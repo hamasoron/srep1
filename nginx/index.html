@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS認定資格</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AWS認定資格一覧</h1>
+        </header>
+        
+        <main>
+            <section class="api-test">
+                <h2>ECS接続テスト</h2>
+                <div class="buttons">
+                    <button onclick="testAPI()">API接続テスト</button>
+                    <button onclick="testDB()">DB接続テスト</button>
+                </div>
+                <div class="response-box">
+                    <p id="response">ボタンをクリックしてテストを実行してください</p>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>© 2023 AWS認定資格ガイド</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
