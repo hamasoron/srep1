@@ -1,31 +1,24 @@
 # ベースイメージの取得
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023 
 
-# nginxをインストール
+# パッケージのアップデートとインストール
 RUN dnf -y update && \
     dnf -y install nginx && \
     dnf -y install awscli && \
     rm -rf /var/cache/dnf && \
     dnf clean all
 
-# 作業ディレクトリを設定
+# 作業ディレクトリの指定（なければ自動作成）
 WORKDIR /usr/share/nginx/html
 
 # ローカルのdefault.confをコンテナの/etc/nginx/conf.d/にコピー
 COPY default.conf /etc/nginx/conf.d/
 
-# 静的ファイルをコピー
+# 静的ファイルをコンテナの/usr/share/nginx/html/にコピー
 COPY index.html script.js style.css /usr/share/nginx/html/
 
-# エントリポイントスクリプトをコピーして実行権限を付与
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# コンテナの待ち受けポート 
+# コンテナの待ち受けポートを80とする
 EXPOSE 80
 
-# エントリポイントを設定
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-
-# コマンド
+# （コンテナの起動時に）nginxをフォアグラウンドで起動
 CMD ["nginx", "-g", "daemon off;"]
