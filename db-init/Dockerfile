@@ -15,7 +15,7 @@ WORKDIR /app
 COPY init.sql /app/
 
 # 環境変数（実行時に上書き可能）
-ENV DB_HOST="hamasoron-prod-rds-aurora.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com"
+ENV DB_HOST="srep1-prod-rds-aurora.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com"
 ENV DB_PORT="3306"
 ENV DB_NAME="hamasorondb"
 ENV DB_USER="hamasoron"

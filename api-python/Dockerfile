@@ -24,7 +24,7 @@ COPY app.py /app/
 # デフォルトの環境変数を設定（実行時に上書き可能）
 ENV DB_USERNAME="hamasoron" \
     DB_PASSWORD="i7V956YP" \
-    DB_SERVERNAME="hamasoron-prod-rds-aurora.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com" \
+    DB_SERVERNAME="srep1-prod-rds-aurora.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com" \
     DB_PORT="3306" \
     DB_NAME="hamasorondb" \
     FLASK_DEBUG="0" \

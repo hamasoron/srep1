@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS aws_certifications (
     OfficialName VARCHAR(100)
 ) CHARSET=utf8mb4;
 
--- テーブルが既に存在する場合は一旦全てのレコードをクリア（TRUNCATE:切り捨て）
+-- テーブルが既に存在する場合は一旦全てのレコードを削除（TRUNCATE:切り捨て）
 TRUNCATE TABLE aws_certifications;
 
 -- aws_certificationsテーブルに12レコード追加
@@ -23,5 +23,5 @@ INSERT INTO aws_certifications (Abbreviation, OfficialName) VALUES
     ('MLS', 'AWS Certified Machine Learning - Specialty'),
     ('SCS', 'AWS Certified Security - Specialty');
 
--- テーブルのレコードの件数を数える確認用クエリ
+-- テーブルのレコード件数を確認
 SELECT COUNT(*) AS total_records FROM aws_certifications;
