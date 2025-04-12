@@ -36,6 +36,7 @@ jobs:
         ### stepsのrunセクション（シェルスクリプトを実行）
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            #### github上でinputsで指定した環境を出力（別のjobで使用するため）
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
           else
             # pushの場合はmainブランチなのでprod環境
@@ -79,7 +80,7 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         ### stepsのusesセクション（GitHub ActionsのActionを使用）
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
