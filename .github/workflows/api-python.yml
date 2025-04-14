@@ -155,9 +155,13 @@ jobs:
           REPO="${{ needs.build-and-push.outputs.ecr_repository }}"
           TAG="${{ needs.build-and-push.outputs.image_tag }}"
           
-          # ECRの完全なURIを構築
-          # 通常、ECRレジストリURIは "accountID.dkr.ecr.region.amazonaws.com" の形式
-          # レジストリが末尾の / を持っていないことを確認
+          # レジストリが空または無効な場合はデフォルト値を使用
+          if [ -z "$REGISTRY" ] || [ "$REGISTRY" = "/" ]; then
+            REGISTRY="727646491820.dkr.ecr.ap-northeast-1.amazonaws.com"
+            echo "Registry was empty or invalid, using default: $REGISTRY"
+          fi
+          
+          # レジストリURIの末尾の / を削除
           REGISTRY=$(echo $REGISTRY | sed 's#/$##')
           
           # 完全なイメージURIを構築
@@ -183,11 +187,33 @@ jobs:
           echo "Original task definition file:"
           cat $TASK_DEF_FILE
           
+          # イメージURIを検証
+          if [[ ! $IMAGE_URI =~ ^[0-9]+\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/ ]]; then
+            echo "WARNING: Image URI format appears invalid: $IMAGE_URI"
+            echo "Using hardcoded ECR URI as fallback"
+            IMAGE_URI="727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-${{ env.ENVIRONMENT }}-api-python-repo:${{ needs.build-and-push.outputs.image_tag }}"
+            echo "Fallback Image URI: $IMAGE_URI"
+          fi
+          
           # 一時ファイルを作成
           TEMP_TASK_DEF=$(mktemp)
           
           # jqを使用してイメージを置き換え
           jq --arg IMAGE "$IMAGE_URI" '.containerDefinitions[0].image = $IMAGE' $TASK_DEF_FILE > $TEMP_TASK_DEF
+          
+          # 生成されたファイルのイメージを確認
+          RESULT_IMAGE=$(jq -r '.containerDefinitions[0].image' $TEMP_TASK_DEF)
+          echo "Image in generated task definition: $RESULT_IMAGE"
+          
+          # イメージにレジストリURIが含まれているか確認
+          if [[ ! $RESULT_IMAGE =~ ^[0-9]+\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/ ]]; then
+            echo "ERROR: Image URI in task definition is still invalid!"
+            echo "Manually setting complete image URI"
+            # イメージを強制的に完全なURIに設定
+            FIXED_IMAGE="727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-${{ env.ENVIRONMENT }}-api-python-repo:${{ needs.build-and-push.outputs.image_tag }}"
+            jq --arg IMAGE "$FIXED_IMAGE" '.containerDefinitions[0].image = $IMAGE' $TASK_DEF_FILE > $TEMP_TASK_DEF
+            echo "Fixed Image: $FIXED_IMAGE"
+          fi
           
           # 新しいファイル名
           NEW_TASK_DEF_FILE="task-def-$(date +%s).json"
