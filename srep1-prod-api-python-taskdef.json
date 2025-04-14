@@ -35,7 +35,7 @@
         }
     ],
     "taskRoleArn": "arn:aws:iam::727646491820:role/CustomECSTaskRole",
-    "executionRoleArn": "arn:aws:iam::727646491820:role/CustomECSTaskDefinitionRole",
+    "executionRoleArn": "arn:aws:iam::727646491820:role/CustomECSTaskExecutionRole",
     "networkMode": "awsvpc",
     "volumes": [],
     "placementConstraints": [],
