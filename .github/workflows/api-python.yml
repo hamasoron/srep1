@@ -154,32 +154,68 @@ jobs:
           REGISTRY="${{ needs.build-and-push.outputs.ecr_registry }}"
           REPO="${{ needs.build-and-push.outputs.ecr_repository }}"
           TAG="${{ needs.build-and-push.outputs.image_tag }}"
+          
+          # ECRの完全なURIを構築
+          # 通常、ECRレジストリURIは "accountID.dkr.ecr.region.amazonaws.com" の形式
+          # レジストリが末尾の / を持っていないことを確認
+          REGISTRY=$(echo $REGISTRY | sed 's#/$##')
+          
+          # 完全なイメージURIを構築
           IMAGE_URI="$REGISTRY/$REPO:$TAG"
+          
           echo "URI=$IMAGE_URI" >> $GITHUB_OUTPUT
-          echo "Using image URI: $IMAGE_URI"
           # デバッグ情報を出力
           echo "Registry: $REGISTRY"
           echo "Repository: $REPO"
           echo "Tag: $TAG"
           echo "Full Image URI: $IMAGE_URI"
 
-      - name: Fill in the task definition values
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: srep1-${{ env.ENVIRONMENT }}-api-python-taskdef.json
-          container-name: api-python
-          image: ${{ steps.image-uri.outputs.URI }}
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Debug task definition
+      - name: Manually modify task definition
+        id: manual-task-def
         run: |
-          echo "Task definition content after update:"
-          cat ${{ steps.task-def.outputs.task-definition }}
+          # 元のタスク定義ファイルを読み込む
+          TASK_DEF_FILE="srep1-${{ env.ENVIRONMENT }}-api-python-taskdef.json"
+          IMAGE_URI="${{ steps.image-uri.outputs.URI }}"
+          
+          echo "Original task definition file:"
+          cat $TASK_DEF_FILE
+          
+          # 一時ファイルを作成
+          TEMP_TASK_DEF=$(mktemp)
+          
+          # jqを使用してイメージを置き換え
+          jq --arg IMAGE "$IMAGE_URI" '.containerDefinitions[0].image = $IMAGE' $TASK_DEF_FILE > $TEMP_TASK_DEF
+          
+          # 新しいファイル名
+          NEW_TASK_DEF_FILE="task-def-$(date +%s).json"
+          cp $TEMP_TASK_DEF $NEW_TASK_DEF_FILE
+          
+          # 出力ファイル名を設定
+          echo "file=$NEW_TASK_DEF_FILE" >> $GITHUB_OUTPUT
+          
+          # デバッグ出力
+          echo "Updated task definition file content:"
+          cat $NEW_TASK_DEF_FILE
 
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: srep1-${{ env.ENVIRONMENT }}-api-python-svc
-          cluster: srep1-${{ env.ENVIRONMENT }}-cluster
-          wait-for-service-stability: true 
+      - name: Deploy with AWS CLI
+        run: |
+          # 修正されたタスク定義ファイルを使用して直接 ECS にデプロイ
+          TASK_DEF_FILE="${{ steps.manual-task-def.outputs.file }}"
+          
+          echo "Task definition file content before registration:"
+          cat $TASK_DEF_FILE
+          
+          echo "Registering task definition using AWS CLI..."
+          TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF_FILE --query 'taskDefinition.taskDefinitionArn' --output text)
+          
+          echo "Task definition registered: $TASK_DEF_ARN"
+          
+          echo "Updating service..."
+          aws ecs update-service \
+            --cluster srep1-${{ env.ENVIRONMENT }}-cluster \
+            --service srep1-${{ env.ENVIRONMENT }}-api-python-svc \
+            --task-definition $TASK_DEF_ARN \
+            --force-new-deployment 
