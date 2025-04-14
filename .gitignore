@@ -1,2 +1,5 @@
-# Terraform-related
-.terraform/
+# Terraform
+**/.terraform/**
+**.tfstate
+**.tfvars
+**/.terraform.lock.hcl
