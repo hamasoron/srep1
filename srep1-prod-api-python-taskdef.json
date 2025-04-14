@@ -5,7 +5,14 @@
             "name": "api-python",
             "image": "727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-prod-api-python-repo",
             "cpu": 0,
-            "portMappings": [],
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp",
+                    "name": "api-http"
+                }
+            ],
             "essential": true,
             "environment": [],
             "environmentFiles": [],
@@ -40,6 +47,5 @@
     "runtimePlatform": {
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
-    },
-    "enableFaultInjection": false
+    }
 }

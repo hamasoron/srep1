@@ -10,7 +10,7 @@ on:
       - release
       - develop
     paths:
-      - 'db-init/*'
+      - 'app/db-init/*'
       - '.github/workflows/db-init.yml'
   ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
@@ -66,6 +66,8 @@ jobs:
       #### 前のjobで出力された環境を取得
       ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
       AWS_REGION: ap-northeast-1
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
 
     steps:
         ### stepsのnameセクション（ステップの名前を定義）
@@ -142,7 +144,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: srep1-${{ env.ENVIRONMENT }}-db-init-taskdef.json
-          container-name: srep1-${{ env.ENVIRONMENT }}-db-init-container
+          container-name: db-init
           image: ${{ needs.build-and-push.outputs.image }}
 
       - name: Run one-time DB initialization task

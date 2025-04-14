@@ -53,7 +53,7 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_api" {
   container_definitions = jsonencode([
     {
       name      = "api-python"
-      image     = "${var.api_ecr_repository_url}:latest"
+      image     = "public.ecr.aws/nginx/nginx:latest"
       essential = true
       
       portMappings = [
@@ -114,22 +114,20 @@ resource "aws_ecs_service" "terra_ecs_service_api" {
     assign_public_ip = false
   }
   
-  load_balancer {
-    target_group_arn = var.api_target_group_arn
-    container_name   = "api-python"
-    container_port   = 8080
-  }
-  
+  # ここではALBに接続せず、Service Connectのみで公開
   service_connect_configuration {
     enabled   = true
     namespace = aws_service_discovery_http_namespace.service_connect_namespace.arn
     
+    # APIサービスをプロバイダーとして登録
     service {
+      port_name      = "api-http"  # タスク定義のportMappingsのnameと一致させる
+      discovery_name = "api-python"  # サービスディスカバリー名
+      
       client_alias {
         port     = 8080
-        dns_name = "api-python"
+        dns_name = "api-python"  # この名前でサービスディスカバリーできる
       }
-      port_name = "api-http"
     }
   }
   
@@ -147,7 +145,7 @@ resource "aws_ecs_service" "terra_ecs_service_api" {
   }
 }
 
-## フロントエンドサービス用のタスク定義（必要に応じて）
+## リバースプロキシ用のタスク定義（Nginx）
 resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
   family                   = "${var.system_name}-${var.environment_name}-front-nginx-taskdef"
   network_mode             = "awsvpc"
@@ -160,7 +158,7 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
   container_definitions = jsonencode([
     {
       name      = "front-nginx"
-      image     = "${var.front_ecr_repository_url}:latest"
+      image     = "public.ecr.aws/nginx/nginx:latest"
       essential = true
       
       portMappings = [
@@ -168,6 +166,7 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
           containerPort = 80
           hostPort      = 80
           protocol      = "tcp"
+          name          = "http-nginx"
         }
       ]
       
@@ -184,6 +183,14 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
         {
           name  = "ENV"
           value = var.environment_name
+        },
+        {
+          name  = "API_SERVICE_HOST"
+          value = "api-python"
+        },
+        {
+          name  = "API_SERVICE_PORT"
+          value = "8080"
         }
       ]
     }
@@ -204,7 +211,7 @@ resource "aws_cloudwatch_log_group" "terra_cloudwatch_log_group_front" {
   }
 }
 
-## ECSサービスの作成（フロントエンド用）
+## ECSサービスの作成（Nginxリバースプロキシ用）
 resource "aws_ecs_service" "terra_ecs_service_front" {
   name                              = "${var.system_name}-${var.environment_name}-front-nginx-src"
   cluster                           = aws_ecs_cluster.terra_ecs_cluster.id
@@ -220,10 +227,17 @@ resource "aws_ecs_service" "terra_ecs_service_front" {
     assign_public_ip = false
   }
   
+  # フロントエンドサービスはALBに接続
   load_balancer {
     target_group_arn = var.front_target_group_arn
     container_name   = "front-nginx"
     container_port   = 80
+  }
+  
+  # Nginxをクライアントとして設定（APIサービスを利用する）
+  service_connect_configuration {
+    enabled   = true
+    namespace = aws_service_discovery_http_namespace.service_connect_namespace.arn
   }
   
   deployment_circuit_breaker {

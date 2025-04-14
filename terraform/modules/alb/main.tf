@@ -76,21 +76,22 @@ resource "aws_lb_listener" "terra_http_listener" {
 }
 
 # API用のリスナールール
-resource "aws_lb_listener_rule" "terra_api_rule" {
-  listener_arn = aws_lb_listener.terra_http_listener.arn
-  priority     = 100
+# APIリクエストも含めてすべてNginxに転送するため、このルールは削除
+# resource "aws_lb_listener_rule" "terra_api_rule" {
+#   listener_arn = aws_lb_listener.terra_http_listener.arn
+#   priority     = 100
 
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.terra_api_target_group.arn
-  }
+#   action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.terra_api_target_group.arn
+#   }
 
-  condition {
-    path_pattern {
-      values = ["/api/*"]
-    }
-  }
-}
+#   condition {
+#     path_pattern {
+#       values = ["/api/*"]
+#     }
+#   }
+# }
 
 # HTTPSリスナーの作成（SSL証明書が利用可能な場合）
 resource "aws_lb_listener" "terra_https_listener" {
@@ -108,19 +109,20 @@ resource "aws_lb_listener" "terra_https_listener" {
 }
 
 # HTTPS API用のリスナールール
-resource "aws_lb_listener_rule" "terra_https_api_rule" {
-  count        = var.enable_https ? 1 : 0
-  listener_arn = aws_lb_listener.terra_https_listener[0].arn
-  priority     = 100
+# APIリクエストも含めてすべてNginxに転送するため、このルールは削除
+# resource "aws_lb_listener_rule" "terra_https_api_rule" {
+#   count        = var.enable_https ? 1 : 0
+#   listener_arn = aws_lb_listener.terra_https_listener[0].arn
+#   priority     = 100
 
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.terra_api_target_group.arn
-  }
+#   action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.terra_api_target_group.arn
+#   }
 
-  condition {
-    path_pattern {
-      values = ["/api/*"]
-    }
-  }
-} 
+#   condition {
+#     path_pattern {
+#       values = ["/api/*"]
+#     }
+#   }
+# } 

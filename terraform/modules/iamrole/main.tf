@@ -122,7 +122,11 @@ resource "aws_iam_policy" "github_actions_policy" {
           "ecs:RunTask",
           "ecs:DescribeServices",
           "ecs:DescribeTasks",
-          "ecs:ListTasks"
+          "ecs:ListTasks",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:DescribeTaskDefinition",
+          "ecs:ListTaskDefinitions"
         ]
         Effect   = "Allow"
         Resource = "*"
