@@ -117,5 +117,5 @@ github_repo = "hamasoron/srep1"
 
 # ECSサービスのタスク数
 # 初回デプロイ時は0に設定し、ECRにイメージがプッシュされた後に1に変更してください
-api_desired_count = 0
-front_desired_count = 0
+api_desired_count = 1
+front_desired_count = 1
