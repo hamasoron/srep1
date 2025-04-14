@@ -114,7 +114,7 @@ jobs:
           #### 旧タグがついたイメージを出力（別のjobで使用するため）
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  # # DB初期化タスクはECSタスク定義を使用して実行するため、通常のサービスデプロイとは異なります
+  # ### DB初期化タスクはECSタスク定義を使用して実行するため、通常のサービスデプロイとは異なります
   # run-db-init:
   #   name: Run DB Init Task
   #   needs: [detect-environment, build-and-push]

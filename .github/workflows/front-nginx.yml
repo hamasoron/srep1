@@ -114,7 +114,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  ## ## job名（deploy）
+  ### ## job名（deploy）
   # deploy:
   #   name: Deploy to ECS
   #   needs: [detect-environment, build-and-push]

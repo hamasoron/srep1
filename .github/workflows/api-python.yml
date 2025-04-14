@@ -115,7 +115,7 @@ jobs:
           #### 旧タグがついたイメージを出力（別のjobで使用するため）
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  # ## job名（deploy）
+  # #### job名（deploy）
   # deploy:
   #   name: Deploy to ECS
   #   needs: [detect-environment, build-and-push]
