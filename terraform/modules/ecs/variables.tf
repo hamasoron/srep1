@@ -95,4 +95,9 @@ variable "api_ecr_repository_url" {
 variable "front_ecr_repository_url" {
   description = "フロントエンドサービスのECRリポジトリURL"
   type        = string
+}
+
+variable "vpc_id" {
+  description = "プライベートDNSネームスペースを作成するVPCのID"
+  type        = string
 } 

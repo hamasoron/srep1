@@ -64,6 +64,7 @@ module "ecs" {
   ecs_task_role_arn           = module.iamrole.ecs_task_role_arn
 
   # ネットワーク設定
+  vpc_id = module.vpc.vpc_id
   protected_subnet_ids = [
     module.vpc.subnet_ids["protected-1a"],
     module.vpc.subnet_ids["protected-1c"]

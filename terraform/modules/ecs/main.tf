@@ -17,13 +17,44 @@ resource "aws_ecs_cluster" "terra_ecs_cluster" {
   }
 }
 
-## Service Connect用の名前空間
+## Service Connect用のHTTP名前空間（既存）
 resource "aws_service_discovery_http_namespace" "service_connect_namespace" {
   name        = "${var.system_name}-${var.environment_name}-cluster.local"
   description = "Service Connect namespace for ${var.system_name}-${var.environment_name}"
   
   tags = {
     Name = "${var.system_name}-${var.environment_name}-cluster.local"
+  }
+}
+
+## Service Discovery用のプライベートDNS名前空間（Route 53プライベートホストゾーン）
+resource "aws_service_discovery_private_dns_namespace" "service_discovery_namespace" {
+  name        = "${var.system_name}-${var.environment_name}-cluster.local"
+  description = "Private DNS namespace for ${var.system_name}-${var.environment_name}"
+  vpc         = var.vpc_id
+  
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-cluster.local"
+  }
+}
+
+## サービスディスカバリーサービス（APIサービス用）
+resource "aws_service_discovery_service" "api_discovery_service" {
+  name = "api-python"
+  
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.service_discovery_namespace.id
+    
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+    
+    routing_policy = "MULTIVALUE"
+  }
+  
+  health_check_custom_config {
+    failure_threshold = 1
   }
 }
 
@@ -114,7 +145,11 @@ resource "aws_ecs_service" "terra_ecs_service_api" {
     assign_public_ip = false
   }
   
-  # ここではALBに接続せず、Service Connectのみで公開
+  # サービスディスカバリーとService Connect両方を設定
+  service_registries {
+    registry_arn = aws_service_discovery_service.api_discovery_service.arn
+  }
+  
   service_connect_configuration {
     enabled   = true
     namespace = aws_service_discovery_http_namespace.service_connect_namespace.arn
