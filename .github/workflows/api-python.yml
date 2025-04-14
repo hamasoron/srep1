@@ -102,7 +102,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         ### stepsのworking-directoryセクション（シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定）
-        working-directory: ./api-python
+        working-directory: ./app/api-python
         ### stepsのrunセクション（シェルスクリプトを実行）
         run: |
           #### タグを付けてイメージをビルド
