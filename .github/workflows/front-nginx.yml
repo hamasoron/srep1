@@ -1,0 +1,138 @@
+# nameセクション（ワークフローの名前を定義）
+name: front-nginx
+
+# onセクション（ワークフローのトリガーを定義）
+on:
+  ## main/release/developブランチにプッシュされた時に自動実行（front-nginx/配下や.github/workflows/front-nginx.ymlが対象）
+  push:
+    branches:
+      - main
+      - release
+      - develop
+    paths:
+      - 'front-nginx/*'
+      - '.github/workflows/front-nginx.yml'
+  ## GitHubの画面から実行ボタンを押した時に手動実行
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'デプロイ環境（prod/stg/dev）'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
+          - stg
+          - dev
+
+# jobsセクション（ワークフローの処理を定義）
+jobs:
+  ## job名（detect-environment:実行環境prod/stg/devを判定して検出後、outputsで出力）
+  detect-environment:
+    name: 環境の検出
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - id: set-env
+        ### stepsのrunセクション（シェルスクリプトを実行）
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            #### github上でinputsで指定した環境を出力（別のjobで使用するため）
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/release" ]; then
+            echo "environment=stg" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          else
+            echo "environment=unknown" >> $GITHUB_OUTPUT
+          fi
+
+  ## job名（build-and-push:ビルドしたイメージをECRにpush）
+  build-and-push:
+    name: Build and Push
+    ### needsフィールド（build-and-pushjobを実行する前にdetect-environmentjobの実行が必要）
+    needs: detect-environment
+    runs-on: ubuntu-latest
+    ### permissionsフィールド（GitHub Actionsのアクションを実行するための権限）
+    permissions:
+      #### id-token: write（クラウドにアクセスするためのトークンを生成）
+      id-token: write
+      #### contents: read（リポジトリの読み込み）
+      contents: read
+    env:
+      #### 前のjobで出力された環境を取得
+      ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
+      AWS_REGION: ap-northeast-1
+
+    steps:
+        ### stepsのnameセクション（ステップの名前を定義）
+      - name: Checkout code
+        ### stepsのusesセクション（GitHub Actionsのアクションを使用）
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        ### stepsのusesセクション（GitHub Actionsのアクションを使用）
+        uses: aws-actions/configure-aws-credentials@v2
+        ### stepsのwithセクション（GitHub Actionsのアクションのパラメータを指定）
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set ECR Repository name
+        id: set-ecr-repo
+        ### stepsのrunセクション
+        run: |
+          #### シェル変数を定義
+          ECR_REPOSITORY="srep1-${{ env.ENVIRONMENT }}-front-nginx-repo"
+          #### シェル変数を出力（別のjobで使用するため）
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        ### stepsのusesセクション（GitHub Actionsのアクションを使用）
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        ### stepsのworking-directoryセクション（シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定）
+        working-directory: ./front-nginx
+        ### stepsのrunセクション（シェルスクリプトを実行）
+        run: |
+          #### タグを付けてイメージをビルド
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          #### 別のタグを付けてイメージをビルド
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          #### 旧タグがついたイメージをECRにpush
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          #### 新タグがついたイメージをECRにpush
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  # ## job名（deploy）
+  # deploy:
+  #   name: Deploy to ECS
+  #   needs: [detect-environment, build-and-push]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
+  #     AWS_REGION: ap-northeast-1
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+
+  #   steps:
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v2
+  #       with:
+  #         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  #         aws-region: ${{ env.AWS_REGION }}
+
+  #     - name: Update ECS service
+  #       run: |
+  #         aws ecs update-service --cluster srep1-${{ env.ENVIRONMENT }}-cluster --service srep1-${{ env.ENVIRONMENT }}-front-service --force-new-deployment 
