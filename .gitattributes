@@ -48,6 +48,7 @@ buildspec.yml       text eol=lf
 
 # その他Git関連
 .gitattributes text eol=lf
+.gitignore text eol=lf
 
 # ========================
 # バイナリファイルの指定
