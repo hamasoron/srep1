@@ -3,7 +3,7 @@
     "containerDefinitions": [
         {
             "name": "api-python",
-            "image": "727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-prod-api-python-repo",
+            "image": "727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-prod-api-python-repo:latest",
             "cpu": 0,
             "portMappings": [
                 {

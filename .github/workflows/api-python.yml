@@ -105,6 +105,11 @@ jobs:
         working-directory: ./app/api-python
         ### stepsのrunセクション（シェルスクリプトを実行）
         run: |
+          # デバッグ情報を出力
+          echo "ECR_REGISTRY: $ECR_REGISTRY"
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
+          echo "IMAGE_TAG: $IMAGE_TAG"
+
           #### タグを付けてイメージをビルド
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           #### 別のタグを付けてイメージをビルド
@@ -117,6 +122,9 @@ jobs:
           echo "ecr_registry=$ECR_REGISTRY" >> $GITHUB_OUTPUT
           echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_OUTPUT
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          
+          # 最終的なイメージURIを確認
+          echo "Full Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
   ## ECSにデプロイするジョブ
   deploy:
@@ -149,6 +157,11 @@ jobs:
           IMAGE_URI="$REGISTRY/$REPO:$TAG"
           echo "URI=$IMAGE_URI" >> $GITHUB_OUTPUT
           echo "Using image URI: $IMAGE_URI"
+          # デバッグ情報を出力
+          echo "Registry: $REGISTRY"
+          echo "Repository: $REPO"
+          echo "Tag: $TAG"
+          echo "Full Image URI: $IMAGE_URI"
 
       - name: Fill in the task definition values
         id: task-def
@@ -157,6 +170,11 @@ jobs:
           task-definition: srep1-${{ env.ENVIRONMENT }}-api-python-taskdef.json
           container-name: api-python
           image: ${{ steps.image-uri.outputs.URI }}
+
+      - name: Debug task definition
+        run: |
+          echo "Task definition content after update:"
+          cat ${{ steps.task-def.outputs.task-definition }}
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
