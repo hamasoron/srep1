@@ -67,7 +67,9 @@ jobs:
       ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
       AWS_REGION: ap-northeast-1
     outputs:
-      image: ${{ steps.build-image.outputs.image }}
+      ecr_registry: ${{ steps.build-image.outputs.ecr_registry }}
+      ecr_repository: ${{ steps.build-image.outputs.ecr_repository }}
+      image_tag: ${{ steps.build-image.outputs.image_tag }}
     steps:
         ### stepsのnameセクション（ステップの名前を定義）
       - name: Checkout code
@@ -75,9 +77,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
-        ### stepsのusesセクション（GitHub Actionsのアクションを使用）
         uses: aws-actions/configure-aws-credentials@v2
-        ### stepsのwithセクション（GitHub Actionsのアクションのパラメータを指定）
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
@@ -113,8 +113,10 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           #### 新タグがついたイメージをECRにpush
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          #### 旧タグがついたイメージを出力（別のjobで使用するため）
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          #### イメージのパーツを個別に出力
+          echo "ecr_registry=$ECR_REGISTRY" >> $GITHUB_OUTPUT
+          echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   ## ECSにデプロイするジョブ
   deploy:
@@ -138,13 +140,23 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Construct image URI
+        id: image-uri
+        run: |
+          REGISTRY="${{ needs.build-and-push.outputs.ecr_registry }}"
+          REPO="${{ needs.build-and-push.outputs.ecr_repository }}"
+          TAG="${{ needs.build-and-push.outputs.image_tag }}"
+          IMAGE_URI="$REGISTRY/$REPO:$TAG"
+          echo "URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "Using image URI: $IMAGE_URI"
+
       - name: Fill in the task definition values
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: srep1-${{ env.ENVIRONMENT }}-api-python-taskdef.json
           container-name: api-python
-          image: ${{ needs.build-and-push.outputs.image }}
+          image: ${{ steps.image-uri.outputs.URI }}
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
