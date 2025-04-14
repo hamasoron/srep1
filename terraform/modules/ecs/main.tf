@@ -221,7 +221,7 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
         },
         {
           name  = "API_SERVICE_HOST"
-          value = "api-python"
+          value = "api-python.${var.system_name}-${var.environment_name}-cluster.local"
         },
         {
           name  = "API_SERVICE_PORT"
@@ -269,11 +269,8 @@ resource "aws_ecs_service" "terra_ecs_service_front" {
     container_port   = 80
   }
   
-  # Nginxをクライアントとして設定（APIサービスを利用する）
-  service_connect_configuration {
-    enabled   = true
-    namespace = aws_service_discovery_http_namespace.service_connect_namespace.arn
-  }
+  # Service Connect設定を削除（料金節約のため）
+  # Nginxはサービスディスカバリを利用して直接APIサービスにアクセスする
   
   deployment_circuit_breaker {
     enable   = true
