@@ -51,6 +51,43 @@ module "ecr" {
   environment_name = var.environment_name
 }
 
+## ECSクラスター・サービスのモジュール呼び出し
+module "ecs" {
+  source = "../../modules/ecs"
+
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  region           = var.region_name
+
+  # IAMロール
+  ecs_task_execution_role_arn = module.iamrole.ecs_task_execution_role_arn
+  ecs_task_role_arn           = module.iamrole.ecs_task_role_arn
+
+  # ネットワーク設定
+  protected_subnet_ids = [
+    module.vpc.subnet_ids["protected-1a"],
+    module.vpc.subnet_ids["protected-1c"]
+  ]
+  ecs_security_group_id = module.sg.security_group_ids["ecs"]
+
+  # ロードバランサー設定
+  api_target_group_arn   = module.alb.api_target_group_arn
+  front_target_group_arn = module.alb.front_target_group_arn
+
+  # ECRリポジトリ
+  api_ecr_repository_url   = module.ecr.api_repository_url
+  front_ecr_repository_url = module.ecr.front_repository_url
+
+  # タスク設定
+  api_task_cpu        = "256"
+  api_task_memory     = "512"
+  api_desired_count   = var.api_desired_count
+  front_task_cpu      = "256"
+  front_task_memory   = "512"
+  front_desired_count = var.front_desired_count
+  log_retention_days  = 7
+}
+
 # RDS Aurora MySQLの作成
 module "rds" {
   source = "../../modules/rds"

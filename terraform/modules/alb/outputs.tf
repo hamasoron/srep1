@@ -8,12 +8,22 @@ output "alb_dns_name" {
   value       = aws_lb.terra_alb.dns_name
 }
 
-output "target_group_arn" {
-  description = "ターゲットグループのARN"
-  value       = aws_lb_target_group.terra_target_group.arn
+output "api_target_group_arn" {
+  description = "APIターゲットグループのARN"
+  value       = aws_lb_target_group.terra_api_target_group.arn
 }
 
-output "target_group_name" {
-  description = "ターゲットグループの名前"
-  value       = aws_lb_target_group.terra_target_group.name
+output "api_target_group_name" {
+  description = "APIターゲットグループの名前"
+  value       = aws_lb_target_group.terra_api_target_group.name
+}
+
+output "front_target_group_arn" {
+  description = "フロントエンドターゲットグループのARN"
+  value       = aws_lb_target_group.terra_front_target_group.arn
+}
+
+output "front_target_group_name" {
+  description = "フロントエンドターゲットグループの名前"
+  value       = aws_lb_target_group.terra_front_target_group.name
 } 

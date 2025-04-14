@@ -115,25 +115,40 @@ jobs:
           #### 旧タグがついたイメージを出力（別のjobで使用するため）
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  # #### job名（deploy）
-  # deploy:
-  #   name: Deploy to ECS
-  #   needs: [detect-environment, build-and-push]
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
-  #     AWS_REGION: ap-northeast-1
-  #   permissions:
-  #     id-token: write
-  #     contents: read
+  # ECSにデプロイするジョブ
+  deploy:
+    name: Deploy to ECS
+    needs: [detect-environment, build-and-push]
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
+      AWS_REGION: ap-northeast-1
+    permissions:
+      id-token: write
+      contents: read
 
-  #   steps:
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v2
-  #       with:
-  #         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-  #         aws-region: ${{ env.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-  #     - name: Update ECS service
-  #       run: |
-  #         aws ecs update-service --cluster srep1-${{ env.ENVIRONMENT }}-cluster --service srep1-${{ env.ENVIRONMENT }}-api-service --force-new-deployment 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fill in the task definition values
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: srep1-${{ env.ENVIRONMENT }}-api-python-taskdef.json
+          container-name: srep1-${{ env.ENVIRONMENT }}-api-container
+          image: ${{ needs.build-and-push.outputs.image }}
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: srep1-${{ env.ENVIRONMENT }}-api-service
+          cluster: srep1-${{ env.ENVIRONMENT }}-cluster
+          wait-for-service-stability: true 

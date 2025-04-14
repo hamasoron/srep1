@@ -26,4 +26,15 @@ output "db_init_repository_arn" {
 output "front_nginx_repository_arn" {
   description = "Front NginxリポジトリのARN"
   value       = aws_ecr_repository.front_nginx.arn
+}
+
+# ECSモジュールとの連携用
+output "api_repository_url" {
+  description = "APIリポジトリのURL (ECS連携用)"
+  value       = aws_ecr_repository.api_python.repository_url
+}
+
+output "front_repository_url" {
+  description = "フロントエンドリポジトリのURL (ECS連携用)"
+  value       = aws_ecr_repository.front_nginx.repository_url
 } 

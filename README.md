@@ -44,5 +44,31 @@ srep1/
 ## デプロイ
 タスク定義ファイル（taskdef.json）を使用して、AWS ECS Fargateにデプロイします。
 
+### 初回デプロイ手順
+初回デプロイでは、以下の手順に従ってください：
+
+1. Terraformでインフラをデプロイします。
+   ```
+   cd terraform/environments/[環境名]
+   terraform init
+   terraform apply
+   ```
+
+2. 初回のTerraform適用では、ECSサービスのdesired_countは0に設定されています。これは、初めてECRにイメージがプッシュされるまでECSタスクが起動しないようにするためです。
+
+3. GitHub Actionsを実行して、コンテナイメージをECRにプッシュします。
+   - mainブランチにプッシュするか、手動でワークフローを実行します。
+
+4. イメージがECRにプッシュされたら、Terraformの変数を更新します：
+   - `terraform.tfvars`ファイルでdesired_countを1に更新します。
+   - または、AWS Management ConsoleからECSサービスを編集し、タスク数を1に変更します。
+
+5. 更新後のTerraformを適用します：
+   ```
+   terraform apply
+   ```
+
+これにより、ECRにイメージが存在する状態でECSサービスが起動するため、エラーを回避できます。
+
 ## ライセンス
 このプロジェクトはサンプル用途として提供されています。

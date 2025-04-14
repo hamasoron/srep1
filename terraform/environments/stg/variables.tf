@@ -73,3 +73,15 @@ variable "github_repo" {
   default     = "hamasoron/srep1"
 }
 
+variable "api_desired_count" {
+  description = "APIサービスのタスク数"
+  type        = number
+  default     = 0
+}
+
+variable "front_desired_count" {
+  description = "フロントエンドサービスのタスク数"
+  type        = number
+  default     = 0
+}
+

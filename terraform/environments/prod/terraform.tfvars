@@ -114,3 +114,8 @@ sg_definitions = { ########## [変更可能](セキュリティグループの�
 # db_password = "password" # 代わりに環境変数 TF_VAR_db_password や -var オプションで渡してください
 db_password = "i7V956YP"
 github_repo = "hamasoron/srep1"
+
+# ECSサービスのタスク数
+# 初回デプロイ時は0に設定し、ECRにイメージがプッシュされた後に1に変更してください
+api_desired_count = 0
+front_desired_count = 0

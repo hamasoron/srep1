@@ -1,7 +1,7 @@
 region_name                       = "ap-northeast-1" ########## [変更不可](リージョンによってAZの数が異なるため正しく動作しない)［AZの数とbackend.tfを調整すれば変更可能］
 system_name                       = "srep1"      ########## [変更可能](例: terraform, hamasoron)
 environment_name                  = "dev"            ########## [変更可能](例: prod, stg, dev)
-create_protected_ngw_associations = false             ########## [変更可能](例: true, false)
+create_protected_ngw_associations = true              ########## [変更可能](例: true, false)
 vpc_cidr                          = "10.0.64.0/19"   ########## [変更可能](例: 10.0.0.0/19, 10.0.32.0/19, 10.0.64.0/19)
 subnet_list = [                                      ########## [変更可能](vpc_cidrの変更によって変更が必要)
   { name = "1a", cidr_block = "10.0.64.0/24", type = "public" },
@@ -114,3 +114,8 @@ sg_definitions = { ########## [変更可能](セキュリティグループの�
 # db_password = "password" # 代わりに環境変数 TF_VAR_db_password や -var オプションで渡してください
 db_password = "i7V956YP"
 github_repo = "hamasoron/srep1"
+
+# ECSサービスのタスク数
+# 初回デプロイ時は0に設定し、ECRにイメージがプッシュされた後に1に変更してください
+api_desired_count = 0
+front_desired_count = 0
