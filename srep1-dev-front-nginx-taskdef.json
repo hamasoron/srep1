@@ -1,9 +1,9 @@
 {
-    "family": "srep1-prod-front-nginx-taskdef",
+    "family": "srep1-dev-front-nginx-taskdef",
     "containerDefinitions": [
         {
             "name": "front-nginx",
-            "image": "727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-prod-front-nginx-repo:latest",
+            "image": "727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-dev-front-nginx-repo:latest",
             "cpu": 0,
             "portMappings": [
                 {
@@ -17,7 +17,7 @@
             "environment": [
                 {
                     "name": "ENV",
-                    "value": "prod"
+                    "value": "dev"
                 },
                 {
                     "name": "API_SERVICE_HOST",
@@ -34,7 +34,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/srep1-prod-front-nginx-taskdef",
+                    "awslogs-group": "/ecs/srep1-dev-front-nginx-taskdef",
                     "mode": "non-blocking",
                     "awslogs-create-group": "true",
                     "max-buffer-size": "25m",
@@ -60,4 +60,4 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     }
-}
+} 
