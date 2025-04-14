@@ -3,7 +3,7 @@ name: api-python
 
 # onセクション（ワークフローのトリガーを定義）
 on:
-  ## main/release/developブランチにプッシュされた時に自動実行（api-python/配下や.github/workflows/api-python-cicd.ymlが対象）
+  ## main/release/developブランチにプッシュされた時に自動実行（api-python/配下や.github/workflows/api-python.ymlが対象）
   push:
     branches:
       - main
@@ -12,7 +12,7 @@ on:
     paths:
       - 'api-python/*'
       - '.github/workflows/api-python.yml'
-  ## GitHubの画面から実行ボタンを押した時に手動実行
+  ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
     inputs:
       environment:
@@ -74,7 +74,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
-        ### stepsのusersセクション（GitHub Actionsのアクションを使用）
+        ### stepsのusesセクション（GitHub Actionsのアクションを使用）
         uses: aws-actions/configure-aws-credentials@v2
         ### stepsのwithセクション（GitHub Actionsのアクションのパラメータを指定）
         with:
