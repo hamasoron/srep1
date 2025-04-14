@@ -162,6 +162,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: srep1-${{ env.ENVIRONMENT }}-api-service
+          service: srep1-${{ env.ENVIRONMENT }}-api-python-svc
           cluster: srep1-${{ env.ENVIRONMENT }}-cluster
           wait-for-service-stability: true 
