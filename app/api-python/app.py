@@ -59,7 +59,7 @@ def database_test():
     # 環境変数からDB接続情報を取得
     username   = os.getenv("DB_USERNAME", "hamasoron")
     password   = os.getenv("DB_PASSWORD", "i7V956YP")
-    servername = os.getenv("DB_SERVERNAME", "srep1-prod-rds-aurora.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com")
+    servername = os.getenv("DB_SERVERNAME", "srep1-dev-rds-aurora.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com")
     port       = os.getenv("DB_PORT", "3306")
     dbname     = os.getenv("DB_NAME", "hamasorondb")
     
