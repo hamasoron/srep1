@@ -157,7 +157,7 @@ module "vpc" {
   vpc_cidr     = var.vpc_cidr
 }
 ```
-#### （4） modules/vpc/variables.tfで受け取る
+#### （4） modules/vpc/variables.tfで受け取る（受け取ってないものについてはデフォルト値を使用）
 （例）
 ```hcl
 variable "region_name" {

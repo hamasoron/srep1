@@ -1,29 +1,31 @@
+# アウトプットの定義
+## RDS
 output "cluster_id" {
-  description = "Aurora MySQLクラスターのID"
-  value       = aws_rds_cluster.aurora_mysql_cluster.id
+  description = "AuroraクラスターのID"
+  value       = aws_rds_cluster.terra_rds_cluster.id
 }
 
 output "cluster_endpoint" {
   description = "ライターエンドポイント"
-  value       = aws_rds_cluster.aurora_mysql_cluster.endpoint
+  value       = aws_rds_cluster.terra_rds_cluster.endpoint
 }
 
 output "cluster_reader_endpoint" {
   description = "リーダーエンドポイント"
-  value       = aws_rds_cluster.aurora_mysql_cluster.reader_endpoint
+  value       = aws_rds_cluster.terra_rds_cluster.reader_endpoint
 }
 
 output "cluster_port" {
   description = "クラスターのポート番号"
-  value       = aws_rds_cluster.aurora_mysql_cluster.port
+  value       = aws_rds_cluster.terra_rds_cluster.port
 }
 
 output "instance_ids" {
-  description = "Aurora MySQLインスタンスのID"
-  value       = aws_rds_cluster_instance.aurora_instance[*].id
+  description = "AuroraインスタンスのID"
+  value       = aws_rds_cluster_instance.terra_rds_cluster_instance[*].id
 }
 
 output "db_name" {
   description = "データベース名"
-  value       = aws_rds_cluster.aurora_mysql_cluster.database_name
+  value       = aws_rds_cluster.terra_rds_cluster.database_name
 } 

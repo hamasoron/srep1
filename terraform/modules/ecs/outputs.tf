@@ -1,4 +1,5 @@
 # アウトプットの定義
+## ECS
 output "ecs_cluster_id" {
   description = "ECSクラスターのID"
   value       = aws_ecs_cluster.terra_ecs_cluster.id

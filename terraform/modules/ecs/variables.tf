@@ -1,4 +1,10 @@
 # 変数の定義
+## 全般
+variable "region" {
+  description = "AWSリージョン"
+  type        = string
+  default     = "ap-northeast-1"
+}
 variable "system_name" {
   description = "システム名"
   type        = string
@@ -9,12 +15,14 @@ variable "environment_name" {
   type        = string
 }
 
-variable "region" {
-  description = "AWSリージョン"
-  type        = string
-  default     = "ap-northeast-1"
+## VPC
+variable "create_protected_ngw_associations" {
+  description = "保護された及びNATゲートウェイ関連の作成有無"
+  type        = bool
+  default     = true
 }
 
+## ECS
 variable "ecs_task_execution_role_arn" {
   description = "ECSタスク実行ロールのARN"
   type        = string
@@ -70,6 +78,13 @@ variable "log_retention_days" {
 variable "protected_subnet_ids" {
   description = "ECSタスクを配置するプロテクテッドサブネットのID"
   type        = list(string)
+  default     = []
+}
+
+variable "public_subnet_ids" {
+  description = "ECSタスクを配置するパブリックサブネットのID（create_protected_ngw_associationsがfalseの場合に使用）"
+  type        = list(string)
+  default     = []
 }
 
 variable "ecs_security_group_id" {
@@ -80,11 +95,13 @@ variable "ecs_security_group_id" {
 variable "api_target_group_arn" {
   description = "APIサービスのターゲットグループARN"
   type        = string
+  default     = ""
 }
 
 variable "front_target_group_arn" {
   description = "フロントエンドサービスのターゲットグループARN"
   type        = string
+  default     = ""
 }
 
 variable "api_ecr_repository_url" {

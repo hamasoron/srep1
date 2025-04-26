@@ -21,6 +21,9 @@ resource "aws_subnet" "terra_subnet" {
   tags = {
     Name = "${var.system_name}-${var.environment_name}-${each.value.type}-subnet-${each.value.name}"
   }
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 ## インターネットゲートウェイの作成
@@ -50,18 +53,6 @@ resource "aws_nat_gateway" "terra_nat_gateway" {
     Name = "${var.system_name}-${var.environment_name}-ngw-1a"
   }
   depends_on = [aws_internet_gateway.terra_internet_gateway, aws_eip.terra_eip_ngw]
-  
-  # NATゲートウェイの関連付けが完全に完了するまで待機する設定
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# NATゲートウェイの状態が完全に利用可能になるまで待機するリソース
-resource "time_sleep" "wait_for_nat" {
-  count = var.create_protected_ngw_associations ? 1 : 0
-  depends_on = [aws_nat_gateway.terra_nat_gateway]
-  create_duration = "30s"
 }
 
 ## ルートテーブルの作成
@@ -87,7 +78,6 @@ resource "aws_route_table" "terra_route_table_protected" {
   tags = {
     Name = "${var.system_name}-${var.environment_name}-protected-rtb-${each.key}"
   }
-  depends_on = [time_sleep.wait_for_nat]
 }
 
 resource "aws_route_table" "terra_route_table_private" {
@@ -143,4 +133,16 @@ resource "aws_vpc_endpoint" "terra_dynamodb_endpoint" {
     ignore_changes = [route_table_ids]
   }
   depends_on = [aws_route_table_association.terra_route_table_association]
+}
+
+resource "aws_vpc_endpoint_route_table_association" "s3_endpoint_protected_associations" {
+  for_each = var.create_protected_ngw_associations ? { for rt in var.route_table_list : rt.name == "protected" ? rt.subnet : "" => rt if rt.name == "protected" } : {}
+  vpc_endpoint_id = aws_vpc_endpoint.terra_s3_endpoint.id
+  route_table_id  = aws_route_table.terra_route_table_protected[each.key].id
+}
+
+resource "aws_vpc_endpoint_route_table_association" "dynamodb_endpoint_protected_associations" {
+  for_each = var.create_protected_ngw_associations ? { for rt in var.route_table_list : rt.name == "protected" ? rt.subnet : "" => rt if rt.name == "protected" } : {}
+  vpc_endpoint_id = aws_vpc_endpoint.terra_dynamodb_endpoint.id
+  route_table_id  = aws_route_table.terra_route_table_protected[each.key].id
 }

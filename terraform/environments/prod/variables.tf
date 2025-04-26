@@ -1,22 +1,24 @@
 # 変数の定義
-## リージョン名の定義
 variable "region_name" {
   type = string
+  description = "リージョン名"
 }
 
-## システム名の定義
 variable "system_name" {
   type = string
+  description = "システム名"
 }
 
 ## 環境名の定義
 variable "environment_name" {
   type = string
+  description = "環境名"
 }
 
 ## 保護された及びNATゲートウェイ関連の作成有無
 variable "create_protected_ngw_associations" {
   type = bool
+  description = "保護された及びNATゲートウェイ関連の作成有無"
 }
 
 ## VPCのCIDRブロックを定義

@@ -1,4 +1,5 @@
 # バックエンドの定義
+## バックエンドをローカルではなくs3に設定
 terraform {
   backend "s3" {
     bucket       = "awshamasoron2"

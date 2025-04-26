@@ -33,6 +33,7 @@ module "alb" {
 
   system_name      = var.system_name
   environment_name = var.environment_name
+  create_protected_ngw_associations = var.create_protected_ngw_associations
   vpc_id           = module.vpc.vpc_id
   security_group_id = module.sg.security_group_ids["alb"]
   public_subnet_ids = [
@@ -58,6 +59,7 @@ module "ecs" {
 
   system_name      = var.system_name
   environment_name = var.environment_name
+  create_protected_ngw_associations = var.create_protected_ngw_associations
   region           = var.region_name
 
   # IAMロール
@@ -66,11 +68,15 @@ module "ecs" {
 
   # ネットワーク設定
   vpc_id = module.vpc.vpc_id
-  protected_subnet_ids = [
+  protected_subnet_ids = var.create_protected_ngw_associations ? [
     module.vpc.subnet_ids["protected-1a"],
     module.vpc.subnet_ids["protected-1c"]
+  ] : []
+  public_subnet_ids = [
+    module.vpc.public_subnet_ids["1a"],
+    module.vpc.public_subnet_ids["1c"]
   ]
-  ecs_security_group_id = module.sg.security_group_ids["ecs"]
+  ecs_security_group_id = module.sg.security_group_ids["ecs-front-nginx"]
 
   # ロードバランサー設定
   api_target_group_arn   = module.alb.api_target_group_arn
@@ -81,13 +87,13 @@ module "ecs" {
   front_ecr_repository_url = module.ecr.front_repository_url
 
   # タスク設定
-  api_task_cpu        = "256"
-  api_task_memory     = "512"
+  api_task_cpu        = "512"
+  api_task_memory     = "1024"
   api_desired_count   = var.api_desired_count
-  front_task_cpu      = "256"
-  front_task_memory   = "512"
+  front_task_cpu      = "512"
+  front_task_memory   = "1024"
   front_desired_count = var.front_desired_count
-  log_retention_days  = 7
+  log_retention_days  = 30
 }
 
 ## RDS Aurora MySQLの作成
