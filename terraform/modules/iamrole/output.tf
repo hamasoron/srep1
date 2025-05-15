@@ -1,12 +1,12 @@
 # アウトプットの定義
 ## IAMロール
 output "ecs_task_role_arn" {
-  description = "ECSタスク用のIAMロールのARN"
+  description = "ECSタスク用のIAMロールのARN（ECSモジュール等で使用）"
   value       = aws_iam_role.terra_iam_role_ecs_task.arn
 }
 
 output "ecs_task_execution_role_arn" {
-  description = "ECSタスク実行用のIAMロールのARN"
+  description = "ECSタスク実行用のIAMロールのARN（ECSモジュール等で使用）"
   value       = aws_iam_role.terra_iam_role_ecs_task_execution.arn
 }
 

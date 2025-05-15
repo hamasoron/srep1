@@ -18,7 +18,7 @@ resource "aws_rds_cluster" "terra_rds_cluster" {
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.system_name}-${var.environment_name}-aurora-final-${random_id.final_snapshot_id.hex}"
   deletion_protection     = var.deletion_protection
   storage_encrypted       = var.storage_encrypted
-  kms_key_id              = var.kms_key_id
+  kms_key_id              = var.rds_kms_key_id
   apply_immediately       = var.apply_immediately
   preferred_maintenance_window = var.preferred_maintenance_window_cluster
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
@@ -41,13 +41,13 @@ resource "aws_db_subnet_group" "terra_db_subnet_group" {
 
 ## Aurora MySQL インスタンス作成（1つのAZのみ）
 resource "aws_rds_cluster_instance" "terra_rds_cluster_instance" {
+  count                   = 1
   identifier              = "${var.system_name}-${var.environment_name}-aurora-instance-${count.index}"
   cluster_identifier      = aws_rds_cluster.terra_rds_cluster.id
   instance_class          = var.instance_class
   engine                  = var.db_engine
   engine_version          = var.engine_version
   availability_zone       = "${var.region_name}a"
-  count                   = 1
   apply_immediately       = var.apply_immediately
   preferred_maintenance_window = var.preferred_maintenance_window_instanceA
   db_subnet_group_name    = aws_db_subnet_group.terra_db_subnet_group.name

@@ -1,5 +1,5 @@
 # nameセクション（ワークフローの名前を定義）
-name: front-nginx
+name: db-initdata
 
 # onセクション（ワークフローのトリガーを定義）
 on:
@@ -10,8 +10,8 @@ on:
       - staging
       - develop
     paths:
-      - 'app/front-nginx/*'
-      - '.github/workflows/front-nginx.yml'
+      - 'app/db-initdata/*'
+      - '.github/workflows/db-initdata.yml'
   ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
     inputs:
@@ -51,13 +51,14 @@ jobs:
     name: Build and Push
     needs: detect-environment ### build-and-pushjobを実行する前にdetect-environmentjobの実行が必要
     runs-on: ubuntu-latest
-    permissions: ### GitHub Actionsのアクションを実行するための権限を設定
+    permissions: ### GitHub Actionsのアクションを実行するための権限
       id-token: write ### OIDC（OpenID Connect）トークンを生成（AWSとの認証に使用）
       contents: read ### リポジトリの読み込み
     env:
       ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }} ### 前のjobで出力された環境を取得
       AWS_REGION: ap-northeast-1
     outputs:
+      image: ${{ steps.build-image.outputs.image }} ### ビルドしたイメージを出力
       ecr_registry: ${{ steps.build-image.outputs.ecr_registry }} ### ビルドしたイメージのレジストリを出力
       ecr_repository: ${{ steps.build-image.outputs.ecr_repository }} ### ビルドしたイメージのリポジトリを出力
       image_tag: ${{ steps.build-image.outputs.image_tag }} ### ビルドしたイメージのタグを出力
@@ -74,19 +75,19 @@ jobs:
       - name: Set ECR Repository name
         id: set-ecr-repo
         run: | ### シェルスクリプトを実行
-          ECR_REPOSITORY="srep1-${{ env.ENVIRONMENT }}-front-nginx-repo"
-          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
+          ECR_REPOSITORY="srep1-${{ env.ENVIRONMENT }}-db-initdata-repo" ### シェル変数を定義
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV ### シェル変数を出力（別のstepで使用するため）
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2 ### GitHub Actionsの公式アクションを使用
+        uses: aws-actions/amazon-ecr-login@v2 ### GitHub ActionsのActionを使用
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-        working-directory: ./app/front-nginx ### シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定
+        working-directory: ./app/db-initdata ### シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定
         run: | ### シェルスクリプトを実行
           echo "ECR_REGISTRY: $ECR_REGISTRY" ### デバッグ情報を出力
           echo "ECR_REPOSITORY: $ECR_REPOSITORY" ### デバッグ情報を出力

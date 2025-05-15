@@ -6,8 +6,23 @@ output "alb_arn" {
 }
 
 output "alb_dns_name" {
-  description = "ALBのDNS名"
+  description = "ALBのDNS名（Route53モジュールでエイリアスレコードを作成する際に使用）"
   value       = aws_lb.terra_alb.dns_name
+}
+
+output "alb_zone_id" {
+  description = "ALBのゾーンID（Route53モジュールでエイリアスレコードを作成する際に使用）"
+  value       = aws_lb.terra_alb.zone_id
+}
+
+output "http_listener_arn" {
+  description = "HTTP リスナーのARN"
+  value       = aws_lb_listener.terra_http_listener.arn
+}
+
+output "https_listener_arn" {
+  description = "HTTPS リスナーのARN"
+  value       = aws_lb_listener.terra_https_listener.arn
 }
 
 output "front_target_group_arn" {

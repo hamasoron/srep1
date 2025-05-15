@@ -12,7 +12,7 @@ variable "environment_name" {
 
 ## VPC
 variable "create_protected_ngw_associations" {
-  description = "保護された及びNATゲートウェイ関連の作成有無"
+  description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無"
   type = bool
 }
 

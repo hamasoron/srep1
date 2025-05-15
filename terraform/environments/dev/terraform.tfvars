@@ -4,6 +4,13 @@ region_name      = "ap-northeast-1"
 system_name      = "srep1"
 environment_name = "dev"
 
+## Route53_zone
+route53_force_destroy = true
+
+## ACM
+domain_name               = "srep1.jp"
+subject_alternative_names = ["*.srep1.jp"]
+
 ## VPC
 create_protected_ngw_associations = true
 vpc_cidr                          = "10.0.64.0/19"
@@ -28,7 +35,10 @@ route_table_list = [
 sg_definitions = {
   "alb" = {
     description = "ALB Security Group"
-    ingress = [{ from_port = 80, to_port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] }]
+    ingress = [
+      { from_port = 80, to_port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+      { from_port = 443, to_port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+    ]
     egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
   }
   "ecs-front-nginx" = {
@@ -41,8 +51,13 @@ sg_definitions = {
     ingress = [{ from_port = 8080, to_port = 8080, protocol = "tcp", cidr_blocks = [] }]
     egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
   }
-  "ecs-db-init" = {
-    description = "ECS DB Init Security Group"
+  "ecs-db-initdata" = {
+    description = "ECS DB Initdata Security Group"
+    ingress = []
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+  }
+  "ecs-db-inituser" = {
+    description = "ECS DB Inituser Security Group"
     ingress = []
     egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
   }
@@ -56,45 +71,86 @@ sg_definitions = {
 ## IAMロール
 github_repo = "hamasoron/srep1"
 
+## secretsmanager
+recovery_window_in_days   = 0
+secretsmanager_kms_key_id = null
+master_username           = "hamasoron"
+master_password           = "i7V956YP"
+app_username              = "hamasoron"
+app_password              = "i7V956YP"
+
 ## RDS
 ### クラスター関連
-db_engine = "aurora-mysql"
-engine_version = "8.0.mysql_aurora.3.05.2"
-database_name = "hamasorondb"
-master_username = "hamasoron"
-master_password = "i7V956YP"
-backup_retention_period = 1
-preferred_backup_window = "16:15-16:45"
-skip_final_snapshot = true
-deletion_protection = false
-storage_encrypted = true
-kms_key_id = null
-apply_immediately = false
-preferred_maintenance_window_cluster = "tue:16:45-tue:17:15"
-enabled_cloudwatch_logs_exports = ["error", "slowquery"]
-copy_tags_to_snapshot = true
+db_engine                              = "aurora-mysql"
+engine_version                         = "8.0.mysql_aurora.3.05.2"
+database_name                          = "hamasorondb"
+backup_retention_period                = 2
+preferred_backup_window                = "16:15-16:45"
+skip_final_snapshot                    = true
+deletion_protection                    = false
+storage_encrypted                      = true
+rds_kms_key_id                         = null
+apply_immediately                      = false
+preferred_maintenance_window_cluster   = "tue:16:45-tue:17:15"
+enabled_cloudwatch_logs_exports        = ["error", "slowquery"]
+copy_tags_to_snapshot                  = true
 ### インスタンス関連
-promotion_tier = 1
-instance_class = "db.t4g.medium"
+promotion_tier                         = 1
+instance_class                         = "db.t4g.medium"
 preferred_maintenance_window_instanceA = "tue:17:15-tue:17:45"
-auto_minor_version_upgrade = true
-enable_performance_insights = false
-monitoring_interval = 0
+auto_minor_version_upgrade             = true
+enable_performance_insights            = false
+monitoring_interval                    = 0
 
 ## S3
-force_destroy = true
+force_destroy       = true
 log_expiration_days = 2
 
 ## ALB
-enable_deletion_protection = false
-deregistration_delay = 30
-enable_access_logs = true
-enable_connection_logs = true
+### ALB関連
+enable_deletion_protection       = false
+enable_access_logs               = true
+enable_connection_logs           = true
+### ターゲットグループ関連
+deregistration_delay             = 30
+load_balancing_algorithm_type    = "round_robin"
+### ヘルスチェック関連
+health_check_interval            = 30
+health_check_path                = "/"
+health_check_port                = "traffic-port"
+health_check_protocol            = "HTTP"
+health_check_timeout             = 5
+health_check_healthy_threshold   = 5
+health_check_unhealthy_threshold = 2
+health_check_matcher             = "200"
 
 ## ECR
+image_tag_mutability        = "IMMUTABLE"
+scan_on_push                = true
+ecr_force_delete            = true
+encryption_type             = "AES256"
+ecr_kms_key                 = null
 enable_ecr_lifecycle_policy = true
-ecr_lifecycle_policy_count = 2
+ecr_lifecycle_policy_count  = 2
+
+## CloudWatch Logs
+log_retention_days = 3
 
 ## ECS
-api_desired_count = 1
-front_desired_count = 1
+### クラスター関連
+ecs_kms_key_id                      = null
+### タスク定義関連
+api_task_cpu                        = 256
+api_task_memory                     = 512
+front_task_cpu                      = 256
+front_task_memory                   = 512
+db_initdata_task_cpu                = 256
+db_initdata_task_memory             = 512
+### サービス関連
+api_desired_count                   = 0
+front_desired_count                 = 0
+platform_version                    = "LATEST"
+enable_execute_command              = true
+deployment_circuit_breaker_enable   = true
+deployment_circuit_breaker_rollback = true
+deployment_controller_type          = "ECS"

@@ -1,70 +1,40 @@
 # アウトプットの定義
 ## VPC
+output "create_protected_ngw_associations" {
+  description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無（ECSモジュール等で使用）"
+  value       = var.create_protected_ngw_associations
+}
+
 output "vpc_id" {
-  description = "VPCのID"
+  description = "VPCのID（SGやALBモジュールなどでVPCを指定する際に使用）"
   value       = aws_vpc.terra_vpc.id
 }
 
 output "subnet_ids" {
-  description = "サブネットのID"
+  description = "サブネットのID（AZやNAT構成に応じて動的に変化する全てのサブネットのIDを必ず取得。ECSモジュール等で使用）"
   value       = { for k, v in aws_subnet.terra_subnet : k => v.id }
 }
 
 output "public_subnet_ids" {
-  description = "パブリックサブネットのID"
+  description = "パブリックサブネットのID（AZやNAT構成に応じて動的に変化するパブリックサブネットのIDを必ず取得。ALBモジュール等で使用）"
   value       = { for k, v in aws_subnet.terra_subnet : substr(k, 7, 2) => v.id if substr(k, 0, 6) == "public" }
 }
 
 output "private_subnet_ids" {
-  description = "プライベートサブネットのID"
+  description = "プライベートサブネットのID（AZやNAT構成に応じて動的に変化するプライベートサブネットのIDを必ず取得。RDSモジュール等で使用）"
   value       = { for k, v in aws_subnet.terra_subnet : substr(k, 8, 2) => v.id if substr(k, 0, 7) == "private" }
 }
 
 output "protected_subnet_ids" {
-  description = "保護されたサブネットのID"
+  description = "プロテクテッドサブネットのID（AZやNAT構成に応じて動的に変化するプロテクテッドサブネットのIDを必ず取得）"
   value       = { for k, v in aws_subnet.terra_subnet : substr(k, 10, 2) => v.id if substr(k, 0, 9) == "protected" }
 }
 
-output "internet_gateway_id" {
-  description = "インターネットゲートウェイのID"
-  value = aws_internet_gateway.terra_internet_gateway.id
-}
-
-output "nat_gateway_eip_id" {
-  description = "NATゲートウェイ用のEIPのID（条件付き）"
-  value = var.create_protected_ngw_associations ? aws_eip.terra_eip_ngw[0].id : null
-}
-
-output "nat_gateway_id" {
-  description = "NATゲートウェイのID（条件付き）"
-  value = var.create_protected_ngw_associations ? aws_nat_gateway.terra_nat_gateway[0].id : null
-}
-
 output "route_table_ids" {
-  description = "ルートテーブルのID"
+  description = "ルートテーブルのID（AZやNAT構成に応じて動的に変化する全てのルートテーブルのIDを必ず取得）"
   value = concat(
     [for rt in aws_route_table.terra_route_table_public : rt.id],
     var.create_protected_ngw_associations ? [for rt in aws_route_table.terra_route_table_protected : rt.id] : [],
     [for rt in aws_route_table.terra_route_table_private : rt.id]
   )
-}
-
-output "route_table_association_ids" {
-  description = "サブネットとルートテーブルの関連付けのID"
-  value = [for assoc in aws_route_table_association.terra_route_table_association : assoc.id]
-}
-
-output "s3_vpc_endpoint_id" {
-  description = "S3のVPCエンドポイントのID"
-  value = aws_vpc_endpoint.terra_s3_endpoint.id
-}
-
-output "dynamodb_vpc_endpoint_id" {
-  description = "DynamoDBのVPCエンドポイントのID"
-  value = aws_vpc_endpoint.terra_dynamodb_endpoint.id
-}
-
-output "protected_subnet_resource_ids" {
-  description = "リソースIDとしてのProtectedサブネットID一覧（依存関係解決用）"
-  value       = [for k, v in aws_subnet.terra_subnet : v.id if substr(k, 0, 9) == "protected"]
 }

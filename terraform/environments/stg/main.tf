@@ -76,7 +76,8 @@ module "ecs" {
     module.vpc.public_subnet_ids["1a"],
     module.vpc.public_subnet_ids["1c"]
   ]
-  ecs_security_group_id = module.sg.security_group_ids["ecs-front-nginx"]
+  front_security_group_id = module.sg.security_group_ids["ecs-front-nginx"]
+  api_security_group_id = module.sg.security_group_ids["ecs-api-python"]
 
   # ロードバランサー設定
   api_target_group_arn   = module.alb.api_target_group_arn
@@ -96,17 +97,40 @@ module "ecs" {
   log_retention_days  = 7
 }
 
+## RDSのマスター認証情報を管理するSecretsManager
+module "rds_credentials" {
+  source           = "../../modules/secretsmanager"
+  
+  secret_name      = "${var.system_name}-${var.environment_name}-rds-master-credentials"
+  description      = "RDS Aurora master credentials for ${var.system_name}-${var.environment_name}"
+  secret_string    = jsonencode({
+    username = "srep1admin"  # 固定ユーザー名
+    password = var.db_password
+  })
+  
+  tags = {
+    Environment = var.environment_name
+    System      = var.system_name
+  }
+}
+
 ## RDS Aurora MySQLの作成
 module "rds" {
   source = "../../modules/rds"
 
   system_name      = var.system_name
   environment_name = var.environment_name
+  region_name      = var.region_name
+  
+  # SecretsManagerを使用するように設定
+  use_secrets_manager = true
+  db_credentials_json = module.rds_credentials.secret_string
   
   # データベース設定
   database_name    = "srep1db"
-  master_username  = "srep1admin"
-  master_password  = var.db_password  # tfvarsかSecrets Managerで管理
+  # 直接指定する代わりにSecretsManagerから取得
+  # master_username  = "srep1admin"
+  # master_password  = var.db_password
   
   # インスタンス設定
   instance_class   = "db.t4g.medium"

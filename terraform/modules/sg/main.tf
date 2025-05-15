@@ -32,11 +32,9 @@ resource "aws_security_group" "terra_security_group" {
       description = lookup(egress.value, "description", null)
     }
   }
-
   tags = {
     Name = "${var.system_name}-${var.environment_name}-${each.key}-sg"
   }
-
   lifecycle {
     create_before_destroy = true
   }
@@ -82,13 +80,24 @@ resource "aws_security_group_rule" "rds_from_ecs_api_python" {
   description              = "Allow MySQL traffic from ECS API Python to RDS"
 }
 
-## ECS-DB-INIT -> RDS: 3306番ポート
-resource "aws_security_group_rule" "rds_from_ecs_db_init" {
+## ECS-DB-INITDATA -> RDS: 3306番ポート
+resource "aws_security_group_rule" "rds_from_ecs_db_initdata" {
   type                     = "ingress"
   from_port                = 3306
   to_port                  = 3306
   protocol                 = "tcp"
   security_group_id        = local.security_group_ids["rds"]
-  source_security_group_id = local.security_group_ids["ecs-db-init"]
-  description              = "Allow MySQL traffic from ECS DB Init to RDS"
+  source_security_group_id = local.security_group_ids["ecs-db-initdata"]
+  description              = "Allow MySQL traffic from ECS DB Initdata to RDS"
+}
+
+## ECS-DB-INITUSER -> RDS: 3306番ポート
+resource "aws_security_group_rule" "rds_from_ecs_db_inituser" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  security_group_id        = local.security_group_ids["rds"]
+  source_security_group_id = local.security_group_ids["ecs-db-inituser"]
+  description              = "Allow MySQL traffic from ECS DB Inituser to RDS"
 }

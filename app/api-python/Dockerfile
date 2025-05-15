@@ -21,15 +21,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ローカルのアプリコードをコンテナの/app/にコピー
 COPY app.py /app/
 
-# デフォルトの環境変数を設定（実行時に上書き可能）
-ENV DB_USERNAME="hamasoron" \
-    DB_PASSWORD="i7V956YP" \
-    DB_SERVERNAME="srep1-dev-aurora-cluster.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com" \
-    DB_PORT="3306" \
-    DB_NAME="hamasorondb" \
-    FLASK_DEBUG="0" \
-    PYTHONUNBUFFERED="1" \
-    WORKERS="2"
+# デフォルトの環境変数を設定（タスク定義のenvironmentセクションで記述すると実行時に上書きされる）
+# ENV DB_USERNAME="hamasoron" \
+#     DB_PASSWORD="i7V956YP" \
+#     DB_SERVERNAME="srep1-dev-aurora-cluster.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com" \
+#     DB_PORT="3306" \
+#     DB_NAME="hamasorondb" \
+#     FLASK_DEBUG="0" \
+#     PYTHONUNBUFFERED="1" \
+#     WORKERS="2"
 
 # コンテナの待ち受けポートを8080とする
 EXPOSE 8080

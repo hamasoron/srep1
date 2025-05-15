@@ -92,7 +92,7 @@ resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_gith
   policy_arn = aws_iam_policy.terra_iam_policy_github_actions.arn
 }
 
-# GitHub OIDCプロバイダーを作成
+# GitHub OIDC（OpenID Connect）プロバイダーを作成
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]

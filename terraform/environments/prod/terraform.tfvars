@@ -2,6 +2,11 @@ region_name                       = "ap-northeast-1" ########## [変更不可](�
 system_name                       = "srep1"      ########## [変更可能](例: terraform, hamasoron)
 environment_name                  = "prod"           ########## [変更可能](例: prod, stg, dev)
 create_protected_ngw_associations = false             ########## [変更可能](例: true, false)
+
+# Route53とACM設定
+route53_force_destroy = false
+certificate_subject_alternative_names = []
+
 vpc_cidr                          = "10.0.0.0/19"    ########## [変更可能](例: 10.0.0.0/19, 10.0.32.0/19, 10.0.64.0/19)
 subnet_list = [                                      ########## [変更可能](vpc_cidrの変更によって変更が必要)
   { name = "1a", cidr_block = "10.0.0.0/24", type = "public" },

@@ -1,90 +1,93 @@
 # アウトプットの定義
+## Route53_zone
+output "route53_zone_id" {
+  description = "作成されたRoute53ホストゾーンのID（ACMモジュールでの証明書のドメイン検証に使用）"
+  value = module.route53_zone.route53_zone_id
+}
+
+output "route53_zone_name" {
+  description = "作成されたRoute53ホストゾーンの名前（Route53のホストゾーン名をACMモジュール内で証明書のドメイン名として使用）"
+  value = module.route53_zone.route53_zone_name
+}
+
+output "route53_zone_name_servers" {
+  description = "作成されたRoute53ホストゾーンのネームサーバー（ValueDomain等の外部レジストラにRoute53のNSレコードをコピーする際に使用）"
+  value = module.route53_zone.route53_zone_name_servers
+}
+
+## ACM
+output "certificate_arn" {
+  description = "ACM証明書のARN（ALBモジュールやCloudFrontモジュールなどで証明書を設定する際に使用）"
+  value = module.acm.certificate_arn
+}
+
 ## VPC
+output "create_protected_ngw_associations" {
+  description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無（ECSモジュール等で使用）"
+  value = module.vpc.create_protected_ngw_associations
+}
+
 output "vpc_id" {
-  description = "VPCのID"
+  description = "VPCのID（SGやALBモジュールなどでVPCを指定する際に使用）"
   value = module.vpc.vpc_id
 }
 
 output "subnet_ids" {
-  description = "サブネットのID"
+  description = "サブネットのID（AZやNAT構成に応じて動的に変化する全てのサブネットのIDを必ず取得。ECSモジュール等で使用）"
   value = module.vpc.subnet_ids
 }
 
 output "public_subnet_ids" {
-  description = "パブリックサブネットのID"
+  description = "パブリックサブネットのID（AZやNAT構成に応じて動的に変化するパブリックサブネットのIDを必ず取得。ALBモジュール等で使用）"
   value = module.vpc.public_subnet_ids
 }
 
 output "private_subnet_ids" {
-  description = "プライベートサブネットのID"
+  description = "プライベートサブネットのID（AZやNAT構成に応じて動的に変化するプライベートサブネットのIDを必ず取得。RDSモジュール等で使用）"
   value = module.vpc.private_subnet_ids
 }
 
 output "protected_subnet_ids" {
-  description = "保護されたサブネットのID"
+  description = "プロテクテッドサブネットのID（AZやNAT構成に応じて動的に変化するプロテクテッドサブネットのIDを必ず取得）"
   value = module.vpc.protected_subnet_ids
 }
 
-output "internet_gateway_id" {
-  description = "インターネットゲートウェイのID"
-  value = module.vpc.internet_gateway_id
-}
-
-output "nat_gateway_eip_id" {
-  description = "NATゲートウェイ用のEIPのID（条件付き）"
-  value       = module.vpc.nat_gateway_eip_id
-}
-
-output "nat_gateway_id" {
-  description = "NATゲートウェイのID（条件付き）"
-  value = module.vpc.nat_gateway_id
-}
-
 output "route_table_ids" {
-  description = "ルートテーブルのID"
+  description = "ルートテーブルのID（AZやNAT構成に応じて動的に変化する全てのルートテーブルのIDを必ず取得）"
   value = module.vpc.route_table_ids
-}
-
-output "route_table_association_ids" {
-  description = "サブネットとルートテーブルの関連付けのID"
-  value = module.vpc.route_table_association_ids
-}
-
-output "s3_vpc_endpoint_id" {
-  description = "S3のVPCエンドポイントのID"
-  value = module.vpc.s3_vpc_endpoint_id
-}
-
-output "dynamodb_vpc_endpoint_id" {
-  description = "DynamoDBのVPCエンドポイントのID"
-  value = module.vpc.dynamodb_vpc_endpoint_id
-}
-
-output "protected_subnet_resource_ids" {
-  description = "リソースIDとしてのProtectedサブネットID一覧（依存関係解決用）"
-  value = module.vpc.protected_subnet_resource_ids
 }
 
 ## セキュリティグループ
 output "security_group_ids" {
-  description = "セキュリティグループのID"
+  description = "セキュリティグループのID（RDSやALBやECSモジュール等で使用）"
   value = module.sg.security_group_ids
 }
 
 ## IAMロール
 output "ecs_task_role_arn" {
-  description = "ECSタスク用のIAMロールのARN"
+  description = "ECSタスク用のIAMロールのARN（ECSモジュール等で使用）"
   value = module.iamrole.ecs_task_role_arn
 }
 
 output "ecs_task_execution_role_arn" {
-  description = "ECSタスク実行用のIAMロールのARN"
+  description = "ECSタスク実行用のIAMロールのARN（ECSモジュール等で使用）"
   value = module.iamrole.ecs_task_execution_role_arn
 }
 
 output "github_actions_role_arn" {
   description = "GitHub Actions用のIAMロールのARN"
   value = module.iamrole.github_actions_role_arn
+}
+
+## SecretsManager
+output "rds_master_secret_arn" {
+  description = "RDS master user secretのARN（ECSモジュールの環境変数の設定等で使用）"
+  value = module.secretsmanager.rds_master_secret_arn
+}
+
+output "rds_app_secret_arn" {
+  description = "RDS app user secretのARN（ECSモジュールの環境変数の設定等で使用）"
+  value = module.secretsmanager.rds_app_secret_arn
 }
 
 ## RDS
@@ -94,28 +97,23 @@ output "cluster_id" {
 }
 
 output "cluster_endpoint" {
-  description = "Auroraクラスターのエンドポイント"
+  description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
   value = module.rds.cluster_endpoint
 }
 
 output "cluster_reader_endpoint" {
-  description = "Auroraクラスターのリーダーエンドポイント"
+  description = "Auroraクラスターのリーダーエンドポイント（ECSモジュールの環境変数の設定等で使用）"
   value = module.rds.cluster_reader_endpoint
 }
 
 output "cluster_port" {
-  description = "Auroraクラスターのポート番号"
+  description = "Aurora クラスターのポート番号（ECSモジュールの環境変数の設定等で使用）"
   value = module.rds.cluster_port
 }
 
-output "instance_ids" {
-  description = "AuroraインスタンスのID"
-  value = module.rds.instance_ids
-}
-
-output "db_name" {
-  description = "データベース名"
-  value = module.rds.db_name
+output "cluster_database_name" {
+  description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.cluster_database_name
 }
 
 ## S3
@@ -150,6 +148,12 @@ output "front_target_group_name" {
   value = module.alb.front_target_group_name
 }
 
+## Route53_records
+output "route53_alias_record_fqdn" {
+  description = "AliasレコードのFQDN"
+  value = module.route53_records.route53_alias_record_fqdn
+}
+
 ## ECR
 output "repositories_url" {
   description = "ECRリポジトリのURL（マップ形式）"
@@ -171,9 +175,69 @@ output "front_repository_url" {
   value = module.ecr.front_repository_url
 }
 
+## CloudWatch Logs
+output "api_log_group_name" {
+  description = "API用CloudWatch Logsグループの名前"
+  value = module.cloudwatch_logs.log_group_names["api-python"]
+}
 
+# output "api_service_connect_log_group_name" {
+#   description = "API Service Connect用CloudWatch Logsグループの名前"
+#   value = module.cloudwatch_logs.service_connect_log_group_names["api-python"]
+# }
 
+output "front_log_group_name" {
+  description = "フロントエンド用CloudWatch Logsグループの名前"
+  value = module.cloudwatch_logs.log_group_names["front-nginx"]
+}
 
+# output "front_service_connect_log_group_name" {
+#   description = "フロントエンド Service Connect用CloudWatch Logsグループの名前"
+#   value = module.cloudwatch_logs.service_connect_log_group_names["front-nginx"]
+# }
 
+output "db_initdata_log_group_name" {
+  description = "DB初期データ用CloudWatch Logsグループの名前"
+  value = module.cloudwatch_logs.log_group_names["db-initdata"]
+}
 
+## ECS
+output "ecs_cluster_id" {
+  description = "ECSクラスターのID"
+  value = module.ecs.ecs_cluster_id
+}
 
+output "ecs_cluster_name" {
+  description = "ECSクラスターの名前"
+  value = module.ecs.ecs_cluster_name
+}
+
+output "ecs_api_service_id" {
+  description = "ECS APIサービスのID"
+  value = module.ecs.ecs_api_service_id
+}
+
+output "ecs_api_service_name" {
+  description = "ECS APIサービスの名前"
+  value = module.ecs.ecs_api_service_name
+}
+
+output "ecs_front_service_id" {
+  description = "ECS フロントエンドサービスのID"
+  value = module.ecs.ecs_front_service_id
+}
+
+output "ecs_front_service_name" {
+  description = "ECS フロントエンドサービスの名前"
+  value = module.ecs.ecs_front_service_name
+}
+
+output "ecs_api_task_definition_arn" {
+  description = "ECS APIタスク定義のARN"
+  value = module.ecs.ecs_api_task_definition_arn
+}
+
+output "ecs_front_task_definition_arn" {
+  description = "ECS フロントエンドタスク定義のARN"
+  value = module.ecs.ecs_front_task_definition_arn
+}

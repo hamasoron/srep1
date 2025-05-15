@@ -17,6 +17,17 @@
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+       ],
+      "Resource": "*"
     }
   ]
 }

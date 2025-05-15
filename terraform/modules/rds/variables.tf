@@ -50,7 +50,7 @@ variable "master_username" {
 }
 
 variable "master_password" {
-  description = "マスターパスワード"
+  description = "マスターユーザーのパスワード"
   type        = string
   sensitive   = true
 }
@@ -81,7 +81,7 @@ variable "storage_encrypted" {
   type        = bool
 }
 
-variable "kms_key_id" {
+variable "rds_kms_key_id" {
   description = "KMSキーID（ストレージ暗号化用）"
   type        = string
 }

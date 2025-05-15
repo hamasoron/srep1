@@ -21,16 +21,6 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
-variable "protected_subnet_ids" {
-  description = "保護されたサブネットのIDリスト"
-  type        = list(string)
-}
-
-variable "create_protected_ngw_associations" {
-  description = "保護された及びNATゲートウェイ関連の作成有無"
-  type        = bool
-}
-
 ## セキュリティグループ
 variable "security_group_id" {
   description = "ALB用のセキュリティグループID"
@@ -43,11 +33,6 @@ variable "enable_deletion_protection" {
   type        = bool
 }
 
-variable "deregistration_delay" {
-  description = "ターゲットグループの削除遅延時間"
-  type        = number
-}
-
 variable "enable_access_logs" {
   description = "ALBのアクセスログを有効にするかどうか"
   type        = bool
@@ -58,4 +43,60 @@ variable "enable_connection_logs" {
   description = "ALBの接続ログを有効にするかどうか"
   type        = bool
   default     = false
+}
+variable "deregistration_delay" {
+  description = "ターゲットグループの削除遅延時間"
+  type        = number
+}
+
+variable "load_balancing_algorithm_type" {
+  description = "ロードバランシングアルゴリズムのタイプ"
+  type        = string
+}
+
+variable "health_check_interval" {
+  description = "ヘルスチェックの間隔"
+  type        = number
+}
+
+variable "health_check_path" {
+  description = "ヘルスチェックのパス"
+  type        = string
+}
+
+variable "health_check_port" {
+  description = "ヘルスチェックのポート"
+  type        = string
+}
+
+variable "health_check_protocol" {
+  description = "ヘルスチェックのプロトコル"
+  type        = string
+}
+
+variable "health_check_timeout" {
+  description = "ヘルスチェックのタイムアウト"
+  type        = number
+}
+
+variable "health_check_healthy_threshold" {
+  description = "ヘルスチェックの正常なしきい値"
+  type        = number
+}
+
+variable "health_check_unhealthy_threshold" {
+  description = "ヘルスチェックの異常なしきい値"
+  type        = number
+}
+
+variable "health_check_matcher" {
+  description = "ヘルスチェックのマッチャー"
+  type        = string
+}
+
+## HTTPS対応
+variable "certificate_arn" {
+  description = "HTTPSリスナーに使用するACM証明書のARN"
+  type        = string
+  default     = ""
 }

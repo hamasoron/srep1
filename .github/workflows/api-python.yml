@@ -3,14 +3,14 @@ name: api-python
 
 # onセクション（ワークフローのトリガーを定義）
 on:
-  ## main/release/developブランチにプッシュされた時に自動実行（api-python/配下や.github/workflows/api-python.ymlが対象）
+  ## main/staging/developブランチで以下の2つのパスにプッシュされた時に自動実行
   push:
     branches:
       - main
-      - release
+      - staging
       - develop
     paths:
-      - 'app/api-python/*'
+      - 'app/api-python/*' 
       - '.github/workflows/api-python.yml'
   ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
@@ -27,22 +27,19 @@ on:
 
 # jobsセクション（ワークフローの処理を定義）
 jobs:
-  ## job名（detect-environment:実行環境prod/stg/devを判定して検出後、outputsで出力）
-  detect-environment: ### 論理名
+  detect-environment: ### job名（detect-environment:実行環境prod/stg/devを判定して検出後、outputsで出力）
     name: Detect Environment ### 表示名
-    runs-on: ubuntu-latest
-    outputs:
+    runs-on: ubuntu-latest ### 実行環境
+    outputs: ### 出力
       environment: ${{ steps.set-env.outputs.environment }}
     steps:
-      - id: set-env
-        ### stepsのrunセクション（シェルスクリプトを実行）
-        run: |
+      - id: set-env ### steps名
+        run: | ### シェルスクリプトを実行（手動実行時はコンソールで指定した環境を出力、自動実行時はmain/staging/developブランチに応じて環境を出力）
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            #### github上でinputsで指定した環境を出力（別のjobで使用するため）
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/release" ]; then
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
             echo "environment=stg" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "environment=dev" >> $GITHUB_OUTPUT
@@ -50,198 +47,55 @@ jobs:
             echo "environment=unknown" >> $GITHUB_OUTPUT
           fi
 
-  ## job名（build-and-push:ビルドしたイメージをECRにpush）
-  build-and-push:
+  build-and-push: ### job名（build-and-push:ビルドしたイメージをECRにpush）
     name: Build and Push
-    ### needsフィールド（build-and-pushjobを実行する前にdetect-environmentjobの実行が必要）
-    needs: detect-environment
+    needs: detect-environment ### build-and-pushjobを実行する前にdetect-environmentjobの実行が必要
     runs-on: ubuntu-latest
-    ### permissionsフィールド（GitHub Actionsのアクションを実行するための権限）
-    permissions:
-      #### id-token: write（クラウドにアクセスするためのトークンを生成）
-      id-token: write
-      #### contents: read（リポジトリの読み込み）
-      contents: read
+    permissions: ### GitHub Actionsのアクションを実行するための権限を設定
+      id-token: write ### OIDC（OpenID Connect）トークンを生成（AWSとの認証に使用）
+      contents: read ### リポジトリの読み込み
     env:
-      #### 前のjobで出力された環境を取得
-      ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
+      ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }} ### 前のjobで出力された環境を取得
       AWS_REGION: ap-northeast-1
     outputs:
-      ecr_registry: ${{ steps.build-image.outputs.ecr_registry }}
-      ecr_repository: ${{ steps.build-image.outputs.ecr_repository }}
-      image_tag: ${{ steps.build-image.outputs.image_tag }}
+      ecr_registry: ${{ steps.build-image.outputs.ecr_registry }} ### ビルドしたイメージのレジストリを出力
+      ecr_repository: ${{ steps.build-image.outputs.ecr_repository }} ### ビルドしたイメージのリポジトリを出力
+      image_tag: ${{ steps.build-image.outputs.image_tag }} ### ビルドしたイメージのタグを出力
     steps:
-        ### stepsのnameセクション（ステップの名前を定義）
-      - name: Checkout code
-        ### stepsのusesセクション（GitHub Actionsのアクションを使用）
-        uses: actions/checkout@v3
+      - name: Checkout code ### GitHubのリポジトリからコードをGitHub Actionsの実行環境にクローンする処理（チェックアウト）
+        uses: actions/checkout@v3 ### GitHub Actionsの公式アクションを使用
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Configure AWS credentials ### OIDC（OpenID Connect）を使用してAWSの認証を設定
+        uses: aws-actions/configure-aws-credentials@v2 ### GitHub Actionsの公式アクションを使用
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} ### 引き受けるIAMロール（GitHubのSettingsで設定したIAMロール）
+          aws-region: ${{ env.AWS_REGION }} ### 東京リージョン（env:で設定した環境変数）
 
       - name: Set ECR Repository name
         id: set-ecr-repo
-        ### stepsのrunセクション（シェルスクリプトを実行）
-        run: |
-          #### シェル変数を定義
+        run: | ### シェルスクリプトを実行
           ECR_REPOSITORY="srep1-${{ env.ENVIRONMENT }}-api-python-repo"
-          #### シェル変数を出力（別のjobで使用するため）
           echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
 
       - name: Login to Amazon ECR
         id: login-ecr
-        ### stepsのusesセクション（GitHub ActionsのActionを使用）
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2 ### GitHub Actionsの公式アクションを使用
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-        ### stepsのworking-directoryセクション（シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定）
-        working-directory: ./app/api-python
-        ### stepsのrunセクション（シェルスクリプトを実行）
-        run: |
-          # デバッグ情報を出力
-          echo "ECR_REGISTRY: $ECR_REGISTRY"
-          echo "ECR_REPOSITORY: $ECR_REPOSITORY"
-          echo "IMAGE_TAG: $IMAGE_TAG"
-
-          #### タグを付けてイメージをビルド
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          #### 別のタグを付けてイメージをビルド
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          #### 旧タグがついたイメージをECRにpush
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          #### 新タグがついたイメージをECRにpush
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          #### イメージのパーツを個別に出力
-          echo "ecr_registry=$ECR_REGISTRY" >> $GITHUB_OUTPUT
-          echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_OUTPUT
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          
-          # 最終的なイメージURIを確認
-          echo "Full Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-  ## ECSにデプロイするジョブ
-  deploy:
-    name: Deploy to ECS
-    needs: [detect-environment, build-and-push]
-    runs-on: ubuntu-latest
-    env:
-      ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }}
-      AWS_REGION: ap-northeast-1
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Construct image URI
-        id: image-uri
-        run: |
-          REGISTRY="${{ needs.build-and-push.outputs.ecr_registry }}"
-          REPO="${{ needs.build-and-push.outputs.ecr_repository }}"
-          TAG="${{ needs.build-and-push.outputs.image_tag }}"
-          
-          # レジストリが空または無効な場合はデフォルト値を使用
-          if [ -z "$REGISTRY" ] || [ "$REGISTRY" = "/" ]; then
-            REGISTRY="727646491820.dkr.ecr.ap-northeast-1.amazonaws.com"
-            echo "Registry was empty or invalid, using default: $REGISTRY"
-          fi
-          
-          # レジストリURIの末尾の / を削除
-          REGISTRY=$(echo $REGISTRY | sed 's#/$##')
-          
-          # 完全なイメージURIを構築
-          IMAGE_URI="$REGISTRY/$REPO:$TAG"
-          
-          echo "URI=$IMAGE_URI" >> $GITHUB_OUTPUT
-          # デバッグ情報を出力
-          echo "Registry: $REGISTRY"
-          echo "Repository: $REPO"
-          echo "Tag: $TAG"
-          echo "Full Image URI: $IMAGE_URI"
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Manually modify task definition
-        id: manual-task-def
-        run: |
-          # 元のタスク定義ファイルを読み込む
-          TASK_DEF_FILE="srep1-${{ env.ENVIRONMENT }}-api-python-taskdef.json"
-          IMAGE_URI="${{ steps.image-uri.outputs.URI }}"
-          
-          echo "Original task definition file:"
-          cat $TASK_DEF_FILE
-          
-          # イメージURIを検証
-          if [[ ! $IMAGE_URI =~ ^[0-9]+\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/ ]]; then
-            echo "WARNING: Image URI format appears invalid: $IMAGE_URI"
-            echo "Using hardcoded ECR URI as fallback"
-            IMAGE_URI="727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-${{ env.ENVIRONMENT }}-api-python-repo:${{ needs.build-and-push.outputs.image_tag }}"
-            echo "Fallback Image URI: $IMAGE_URI"
-          fi
-          
-          # 一時ファイルを作成
-          TEMP_TASK_DEF=$(mktemp)
-          
-          # jqを使用してイメージを置き換え
-          jq --arg IMAGE "$IMAGE_URI" '.containerDefinitions[0].image = $IMAGE' $TASK_DEF_FILE > $TEMP_TASK_DEF
-          
-          # 生成されたファイルのイメージを確認
-          RESULT_IMAGE=$(jq -r '.containerDefinitions[0].image' $TEMP_TASK_DEF)
-          echo "Image in generated task definition: $RESULT_IMAGE"
-          
-          # イメージにレジストリURIが含まれているか確認
-          if [[ ! $RESULT_IMAGE =~ ^[0-9]+\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/ ]]; then
-            echo "ERROR: Image URI in task definition is still invalid!"
-            echo "Manually setting complete image URI"
-            # イメージを強制的に完全なURIに設定
-            FIXED_IMAGE="727646491820.dkr.ecr.ap-northeast-1.amazonaws.com/srep1-${{ env.ENVIRONMENT }}-api-python-repo:${{ needs.build-and-push.outputs.image_tag }}"
-            jq --arg IMAGE "$FIXED_IMAGE" '.containerDefinitions[0].image = $IMAGE' $TASK_DEF_FILE > $TEMP_TASK_DEF
-            echo "Fixed Image: $FIXED_IMAGE"
-          fi
-          
-          # 新しいファイル名
-          NEW_TASK_DEF_FILE="task-def-$(date +%s).json"
-          cp $TEMP_TASK_DEF $NEW_TASK_DEF_FILE
-          
-          # 出力ファイル名を設定
-          echo "file=$NEW_TASK_DEF_FILE" >> $GITHUB_OUTPUT
-          
-          # デバッグ出力
-          echo "Updated task definition file content:"
-          cat $NEW_TASK_DEF_FILE
-
-      - name: Deploy with AWS CLI
-        run: |
-          # 修正されたタスク定義ファイルを使用して直接 ECS にデプロイ
-          TASK_DEF_FILE="${{ steps.manual-task-def.outputs.file }}"
-          
-          echo "Task definition file content before registration:"
-          cat $TASK_DEF_FILE
-          
-          echo "Registering task definition using AWS CLI..."
-          TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF_FILE --query 'taskDefinition.taskDefinitionArn' --output text)
-          
-          echo "Task definition registered: $TASK_DEF_ARN"
-          
-          echo "Updating service..."
-          aws ecs update-service \
-            --cluster srep1-${{ env.ENVIRONMENT }}-cluster \
-            --service srep1-${{ env.ENVIRONMENT }}-api-python-svc \
-            --task-definition $TASK_DEF_ARN \
-            --force-new-deployment 
+        working-directory: ./app/api-python ### シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定
+        run: | ### シェルスクリプトを実行
+          echo "ECR_REGISTRY: $ECR_REGISTRY" ### デバッグ情報を出力
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY" ### デバッグ情報を出力
+          echo "IMAGE_TAG: $IMAGE_TAG" ### デバッグ情報を出力
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . ### タグを付けてイメージをビルド
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest ### 別のタグを付けてイメージをビルド
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ### イメージをECRにpush
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest ### 新タグがついたイメージをECRにpush
+          echo "ecr_registry=$ECR_REGISTRY" >> $GITHUB_OUTPUT ### イメージのパーツを個別に出力
+          echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_OUTPUT ### デバッグ情報を出力
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT ### デバッグ情報を出力
+          echo "Full Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ### 最終的なイメージURIを確認

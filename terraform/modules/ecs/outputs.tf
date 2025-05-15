@@ -39,3 +39,8 @@ output "ecs_front_task_definition_arn" {
   description = "ECS フロントエンドタスク定義のARN"
   value       = aws_ecs_task_definition.terra_ecs_task_definition_front.arn
 } 
+
+output "ecs_db_initdata_task_definition_arn" {
+  description = "ECS データ投入用タスク定義のARN"
+  value       = aws_ecs_task_definition.terra_ecs_task_definition_db_initdata.arn
+}
