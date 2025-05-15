@@ -1,7 +1,7 @@
-# ベースイメージの取得
+# FROM命令:ベースイメージを指定
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023 
 
-# パッケージのアップデートとインストール
+# RUN命令:コマンドを実行（パッケージのアップデートとインストール）
 RUN dnf -y update && \
     dnf -y install nginx && \
     dnf -y install awscli && \
@@ -9,25 +9,27 @@ RUN dnf -y update && \
     rm -rf /var/cache/dnf && \
     dnf clean all
 
-# 作業ディレクトリの指定（なければ自動作成）
+# WORKDIR命令:作業ディレクトリを指定（なければ自動作成）
 WORKDIR /usr/share/nginx/html
 
-# テンプレートファイルをコンテナの/etc/nginx/templates/にコピー
+# RUN命令:コマンドを実行（ディレクトリの作成）
 RUN mkdir -p /etc/nginx/templates
-COPY default_template.conf /etc/nginx/templates/
 
-# 環境ごとのdefault.confを作成する起動スクリプトを追加
+# COPY命令:ローカルのファイルをコンテナにコピー
+COPY default_template.conf /etc/nginx/templates/
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# RUN命令:コマンドを実行（シェルスクリプトの実行権限の付与）
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# （コンテナの起動時に）毎回起動スクリプトを実行
+# ENTRYPOINT命令:（コンテナ起動時に）毎回シェルスクリプトを実行
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-# 静的ファイルをコンテナの/usr/share/nginx/html/にコピー
+# COPY命令:ローカルのファイルをコンテナにコピー
 COPY index.html script.js style.css /usr/share/nginx/html/
 
-# コンテナの待ち受けポートを80とする
+# EXPOSE命令:コンテナの待ち受けポートを指定
 EXPOSE 80
 
-# （コンテナの起動時に）nginxをフォアグラウンドで起動
+# CMD命令:（コンテナ起動時に）コマンドを実行（nginxをフォアグラウンドで起動）
 CMD ["nginx", "-g", "daemon off;"]

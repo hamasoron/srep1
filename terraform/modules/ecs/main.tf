@@ -87,11 +87,11 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_api" {
       secrets = [
         {
           name = "DB_USERNAME"
-          valueFrom = "${var.db_master_secret_arn}"
+          valueFrom = "${var.db_master_secret_arn}:username::"
         },
         {
           name = "DB_PASSWORD"
-          valueFrom = "${var.db_master_secret_arn}"
+          valueFrom = "${var.db_master_secret_arn}:password::"
         },
       ]
       environment = [
@@ -270,11 +270,11 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_db_initdata" {
       secrets = [
         {
           name = "DB_USERNAME"
-          valueFrom = "${var.db_master_secret_arn}"
+          valueFrom = "${var.db_master_secret_arn}:username::"
         },
         {
           name = "DB_PASSWORD"
-          valueFrom = "${var.db_master_secret_arn}"
+          valueFrom = "${var.db_master_secret_arn}:password::"
         },
       ]
       environment = [
