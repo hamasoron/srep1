@@ -3,7 +3,6 @@
 # エラー発生時にスクリプトを停止（最後まで実行させないエラーハンドリング）
 # エラー発生時に行番号を表示して異常終了
 set -e
-trap 'echo "[ERROR] Script failed at line $LINENO"; exit 1' ERR
 
 # 初期データ投入プロセスの開始
 echo "[INFO] Starting DB initdata process..."
@@ -31,7 +30,6 @@ for i in $(seq 1 30); do
     break
   fi
   echo "[INFO] Waiting... ($i/30)"
-  nontarodb
   sleep 2
 done
 
