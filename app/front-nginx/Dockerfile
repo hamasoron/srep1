@@ -16,7 +16,7 @@ WORKDIR /usr/share/nginx/html
 RUN mkdir -p /etc/nginx/templates
 
 # COPY命令:ローカルのファイルをコンテナにコピー
-COPY default_template.conf /etc/nginx/templates/default.conf.template
+COPY default_template.conf /etc/nginx/templates/default_template.conf
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # RUN命令:コマンドを実行（スクリプトの実行権限の付与）
