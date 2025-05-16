@@ -13,23 +13,13 @@ RUN dnf -y update && \
 WORKDIR /app
 
 # COPY命令:ローカルのファイルをコンテナにコピー
-COPY requirements.txt /app/
+COPY requirements.txt .
 
-# RUN命令:コマンドを実行（依存ライブラリのインストール）
+# RUN命令:コマンドを実行（依存ライブラリの一括インストール）
 RUN pip install --no-cache-dir -r requirements.txt
 
 # COPY命令:ローカルのファイルをコンテナにコピー
-COPY app.py /app/
-
-# デフォルトの環境変数を設定（タスク定義のenvironmentセクションで記述すると実行時に上書きされる）
-# ENV DB_USERNAME="hamasoron" \
-#     DB_PASSWORD="i7V956YP" \
-#     DB_SERVERNAME="srep1-dev-aurora-cluster.cluster-cfaa8ocau40c.ap-northeast-1.rds.amazonaws.com" \
-#     DB_PORT="3306" \
-#     DB_NAME="hamasorondb" \
-#     FLASK_DEBUG="0" \
-#     PYTHONUNBUFFERED="1" \
-#     WORKERS="2"
+COPY app.py .
 
 # EXPOSE命令:コンテナの待ち受けポートを指定
 EXPOSE 8080
@@ -40,4 +30,5 @@ EXPOSE 8080
 ## --workers: ワーカープロセス数（通常はCPUコア数 * 2 + 1 が推奨）
 ## --timeout: リクエストタイムアウト時間（秒）
 ## --access-logfile: アクセスログの出力先（- は標準出力）
+## app:app → 左がモジュール名（app.py）、右がFlaskインスタンス名（app = Flask(...)）
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "app:app"]

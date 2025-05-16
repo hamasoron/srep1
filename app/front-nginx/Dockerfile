@@ -12,17 +12,17 @@ RUN dnf -y update && \
 # WORKDIR命令:作業ディレクトリを指定（なければ自動作成）
 WORKDIR /usr/share/nginx/html
 
-# RUN命令:コマンドを実行（ディレクトリの作成）
+# RUN命令:コマンドを実行（ディレクトリを再帰的に作成）
 RUN mkdir -p /etc/nginx/templates
 
 # COPY命令:ローカルのファイルをコンテナにコピー
-COPY default_template.conf /etc/nginx/templates/
+COPY default_template.conf /etc/nginx/templates/default.conf.template
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# RUN命令:コマンドを実行（シェルスクリプトの実行権限の付与）
+# RUN命令:コマンドを実行（スクリプトの実行権限の付与）
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# ENTRYPOINT命令:（コンテナ起動時に）毎回シェルスクリプトを実行
+# ENTRYPOINT命令:（コンテナ起動時に）毎回スクリプトを実行
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # COPY命令:ローカルのファイルをコンテナにコピー

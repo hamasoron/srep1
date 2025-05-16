@@ -19,4 +19,3 @@ exec "$@"
 ## :set ff?
 ## :wq
 ## cat -A docker-entrypoint.sh
-

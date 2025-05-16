@@ -15,8 +15,8 @@ WORKDIR /app
 COPY initdata.sql /app/
 COPY entrypoint.sh /app/
 
-# RUN命令:コマンドを実行（シェルスクリプトの実行権限を付与）
+# RUN命令:コマンドを実行（スクリプトの実行権限を付与）
 RUN chmod +x /app/entrypoint.sh
 
-# ENTRYPOINT命令:（コンテナ起動時に）毎回シェルスクリプトを実行
+# ENTRYPOINT命令:（コンテナ起動時に）毎回スクリプトを実行
 ENTRYPOINT [ "/app/entrypoint.sh" ]
