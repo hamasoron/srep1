@@ -147,8 +147,9 @@ front_task_memory                   = 512
 db_initdata_task_cpu                = 256
 db_initdata_task_memory             = 512
 ### サービス関連
-api_desired_count                   = 0
-front_desired_count                 = 0
+api_desired_count                   = 1
+front_desired_count                 = 1
+force_new_deployment                = true
 platform_version                    = "LATEST"
 enable_execute_command              = true
 deployment_circuit_breaker_enable   = true

@@ -206,6 +206,7 @@ module "ecs" {
   ### サービス関連
   api_desired_count                   = var.api_desired_count
   front_desired_count                 = var.front_desired_count
+  force_new_deployment                = var.force_new_deployment
   platform_version                    = var.platform_version
   enable_execute_command              = var.enable_execute_command
   deployment_circuit_breaker_enable   = var.deployment_circuit_breaker_enable
