@@ -1,4 +1,4 @@
-## FROM命令:ベースイメージを指定
+# FROM命令:ベースイメージを指定
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 # RUN命令:コマンドを実行（パッケージのアップデートとインストール）
