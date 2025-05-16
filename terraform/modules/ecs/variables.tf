@@ -161,6 +161,11 @@ variable "front_desired_count" {
   type        = number
 }
 
+variable "force_new_deployment" {
+  description = "ECSサービスの強制的なデプロイを有効にするかどうか"
+  type        = bool
+}
+
 variable "platform_version" {
   description = "ECSのプラットフォームバージョン"
   type        = string

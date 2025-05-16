@@ -121,6 +121,7 @@ resource "aws_ecs_service" "terra_ecs_service_api" {
   cluster                           = aws_ecs_cluster.terra_ecs_cluster.id
   task_definition                   = aws_ecs_task_definition.terra_ecs_task_definition_api.arn
   desired_count                     = var.api_desired_count
+  force_new_deployment              = var.force_new_deployment
   capacity_provider_strategy { ##### launch_type属性と併用不可。記述なしの場合は、ECSクラスターのdefault_capacity_provider_strategyが適用される
     capacity_provider = "FARGATE"
     weight            = 1
@@ -204,6 +205,7 @@ resource "aws_ecs_service" "terra_ecs_service_front" {
   cluster                           = aws_ecs_cluster.terra_ecs_cluster.id
   task_definition                   = aws_ecs_task_definition.terra_ecs_task_definition_front.arn
   desired_count                     = var.front_desired_count
+  force_new_deployment              = var.force_new_deployment
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
     weight            = 1

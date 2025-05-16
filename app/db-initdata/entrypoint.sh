@@ -7,7 +7,7 @@ set -e
 echo "[INFO] Starting DB initdata process..."
 
 # 必須環境変数の存在確認
-REQUIRED_VARS="DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD"
+REQUIRED_VARS="DB_HOST DB_PORT DB_NAME DB_USERNAME DB_PASSWORD"
 for VAR in $REQUIRED_VARS; do
   if [ -z "$(eval echo \$$VAR)" ]; then
     echo "[ERROR] Environment variable $VAR is not set."
