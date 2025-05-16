@@ -12,7 +12,7 @@ RUN dnf -y update && \
 WORKDIR /app
 
 # COPY命令:ローカルのファイルをコンテナにコピー
-COPY init.sql /app/
+COPY initdata.sql /app/
 COPY entrypoint.sh /app/
 
 # RUN命令:コマンドを実行（シェルスクリプトの実行権限を付与）
