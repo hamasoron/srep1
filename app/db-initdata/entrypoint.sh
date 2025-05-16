@@ -20,7 +20,6 @@ done
 # 初期データ投入SQLファイルの存在確認
 if [ ! -f /app/initdata.sql ]; then
   echo "[ERROR] /app/initdata.sql not found."
-  hamasoron
   exit 1 ## 異常終了
 fi
 
@@ -32,6 +31,7 @@ for i in $(seq 1 30); do
     break
   fi
   echo "[INFO] Waiting... ($i/30)"
+  nontarodb
   sleep 2
 done
 
