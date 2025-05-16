@@ -26,8 +26,8 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-# 初期化SQLの実行
-echo "[INFO] Executing init.sql..."
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_NAME" < /app/init.sql
+# 初期化データSQLの実行
+echo "[INFO] Executing initdata.sql..."
+mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_NAME" < /app/initdata.sql
 
 echo "[INFO] DB initdata completed successfully."
