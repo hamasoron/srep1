@@ -10,19 +10,19 @@ variable "environment_name" {
   type        = string
 }
 
-## Route53_zone
+## Route53 Zone
 variable "route53_zone_id" {
-  description = "Route53のゾーンID"
+  description = "Route53のゾーンID（Route53 Zoneモジュールのoutputs.tfの受け皿として定義）"
   type        = string
 }
 
-## Route53_records
+## Route53 Records
 variable "alb_dns_name" {
-  description = "ALBのDNS名"
+  description = "ALBのDNS名（ALBモジュールのoutputs.tfの受け皿として定義）"
   type        = string
 }
 
 variable "alb_zone_id" {
-  description = "ALBのゾーンID"
+  description = "ALBのゾーンID（ALBモジュールのoutputs.tfの受け皿として定義）"
   type        = string
 }

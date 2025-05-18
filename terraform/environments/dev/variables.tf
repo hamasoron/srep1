@@ -15,18 +15,13 @@ variable "environment_name" {
   type = string
 }
 
-## Route53_zone
+## Route53 Zone
 variable "route53_force_destroy" {
   description = "ゾーンを削除する際にすべてのレコードを削除するかどうか"
   type        = bool
 }
 
 ## ACM
-variable "domain_name" {
-  description = "ドメイン名"
-  type = string
-}
-
 variable "subject_alternative_names" {
   description = "サブドメイン名"
   type = list(string)
@@ -61,7 +56,7 @@ variable "route_table_list" {
   }))
 }
 
-## セキュリティグループ
+## SG
 variable "sg_definitions" {
   description = "セキュリティグループのリスト"
   type = map(object({
@@ -81,13 +76,30 @@ variable "sg_definitions" {
   }))
 }
 
-## IAMロール
+## IAM Role
 variable "github_repo" {
   description = "GitHub リポジトリ名（組織名/リポジトリ名形式）"
   type        = string
 }
 
-## SecretsManager
+## CloudWatch Logs
+variable "rds_log_configs" {
+  description = "RDSログの設定"
+  type = list(object({
+    name                     = string
+    retention_in_days        = number
+  }))
+}
+
+variable "ecs_log_configs" {
+  description = "ECSログの設定"
+  type        = list(object({
+    name = string
+    retention_in_days = number
+  }))
+}
+
+## Secrets Manager
 variable "recovery_window_in_days" {
   description = "削除後の復旧ウィンドウ（日数）"
   type        = number
@@ -305,11 +317,6 @@ variable "image_tag_mutability" {
   type        = string
 } 
 
-variable "scan_on_push"{
-  description = "ECRイメージの基本スキャンを有効にするかどうか"
-  type        = bool
-}
-
 variable "ecr_force_delete" {
   description = "ECRリポジトリを強制的に削除するかどうか"
   type        = bool
@@ -325,20 +332,15 @@ variable "ecr_kms_key" {
   type        = string
 }
 
-variable "enable_ecr_lifecycle_policy" {
-  description = "ECRライフサイクルポリシーの有効/無効"
-  type        = bool
-}
-
-variable "ecr_lifecycle_policy_count" {
-  description = "ECRライフサイクルポリシーで保持するイメージ数"
-  type        = number
-}
-
-## CloudWatch Logs
-variable "log_retention_days" {
-  description = "CloudWatch Logsの保持期間（日数）"
-  type        = number
+variable "ecr_repositories" {
+  description = "ECRリポジトリごとの設定"
+  type = list(object({
+    name             = string
+    description      = string
+    enable_lifecycle = optional(bool)
+    lifecycle_count  = optional(number)
+    scan_on_push     = optional(bool)
+  }))
 }
 
 ## ECS
@@ -376,6 +378,16 @@ variable "db_initdata_task_cpu" {
 
 variable "db_initdata_task_memory" {
   description = "データ投入用タスクのメモリ数"
+  type        = number
+}
+
+variable "db_inituser_task_cpu" {
+  description = "ユーザー作成用タスクのCPU数"
+  type        = number
+}
+
+variable "db_inituser_task_memory" {
+  description = "ユーザー作成用タスクのメモリ数"
   type        = number
 }
 

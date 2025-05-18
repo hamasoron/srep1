@@ -12,22 +12,35 @@ variable "environment_name" {
 
 ## VPC
 variable "vpc_id" {
-  description = "VPCのID"
+  description = "VPCのID（VPCモジュールのoutputs.tfの受け皿として定義）"
   type        = string
 }
 
 variable "public_subnet_ids" {
-  description = "パブリックサブネットのIDリスト"
+  description = "パブリックサブネットのIDリスト（VPCモジュールのoutputs.tfの受け皿として定義）"
   type        = list(string)
 }
 
-## セキュリティグループ
+## SG
 variable "security_group_id" {
-  description = "ALB用のセキュリティグループID"
+  description = "ALB用のセキュリティグループID（SGモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+}
+
+## ACM
+variable "certificate_arn" {
+  description = "HTTPSリスナーに使用するACM証明書のARN（ACMモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+}
+
+## S3
+variable "s3_alb_logs_bucket_name" {
+  description = "ALBログバケットの名前（S3モジュールのoutputs.tfの受け皿として定義）"
   type        = string
 }
 
 ## ALB
+### ALB関連
 variable "enable_deletion_protection" {
   description = "ALBの削除保護を有効にするかどうか"
   type        = bool
@@ -44,6 +57,8 @@ variable "enable_connection_logs" {
   type        = bool
   default     = false
 }
+
+### ターゲットグループ関連
 variable "deregistration_delay" {
   description = "ターゲットグループの削除遅延時間"
   type        = number
@@ -54,6 +69,7 @@ variable "load_balancing_algorithm_type" {
   type        = string
 }
 
+### ヘルスチェック関連
 variable "health_check_interval" {
   description = "ヘルスチェックの間隔"
   type        = number
@@ -92,11 +108,4 @@ variable "health_check_unhealthy_threshold" {
 variable "health_check_matcher" {
   description = "ヘルスチェックのマッチャー"
   type        = string
-}
-
-## HTTPS対応
-variable "certificate_arn" {
-  description = "HTTPSリスナーに使用するACM証明書のARN"
-  type        = string
-  default     = ""
 }

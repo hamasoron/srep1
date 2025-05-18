@@ -1,5 +1,5 @@
 # アウトプットの定義
-## Route53_zone
+## Route53 Zone
 output "route53_zone_id" {
   description = "作成されたRoute53ホストゾーンのID（ACMモジュールでの証明書のドメイン検証に使用）"
   value = module.route53_zone.route53_zone_id
@@ -16,15 +16,15 @@ output "route53_zone_name_servers" {
 }
 
 ## ACM
-output "certificate_arn" {
-  description = "ACM証明書のARN（ALBモジュールやCloudFrontモジュールなどで証明書を設定する際に使用）"
-  value = module.acm.certificate_arn
+output "acm_certificate_arn" {
+  description = "ACM証明書のARN（ALBモジュール等で証明書を設定する際に使用）"
+  value = module.acm.acm_certificate_arn
 }
 
 ## VPC
-output "create_protected_ngw_associations" {
+output "vpc_create_protected_ngw_associations" {
   description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無（ECSモジュール等で使用）"
-  value = module.vpc.create_protected_ngw_associations
+  value = module.vpc.vpc_create_protected_ngw_associations
 }
 
 output "vpc_id" {
@@ -32,212 +32,188 @@ output "vpc_id" {
   value = module.vpc.vpc_id
 }
 
-output "subnet_ids" {
-  description = "サブネットのID（AZやNAT構成に応じて動的に変化する全てのサブネットのIDを必ず取得。ECSモジュール等で使用）"
-  value = module.vpc.subnet_ids
-}
-
-output "public_subnet_ids" {
+output "vpc_public_subnet_ids" {
   description = "パブリックサブネットのID（AZやNAT構成に応じて動的に変化するパブリックサブネットのIDを必ず取得。ALBモジュール等で使用）"
-  value = module.vpc.public_subnet_ids
+  value = module.vpc.vpc_public_subnet_ids
 }
 
-output "private_subnet_ids" {
+output "vpc_private_subnet_ids" {
   description = "プライベートサブネットのID（AZやNAT構成に応じて動的に変化するプライベートサブネットのIDを必ず取得。RDSモジュール等で使用）"
-  value = module.vpc.private_subnet_ids
+  value = module.vpc.vpc_private_subnet_ids
 }
 
-output "protected_subnet_ids" {
+output "vpc_protected_subnet_ids" {
   description = "プロテクテッドサブネットのID（AZやNAT構成に応じて動的に変化するプロテクテッドサブネットのIDを必ず取得）"
-  value = module.vpc.protected_subnet_ids
+  value = module.vpc.vpc_protected_subnet_ids
 }
 
-output "route_table_ids" {
-  description = "ルートテーブルのID（AZやNAT構成に応じて動的に変化する全てのルートテーブルのIDを必ず取得）"
-  value = module.vpc.route_table_ids
+output "vpc_route_table_ids" {
+  description = "ルートテーブルのID"
+  value = module.vpc.vpc_route_table_ids
 }
 
-## セキュリティグループ
-output "security_group_ids" {
+## SG
+output "sg_security_group_ids" {
   description = "セキュリティグループのID（RDSやALBやECSモジュール等で使用）"
-  value = module.sg.security_group_ids
+  value = module.sg.sg_security_group_ids
 }
 
-## IAMロール
-output "ecs_task_role_arn" {
+## IAM Role
+output "iam_role_ecs_task_role_arn" {
   description = "ECSタスク用のIAMロールのARN（ECSモジュール等で使用）"
-  value = module.iamrole.ecs_task_role_arn
+  value = module.iam_role.iam_role_ecs_task_role_arn
 }
 
-output "ecs_task_execution_role_arn" {
+output "iam_role_ecs_task_execution_role_arn" {
   description = "ECSタスク実行用のIAMロールのARN（ECSモジュール等で使用）"
-  value = module.iamrole.ecs_task_execution_role_arn
+  value = module.iam_role.iam_role_ecs_task_execution_role_arn
 }
 
-output "github_actions_role_arn" {
-  description = "GitHub Actions用のIAMロールのARN"
-  value = module.iamrole.github_actions_role_arn
-}
-
-## SecretsManager
-output "rds_master_secret_arn" {
-  description = "RDS master user secretのARN（ECSモジュールの環境変数の設定等で使用）"
-  value = module.secretsmanager.rds_master_secret_arn
-}
-
-output "rds_app_secret_arn" {
-  description = "RDS app user secretのARN（ECSモジュールの環境変数の設定等で使用）"
-  value = module.secretsmanager.rds_app_secret_arn
-}
-
-## RDS
-output "cluster_id" {
-  description = "AuroraクラスターのID"
-  value = module.rds.cluster_id
-}
-
-output "cluster_endpoint" {
-  description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
-  value = module.rds.cluster_endpoint
-}
-
-output "cluster_reader_endpoint" {
-  description = "Auroraクラスターのリーダーエンドポイント（ECSモジュールの環境変数の設定等で使用）"
-  value = module.rds.cluster_reader_endpoint
-}
-
-output "cluster_port" {
-  description = "Aurora クラスターのポート番号（ECSモジュールの環境変数の設定等で使用）"
-  value = module.rds.cluster_port
-}
-
-output "cluster_database_name" {
-  description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
-  value = module.rds.cluster_database_name
-}
-
-## S3
-output "alb_logs_bucket_name" {
-  description = "ALBログバケットの名前"
-  value = module.s3.alb_logs_bucket_name
-}
-
-output "alb_logs_bucket_arn" {
-  description = "ALBログバケットのARN"
-  value = module.s3.alb_logs_bucket_arn
-}
-
-## ALB
-output "alb_arn" {
-  description = "ALBのARN"
-  value = module.alb.alb_arn
-}
-
-output "alb_dns_name" {
-  description = "ALBのDNS名"
-  value = module.alb.alb_dns_name
-}
-
-output "front_target_group_arn" {
-  description = "フロントエンドターゲットグループのARN"
-  value = module.alb.front_target_group_arn
-}
-
-output "front_target_group_name" {
-  description = "フロントエンドターゲットグループの名前"
-  value = module.alb.front_target_group_name
-}
-
-## Route53_records
-output "route53_alias_record_fqdn" {
-  description = "AliasレコードのFQDN"
-  value = module.route53_records.route53_alias_record_fqdn
-}
-
-## ECR
-output "repositories_url" {
-  description = "ECRリポジトリのURL（マップ形式）"
-  value = module.ecr.repositories_url
-}
-
-output "repositories_arn" {
-  description = "ECRリポジトリのARN（マップ形式）"
-  value = module.ecr.repositories_arn
-}
-
-output "api_repository_url" {
-  description = "APIリポジトリのURL (ECS連携用)"
-  value = module.ecr.api_repository_url
-}
-
-output "front_repository_url" {
-  description = "フロントエンドリポジトリのURL (ECS連携用)"
-  value = module.ecr.front_repository_url
+output "iam_role_github_actions_role_arn" {
+  description = "GitHub Actions用のIAMロールのARN（GitHubのSecrets and VariablesのAWS_ROLE_TO_ASSUMEにコピーする際に使用）"
+  value = module.iam_role.iam_role_github_actions_role_arn
 }
 
 ## CloudWatch Logs
-output "api_log_group_name" {
-  description = "API用CloudWatch Logsグループの名前"
-  value = module.cloudwatch_logs.log_group_names["api-python"]
+output "rds_log_group_names" {
+  description = "マップ形式のCloudWatchロググループの名前一覧（RDSモジュールのロググループ名として使用）"
+  value = module.cloudwatch_logs.rds_log_group_names
 }
 
-# output "api_service_connect_log_group_name" {
-#   description = "API Service Connect用CloudWatch Logsグループの名前"
-#   value = module.cloudwatch_logs.service_connect_log_group_names["api-python"]
-# }
-
-output "front_log_group_name" {
-  description = "フロントエンド用CloudWatch Logsグループの名前"
-  value = module.cloudwatch_logs.log_group_names["front-nginx"]
+output "ecs_log_group_names" {
+  description = "マップ形式のCloudWatchロググループの名前一覧（ECSモジュールのタスク定義のロググループ名として使用）"
+  value = module.cloudwatch_logs.ecs_log_group_names
 }
 
-# output "front_service_connect_log_group_name" {
-#   description = "フロントエンド Service Connect用CloudWatch Logsグループの名前"
-#   value = module.cloudwatch_logs.service_connect_log_group_names["front-nginx"]
-# }
+## Secrets Manager
+output "secretsmanager_rds_master_secret_arn" {
+  description = "RDS master user secretのARN（ECSモジュールの環境変数の設定等で使用）"
+  value = module.secretsmanager.secretsmanager_rds_master_secret_arn
+}
 
-output "db_initdata_log_group_name" {
-  description = "DB初期データ用CloudWatch Logsグループの名前"
-  value = module.cloudwatch_logs.log_group_names["db-initdata"]
+output "secretsmanager_master_credentials_json" {
+  description = "マスターユーザーの認証情報（RDSモジュールのmaster_usernameとmaster_passwordに使用）"
+  value = module.secretsmanager.secretsmanager_master_credentials_json
+  sensitive = true
+}
+
+output "secretsmanager_rds_app_secret_arn" {
+  description = "RDS app user secretのARN（ECSモジュールの環境変数の設定等で使用）"
+  value = module.secretsmanager.secretsmanager_rds_app_secret_arn
+}
+
+## RDS
+output "rds_cluster_id" {
+  description = "AuroraクラスターのID"
+  value = module.rds.rds_cluster_id
+}
+
+output "rds_cluster_endpoint" {
+  description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.rds_cluster_endpoint
+}
+
+output "rds_cluster_reader_endpoint" {
+  description = "Auroraクラスターのリーダーエンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.rds_cluster_reader_endpoint
+}
+
+output "rds_cluster_port" {
+  description = "Aurora クラスターのポート番号（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.rds_cluster_port
+}
+
+output "rds_cluster_database_name" {
+  description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.rds_cluster_database_name
+}
+
+## S3
+output "s3_app_contents_bucket_name" {
+  description = "アプリケーションのコンテンツバケットの名前"
+  value = module.s3.s3_app_contents_bucket_name
+}
+
+output "s3_alb_logs_bucket_name" {
+  description = "ALBのログバケットの名前（ALBモジュールでアクセスログやコネクションログを保存するために使用）"
+  value = module.s3.s3_alb_logs_bucket_name
+}
+
+## ALB
+output "alb_dns_name" {
+  description = "ALBのDNS名（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
+  value = module.alb.alb_dns_name
+}
+
+output "alb_zone_id" {
+  description = "ALBのゾーンID（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
+  value = module.alb.alb_zone_id
+}
+
+output "alb_front_target_group_arn" {
+  description = "フロントエンドターゲットグループのARN（ECSモジュールで使用）"
+  value = module.alb.alb_front_target_group_arn
+}
+
+## Route53 Records
+output "route53_records_alias_record_fqdn" {
+  description = "AliasレコードのFQDN（ブラウザでALBのDNS名の別名アクセスする際に使用）"
+  value = module.route53_records.route53_records_alias_record_fqdn
+}
+
+## ECR
+output "ecr_repository_urls" {
+  description = "マップ形式のECRリポジトリのURL（ECSモジュールのタスク定義のイメージURLとして使用）"
+  value = module.ecr.ecr_repository_urls
 }
 
 ## ECS
 output "ecs_cluster_id" {
-  description = "ECSクラスターのID"
+  description = "ECSクラスターのID（GitHub Actionsで使用）"
   value = module.ecs.ecs_cluster_id
 }
 
 output "ecs_cluster_name" {
-  description = "ECSクラスターの名前"
+  description = "ECSクラスターの名前（ECS Exec等で使用）"
   value = module.ecs.ecs_cluster_name
 }
 
-output "ecs_api_service_id" {
-  description = "ECS APIサービスのID"
-  value = module.ecs.ecs_api_service_id
-}
-
 output "ecs_api_service_name" {
-  description = "ECS APIサービスの名前"
+  description = "ECS APIサービスの名前（ECS Exec等で使用）"
   value = module.ecs.ecs_api_service_name
 }
 
-output "ecs_front_service_id" {
-  description = "ECS フロントエンドサービスのID"
-  value = module.ecs.ecs_front_service_id
-}
-
 output "ecs_front_service_name" {
-  description = "ECS フロントエンドサービスの名前"
+  description = "ECS フロントエンドサービスの名前（ECS Exec等で使用）"
   value = module.ecs.ecs_front_service_name
 }
 
+output "ecs_api_container_name" {
+  description = "ECS APIコンテナの名前（ECS Exec等で使用）"
+  value = module.ecs.ecs_api_container_name
+}
+
+output "ecs_front_container_name" {
+  description = "ECS フロントエンドコンテナの名前（ECS Exec等で使用）"
+  value = module.ecs.ecs_front_container_name
+}
+
 output "ecs_api_task_definition_arn" {
-  description = "ECS APIタスク定義のARN"
+  description = "ECS APIタスク定義のARN（GitHub Actionsで使用）"
   value = module.ecs.ecs_api_task_definition_arn
 }
 
 output "ecs_front_task_definition_arn" {
-  description = "ECS フロントエンドタスク定義のARN"
+  description = "ECS フロントエンドタスク定義のARN（GitHub Actionsで使用）"
   value = module.ecs.ecs_front_task_definition_arn
+}
+
+output "ecs_db_initdata_task_definition_arn" {
+  description = "ECS データ投入用タスク定義のARN（GitHub Actionsで使用）"
+  value = module.ecs.ecs_db_initdata_task_definition_arn
+}
+
+output "ecs_db_inituser_task_definition_arn" {
+  description = "ECS DBユーザー作成用タスク定義のARN（GitHub Actionsで使用）"
+  value = module.ecs.ecs_db_inituser_task_definition_arn
 }

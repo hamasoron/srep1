@@ -11,7 +11,7 @@ resource "aws_lb" "terra_alb" {
   dynamic "access_logs" {
     for_each = var.enable_access_logs ? [1] : []
     content {
-      bucket  = "${var.system_name}-${var.environment_name}-alb-logs"
+      bucket  = var.s3_alb_logs_bucket_name
       prefix  = "accesslogs"
       enabled = true
     }
@@ -20,7 +20,7 @@ resource "aws_lb" "terra_alb" {
     for_each = var.enable_connection_logs ? [1] : []
     content {
       enabled = true
-      bucket  = "${var.system_name}-${var.environment_name}-alb-logs"
+      bucket  = var.s3_alb_logs_bucket_name
       prefix  = "connectionlogs"
     }
   }

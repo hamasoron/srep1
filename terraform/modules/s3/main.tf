@@ -5,8 +5,8 @@ data "aws_caller_identity" "terra_caller_identity" {}
 ## バケット定義
 locals {
   buckets = {
-    contents = {
-      name = "${var.system_name}-${var.environment_name}-contents"
+    app_contents = {
+      name = "${var.system_name}-${var.environment_name}-app-contents"
       lifecycle_rule = false
       policy = jsonencode({
         Version = "2012-10-17"
@@ -18,7 +18,7 @@ locals {
             }
             Action = "s3:*"
             Resource = [
-              "arn:aws:s3:::${var.system_name}-${var.environment_name}-contents/*"
+              "arn:aws:s3:::${var.system_name}-${var.environment_name}-app-contents/*"
             ]
           }
         ]
@@ -50,7 +50,8 @@ locals {
     "srep1/",
     "srep1/app/",
     "srep1/app/api-python/",
-    "srep1/app/db-init/",
+    "srep1/app/db-initdata/",
+    "srep1/app/db-inituser/",
     "srep1/app/front-nginx/"
   ]
 }
@@ -123,7 +124,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "terra_s3_bucket_lifecycle_conf
 ## contentsバケットの疑似フォルダ構造を作成
 resource "aws_s3_object" "folder_structure" {
   for_each = toset(local.folder_structure)
-  bucket   = aws_s3_bucket.terra_s3_bucket["contents"].id
+  bucket   = aws_s3_bucket.terra_s3_bucket["app_contents"].id
   key      = each.value
   content  = ""
   tags = {

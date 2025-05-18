@@ -1,7 +1,7 @@
 # リソースの定義
 ## クラスター用の一意なスナップショットIDの生成（skip_final_snapshotがfalseの場合に使用）
 resource "random_id" "final_snapshot_id" {
-  byte_length = 4
+  byte_length = 4 ##### 4バイトの16進数（8桁のランダムなIDを生成後に接尾辞として使用）
 }
 
 ## Aurora MySQL クラスターの作成
@@ -22,7 +22,7 @@ resource "aws_rds_cluster" "terra_rds_cluster" {
   apply_immediately       = var.apply_immediately
   preferred_maintenance_window = var.preferred_maintenance_window_cluster
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
-  vpc_security_group_ids  = [var.security_group_id]
+  vpc_security_group_ids  = [var.rds_security_group_id]
   db_subnet_group_name    = aws_db_subnet_group.terra_db_subnet_group.name
   copy_tags_to_snapshot   = var.copy_tags_to_snapshot
   tags = {
@@ -33,7 +33,7 @@ resource "aws_rds_cluster" "terra_rds_cluster" {
 ## サブネットグループ作成
 resource "aws_db_subnet_group" "terra_db_subnet_group" {
   name       = "${var.system_name}-${var.environment_name}-aurora-subgrp"
-  subnet_ids = var.subnet_ids
+  subnet_ids = var.private_subnet_ids
   tags = {
     Name = "${var.system_name}-${var.environment_name}-aurora-subgrp"
   }
@@ -44,6 +44,7 @@ resource "aws_rds_cluster_instance" "terra_rds_cluster_instance" {
   count                   = 1
   identifier              = "${var.system_name}-${var.environment_name}-aurora-instance-${count.index}"
   cluster_identifier      = aws_rds_cluster.terra_rds_cluster.id
+  promotion_tier          = var.promotion_tier
   instance_class          = var.instance_class
   engine                  = var.db_engine
   engine_version          = var.engine_version

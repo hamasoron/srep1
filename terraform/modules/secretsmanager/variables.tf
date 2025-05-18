@@ -15,7 +15,7 @@ variable "environment_name" {
   type        = string
 }
 
-## secretsmanager
+## Secrets Manager
 variable "recovery_window_in_days" {
   description = "削除後の復旧ウィンドウ（日数）"
   type        = number
@@ -26,7 +26,6 @@ variable "secretsmanager_kms_key_id" {
   type        = string
 }
 
-## RDS（Aurora）マスターユーザー
 variable "master_username" {
   description = "マスターユーザー名"
   type        = string
@@ -38,7 +37,6 @@ variable "master_password" {
   sensitive   = true
 }
 
-## RDS（Aurora）アプリケーションユーザー
 variable "app_username" {
   description = "アプリケーションユーザー名"
   type        = string

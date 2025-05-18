@@ -4,11 +4,10 @@ region_name      = "ap-northeast-1"
 system_name      = "srep1"
 environment_name = "dev"
 
-## Route53_zone
+## Route53 Zone
 route53_force_destroy = true
 
 ## ACM
-domain_name               = "srep1.jp"
 subject_alternative_names = ["*.srep1.jp"]
 
 ## VPC
@@ -31,7 +30,7 @@ route_table_list = [
   { name = "private", subnet = "1c", gateway_type = "none" },
 ]
 
-## セキュリティグループ
+## SG
 sg_definitions = {
   "alb" = {
     description = "ALB Security Group"
@@ -68,10 +67,22 @@ sg_definitions = {
   }
 }
 
-## IAMロール
+## IAM Role
 github_repo = "hamasoron/srep1"
 
-## secretsmanager
+## CloudWatch Logs
+rds_log_configs = [
+  { name = "error", retention_in_days = 1 },
+  { name = "slowquery", retention_in_days = 3 },
+]
+ecs_log_configs = [
+  { name = "front-nginx", retention_in_days = 1 },
+  { name = "api-python",  retention_in_days = 3 },
+  { name = "db-initdata", retention_in_days = 1 },
+  { name = "db-inituser", retention_in_days = 1 }
+]
+
+## Secrets Manager
 recovery_window_in_days   = 0
 secretsmanager_kms_key_id = null
 master_username           = "hamasoron"
@@ -126,15 +137,39 @@ health_check_matcher             = "200"
 
 ## ECR
 image_tag_mutability        = "IMMUTABLE"
-scan_on_push                = true
 ecr_force_delete            = true
 encryption_type             = "AES256"
 ecr_kms_key                 = null
-enable_ecr_lifecycle_policy = true
-ecr_lifecycle_policy_count  = 2
-
-## CloudWatch Logs
-log_retention_days = 3
+ecr_repositories = [
+  {
+    name             = "front-nginx"
+    description      = "フロントエンドNginx用リポジトリ"
+    enable_lifecycle = true
+    lifecycle_count  = 1
+    scan_on_push     = true
+  },
+  {
+    name             = "api-python"
+    description      = "APIサービス用リポジトリ"
+    enable_lifecycle = true
+    lifecycle_count  = 2
+    scan_on_push     = true
+  },
+  {
+    name             = "db-initdata"
+    description      = "初期データ投入用リポジトリ"
+    enable_lifecycle = false
+    lifecycle_count  = null
+    scan_on_push     = false
+  },
+  {
+    name             = "db-inituser"
+    description      = "アプリケーションユーザー作成用リポジトリ"
+    enable_lifecycle = false
+    lifecycle_count  = null
+    scan_on_push     = false
+  }
+]
 
 ## ECS
 ### クラスター関連
@@ -146,6 +181,8 @@ front_task_cpu                      = 256
 front_task_memory                   = 512
 db_initdata_task_cpu                = 256
 db_initdata_task_memory             = 512
+db_inituser_task_cpu                = 256
+db_inituser_task_memory             = 512
 ### サービス関連
 api_desired_count                   = 1
 front_desired_count                 = 1

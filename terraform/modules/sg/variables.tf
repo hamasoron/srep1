@@ -12,11 +12,11 @@ variable "environment_name" {
 
 ## VPC
 variable "vpc_id" {
-  description = "VPCのID"
+  description = "VPCのID（VPCモジュールのoutputs.tfの受け皿として定義）"
   type = string
 }
 
-## セキュリティグループ
+## SG
 variable "sg_definitions" {
   description = "セキュリティグループのリスト"
   type = map(object({

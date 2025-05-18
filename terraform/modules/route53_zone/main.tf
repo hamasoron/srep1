@@ -1,8 +1,8 @@
 # リソースの定義
-## Route53ゾーンの作成
+## Route53ゾーンの作成（パブリックホストゾーン）
 resource "aws_route53_zone" "terra_route53_zone" {
   name          = "${var.system_name}.jp"
-  comment       = "Route53 Zone for ${var.system_name}.jp"
+  comment       = "Public hosted zone for ${var.system_name}.jp (${var.environment_name})"
   force_destroy = var.route53_force_destroy
   tags = {
     "Name" = "${var.system_name}-${var.environment_name}-route53-hostzone"

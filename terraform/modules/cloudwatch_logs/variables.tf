@@ -11,14 +11,18 @@ variable "environment_name" {
 }
 
 ## CloudWatch Logs
-variable "log_retention_days" {
-  description = "CloudWatch Logsの保持期間（日数）"
-  type        = number
-}
-
-variable "services" {
-  description = "設定するサービス一覧"
+variable "rds_log_configs" {
+  description = "RDSログの設定"
   type = list(object({
     name                     = string
+    retention_in_days        = number
+  }))
+}
+
+variable "ecs_log_configs" {
+  description = "ECSログの設定"
+  type = list(object({
+    name                     = string
+    retention_in_days        = number
   }))
 } 

@@ -16,11 +16,6 @@ variable "image_tag_mutability" {
   type        = string
 }
 
-variable "scan_on_push" {
-  description = "ECRイメージの基本スキャンを有効にするかどうか"
-  type        = bool
-}
-
 variable "ecr_force_delete" {
   description = "ECRリポジトリを強制的に削除するかどうか"
   type        = bool
@@ -36,12 +31,13 @@ variable "ecr_kms_key" {
   type        = string
 }
 
-variable "enable_ecr_lifecycle_policy" {
-  description = "ECRライフサイクルポリシーの有効/無効"
-  type        = bool
-}
-
-variable "ecr_lifecycle_policy_count" {
-  description = "ECRライフサイクルポリシーで保持するイメージ数"
-  type        = number
+variable "ecr_repositories" {
+  description = "ECRリポジトリごとの設定"
+  type = list(object({
+    name             = string
+    description      = string
+    enable_lifecycle = optional(bool)
+    lifecycle_count  = optional(number)
+    scan_on_push     = optional(bool)
+  }))
 }

@@ -2,7 +2,7 @@
 ## バックエンドをローカルではなくs3に設定
 terraform {
   backend "s3" {
-    bucket       = "awshamasoron2"
+    bucket       = "srep1-tfstate-backend"
     key          = "env/stg/terraform.tfstate"
     region       = "ap-northeast-1"
     use_lockfile = true

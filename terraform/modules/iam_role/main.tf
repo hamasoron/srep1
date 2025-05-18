@@ -61,15 +61,15 @@ resource "aws_iam_role" "terra_iam_role_github_actions" {
 ## 外部ファイルからIAMポリシー（ECSタスク用）を読み込む
 resource "aws_iam_policy" "terra_iam_policy_ecs_task" {
   name   = "CustomECSTaskPolicy"
-  policy = file("${path.module}/iampolicy/CustomECSTaskPolicy.json")
+  policy = file("${path.module}/iam_policy/CustomECSTaskPolicy.json")
 }
 resource "aws_iam_policy" "terra_iam_policy_ecs_task_execution" {
   name   = "CustomECSTaskExecutionPolicy"
-  policy = file("${path.module}/iampolicy/CustomECSTaskExecutionPolicy.json")
+  policy = file("${path.module}/iam_policy/CustomECSTaskExecutionPolicy.json")
 }
 resource "aws_iam_policy" "terra_iam_policy_github_actions" {
   name   = "CustomGitHubActionsPolicy"
-  policy = file("${path.module}/iampolicy/CustomGitHubActionsPolicy.json")
+  policy = file("${path.module}/iam_policy/CustomGitHubActionsPolicy.json")
 }
 
 ## ECSタスクロールにカスタムポリシーをアタッチ

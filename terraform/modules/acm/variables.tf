@@ -10,18 +10,19 @@ variable "environment_name" {
   type        = string
 }
 
-## ACM
+## Route53 Zone
 variable "domain_name" {
-  description = "ドメイン名"
+  description = "ドメイン名（route53_zoneモジュールのoutputs.tfの受け皿として定義）"
   type        = string
-}
-
-variable "subject_alternative_names" {
-  description = "サブドメイン名"
-  type        = list(string)
 }
 
 variable "route53_zone_id" {
-  description = "Route53ホストゾーンID（route53モジュールのoutputs.tfの受け皿として使用）"
+  description = "Route53ホストゾーンID（route53_zoneモジュールのoutputs.tfの受け皿として定義）"
   type        = string
+}
+
+## ACM
+variable "subject_alternative_names" {
+  description = "サブドメイン名"
+  type        = list(string)
 }

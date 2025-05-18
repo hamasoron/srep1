@@ -42,14 +42,14 @@ def dbtest_handler():
     if request.method == "OPTIONS":
         return set_cors_headers(make_response(""))
     try:
-        logger.info("DB接続テストが実行されました")
+        logger.info("DB test was executed")
         count = database_test()
         text = f"DB接続テストが成功しました（aws_certifications の件数：{count}）"
         response = make_response(text)
         response.mimetype = "text/plain"
         return set_cors_headers(response)
     except Exception as e:
-        logger.error(f"データベース接続エラー: {str(e)}")
+        logger.error(f"Database connection error: {str(e)}")
         text = f"Database error: {str(e)}"
         response = make_response(text, 500)
         response.mimetype = "text/plain"
@@ -64,15 +64,15 @@ def database_test():
     dbname     = os.getenv("DB_NAME")
     
     # 接続情報をログに記録（パスワードを除く）
-    logger.info(f"データベース接続: {username}@{servername}:{port}/{dbname}")
+    logger.info(f"Database connection: {username}@{servername}:{port}/{dbname}")
     
     # 接続情報の検証
     if not servername:
-        raise ValueError("環境変数 DB_SERVERNAME が設定されていません")
+        raise ValueError("Environment variable DB_SERVERNAME is not set")
     if not username:
-        raise ValueError("環境変数 DB_USERNAME が設定されていません")
+        raise ValueError("Environment variable DB_USERNAME is not set")
     if not password:
-        raise ValueError("環境変数 DB_PASSWORD が設定されていません")
+        raise ValueError("Environment variable DB_PASSWORD is not set")
 
     connection = None
     cursor = None
@@ -94,7 +94,7 @@ def database_test():
         count = result[0] if result else 0
         return count
     except mysql.connector.Error as err:
-        logger.error(f"MySQLエラー: {err}")
+        logger.error(f"MySQL error: {err}")
         raise
     finally:
         # 必ずリソースを解放
@@ -102,11 +102,11 @@ def database_test():
             cursor.close()
         if connection and connection.is_connected():
             connection.close()
-            logger.info("データベース接続を閉じました")
+            logger.info("Database connection closed")
 
 # Flaskの開発サーバーとして実行する場合のエントリポイント
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8080"))
     debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
-    logger.info(f"Flaskサーバーを起動します: port={port}, debug={debug_mode}")
+    logger.info(f"Starting Flask server: port={port}, debug={debug_mode}")
     app.run(host="0.0.0.0", port=port, debug=debug_mode)

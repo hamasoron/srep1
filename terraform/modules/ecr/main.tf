@@ -1,21 +1,16 @@
 # リソースの定義
 ## ローカル変数（ECRリポジトリ名のリストを定義）
 locals {
-  repositories = {
-    "api-python"  = "APIサービス用リポジトリ"
-    "db-initdata" = "データ投入用リポジトリ"
-    "front-nginx" = "フロントエンドNginx用リポジトリ"
+  repository_map = { for repo in var.ecr_repositories : repo.name => repo }
   }
-  policy_description = "最新の${var.ecr_lifecycle_policy_count}イメージを保持"
-}
 
 ## ECRリポジトリの作成
 resource "aws_ecr_repository" "terra_ecr_repository" {
-  for_each             = local.repositories
+  for_each             = local.repository_map
   name                 = "${var.system_name}-${var.environment_name}-${each.key}-repo"
   image_tag_mutability = var.image_tag_mutability
   image_scanning_configuration {
-    scan_on_push = var.scan_on_push
+    scan_on_push = lookup(each.value, "scan_on_push", true)
   }
   encryption_configuration {
     encryption_type = var.encryption_type
@@ -24,23 +19,26 @@ resource "aws_ecr_repository" "terra_ecr_repository" {
   force_delete = var.ecr_force_delete
   tags = {
     Name        = "${var.system_name}-${var.environment_name}-${each.key}-repo"
-    Description = each.value
+    Description = each.value.description
   }
 }
 
 ## ライフサイクルポリシーの作成
 resource "aws_ecr_lifecycle_policy" "terra_ecr_lifecycle_policy" {
-  for_each   = var.enable_ecr_lifecycle_policy ? local.repositories : {}
+  for_each = {
+    for k, v in local.repository_map :
+    k => v if lookup(v, "enable_lifecycle", true)
+  }
   repository = aws_ecr_repository.terra_ecr_repository[each.key].name
   policy = jsonencode({
     rules = [
       {
         rulePriority = 1
-        description  = local.policy_description
+        description  = "最新の${lookup(each.value, "lifecycle_count", 5)}イメージを保持"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = var.ecr_lifecycle_policy_count
+          countNumber = lookup(each.value, "lifecycle_count", 5)
         }
         action = {
           type = "expire"

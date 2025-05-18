@@ -16,15 +16,27 @@ variable "environment_name" {
 }
 
 ## VPC
-variable "subnet_ids" {
-  description = "サブネットIDのリスト"
+variable "private_subnet_ids" {
+  description = "プライベートサブネットIDのリスト（VPCモジュールのoutputs.tfの受け皿として定義）"
   type        = list(string)
 }
 
-## セキュリティグループ
-variable "security_group_id" {
-  description = "セキュリティグループID"
+## SG
+variable "rds_security_group_id" {
+  description = "セキュリティグループID（SGモジュールのoutputs.tfの受け皿として定義）"
   type        = string
+}
+
+## Secrets Manager
+variable "master_username" {
+  description = "マスターユーザー名（Secrets Managerモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+}
+
+variable "master_password" {
+  description = "マスターユーザーのパスワード（Secrets Managerモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+  sensitive   = true
 }
 
 ## RDS
@@ -44,21 +56,9 @@ variable "database_name" {
   type        = string
 }
 
-variable "master_username" {
-  description = "マスターユーザー名"
-  type        = string
-}
-
-variable "master_password" {
-  description = "マスターユーザーのパスワード"
-  type        = string
-  sensitive   = true
-}
-
 variable "backup_retention_period" {
   description = "バックアップの保持期間（日）"
   type        = number
-  default     = 7
 }
 
 variable "preferred_backup_window" {
