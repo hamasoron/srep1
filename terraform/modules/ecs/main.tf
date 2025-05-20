@@ -347,6 +347,14 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_db_inituser" {
           name = "DB_MASTER_PASSWORD"
           valueFrom = "${var.db_master_secret_arn}:password::"
         },
+        {
+          name = "DB_APP_USER"
+          valueFrom = "${var.db_app_secret_arn}:username::"
+        },
+        {
+          name = "DB_APP_PASSWORD"
+          valueFrom = "${var.db_app_secret_arn}:password::"
+        },
       ]
       environment = [
         {

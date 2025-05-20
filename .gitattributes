@@ -21,6 +21,7 @@
 *.env        text eol=lf
 *.ini        text eol=lf
 *.toml       text eol=lf
+*.txt        text eol=lf
 
 # Dockerfile
 Dockerfile         text eol=lf
