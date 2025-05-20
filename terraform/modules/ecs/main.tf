@@ -86,18 +86,22 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_api" {
       }
       secrets = [
         {
-          name = "DB_USERNAME"
-          valueFrom = "${var.db_master_secret_arn}:username::"
+          name = "DB_APP_USERNAME"
+          valueFrom = "${var.db_app_secret_arn}:username::"
         },
         {
-          name = "DB_PASSWORD"
-          valueFrom = "${var.db_master_secret_arn}:password::"
+          name = "DB_APP_PASSWORD"
+          valueFrom = "${var.db_app_secret_arn}:password::"
         },
       ]
       environment = [
         {
-          name = "DB_SERVERNAME"
-          value = "${var.db_host}"
+          name = "DB_WRITER_HOST"
+          value = "${var.db_writer_host}"
+        },
+        {
+          name = "DB_READER_HOST"
+          value = "${var.db_reader_host}"
         },
         {
           name = "DB_PORT"
@@ -271,18 +275,22 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_db_initdata" {
       }
       secrets = [
         {
-          name = "DB_USERNAME"
-          valueFrom = "${var.db_master_secret_arn}:username::"
+          name = "DB_APP_USERNAME"
+          valueFrom = "${var.db_app_secret_arn}:username::"
         },
         {
-          name = "DB_PASSWORD"
-          valueFrom = "${var.db_master_secret_arn}:password::"
+          name = "DB_APP_PASSWORD"
+          valueFrom = "${var.db_app_secret_arn}:password::"
         },
       ]
       environment = [
         {
-          name = "DB_HOST"
-          value = "${var.db_host}"
+          name = "DB_WRITER_HOST"
+          value = "${var.db_writer_host}"
+        },
+        {
+          name = "DB_READER_HOST"
+          value = "${var.db_reader_host}"
         },
         {
           name = "DB_PORT"
@@ -332,18 +340,22 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_db_inituser" {
       }
       secrets = [
         {
-          name = "DB_USERNAME"
+          name = "DB_MASTER_USERNAME"
           valueFrom = "${var.db_master_secret_arn}:username::"
         },
         {
-          name = "DB_PASSWORD"
+          name = "DB_MASTER_PASSWORD"
           valueFrom = "${var.db_master_secret_arn}:password::"
         },
       ]
       environment = [
         {
-          name = "DB_HOST"
-          value = "${var.db_host}"
+          name = "DB_WRITER_HOST"
+          value = "${var.db_writer_host}"
+        },
+        {
+          name = "DB_READER_HOST"
+          value = "${var.db_reader_host}"
         },
         {
           name = "DB_PORT"

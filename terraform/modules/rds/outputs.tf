@@ -5,7 +5,7 @@ output "rds_cluster_id" {
   value       = aws_rds_cluster.terra_rds_cluster.id
 }
 
-output "rds_cluster_endpoint" {
+output "rds_cluster_writer_endpoint" {
   description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
   value       = aws_rds_cluster.terra_rds_cluster.endpoint
 }

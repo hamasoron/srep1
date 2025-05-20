@@ -70,6 +70,9 @@ sg_definitions = {
 ## IAM Role
 github_repo = "hamasoron/srep1"
 
+## IAM AccessAnalyzer
+analyzer_type = "ACCOUNT"
+
 ## CloudWatch Logs
 rds_log_configs = [
   { name = "error", retention_in_days = 1 },
@@ -184,8 +187,8 @@ db_initdata_task_memory             = 512
 db_inituser_task_cpu                = 256
 db_inituser_task_memory             = 512
 ### サービス関連
-api_desired_count                   = 1
-front_desired_count                 = 1
+api_desired_count                   = 0 
+front_desired_count                 = 0
 force_new_deployment                = true
 platform_version                    = "LATEST"
 enable_execute_command              = true

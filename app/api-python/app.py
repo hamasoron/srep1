@@ -57,9 +57,9 @@ def dbtest_handler():
 
 def database_test():
     # 環境変数からDB接続情報を取得
-    username   = os.getenv("DB_USERNAME")
-    password   = os.getenv("DB_PASSWORD")
-    servername = os.getenv("DB_SERVERNAME")
+    username   = os.getenv("DB_APP_USERNAME")
+    password   = os.getenv("DB_APP_PASSWORD")
+    servername = os.getenv("DB_READER_HOST")
     port       = os.getenv("DB_PORT")
     dbname     = os.getenv("DB_NAME")
     
@@ -68,11 +68,11 @@ def database_test():
     
     # 接続情報の検証
     if not servername:
-        raise ValueError("Environment variable DB_SERVERNAME is not set")
+        raise ValueError("Environment variable DB_READER_HOST is not set")
     if not username:
-        raise ValueError("Environment variable DB_USERNAME is not set")
+        raise ValueError("Environment variable DB_APP_USERNAME is not set")
     if not password:
-        raise ValueError("Environment variable DB_PASSWORD is not set")
+        raise ValueError("Environment variable DB_APP_PASSWORD is not set")
 
     connection = None
     cursor = None

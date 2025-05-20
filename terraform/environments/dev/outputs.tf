@@ -74,6 +74,12 @@ output "iam_role_github_actions_role_arn" {
   value = module.iam_role.iam_role_github_actions_role_arn
 }
 
+## IAM AccessAnalyzer
+output "iam_accessanalyzer_arn" {
+  description = "アナライザーのARN"
+  value = module.iam_accessanalyzer.iam_accessanalyzer_arn
+}
+
 ## CloudWatch Logs
 output "rds_log_group_names" {
   description = "マップ形式のCloudWatchロググループの名前一覧（RDSモジュールのロググループ名として使用）"
@@ -108,13 +114,13 @@ output "rds_cluster_id" {
   value = module.rds.rds_cluster_id
 }
 
-output "rds_cluster_endpoint" {
-  description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
-  value = module.rds.rds_cluster_endpoint
+output "rds_cluster_writer_endpoint" {
+  description = "Auroraクラスターの書き込み用エンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.rds_cluster_writer_endpoint
 }
 
 output "rds_cluster_reader_endpoint" {
-  description = "Auroraクラスターのリーダーエンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  description = "Auroraクラスターの読み込み用エンドポイント（ECSモジュールの環境変数の設定等で使用）"
   value = module.rds.rds_cluster_reader_endpoint
 }
 

@@ -59,10 +59,20 @@ variable "db_master_secret_arn" {
   type        = string
 }
 
+variable "db_app_secret_arn" {
+  description = "RDSアプリケーションユーザーのシークレットのARN（SecretsManagerモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+}
+
 ## RDS
 ### 環境変数関連
-variable "db_host" {
-  description = "RDSのホスト名（RDSモジュールのoutputs.tfの受け皿として定義）"
+variable "db_writer_host" {
+  description = "RDSの書き込み用ホスト名（RDSモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+}
+
+variable "db_reader_host" {
+  description = "RDSの読み込み用ホスト名（RDSモジュールのoutputs.tfの受け皿として定義）"
   type        = string
 }
 

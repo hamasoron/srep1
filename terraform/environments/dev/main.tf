@@ -43,6 +43,12 @@ module "iam_role" {
   github_repo = var.github_repo
 }
 
+## IAM AccessAnalyzerのモジュール呼び出し
+module "iam_accessanalyzer" {
+  source      = "../../modules/iam_accessanalyzer"
+  analyzer_type = var.analyzer_type
+}
+
 ## CloudWatch Logsのモジュール呼び出し
 module "cloudwatch_logs" {
   source             = "../../modules/cloudwatch_logs"
@@ -198,8 +204,10 @@ module "ecs" {
   db_inituser_task_memory             = var.db_inituser_task_memory
   ### シークレット関連
   db_master_secret_arn                = module.secretsmanager.secretsmanager_rds_master_secret_arn
+  db_app_secret_arn                   = module.secretsmanager.secretsmanager_rds_app_secret_arn
   ### 環境変数関連
-  db_host                             = module.rds.rds_cluster_endpoint
+  db_writer_host                      = module.rds.rds_cluster_writer_endpoint
+  db_reader_host                      = module.rds.rds_cluster_reader_endpoint
   db_port                             = module.rds.rds_cluster_port
   db_name                             = module.rds.rds_cluster_database_name
   ### サービス関連

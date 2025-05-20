@@ -82,6 +82,13 @@ variable "github_repo" {
   type        = string
 }
 
+## IAM AccessAnalyzer
+variable "analyzer_type" {
+  description = "アナライザーのタイプ（ACCOUNT or ORGANIZATION）"
+  type        = string
+}
+
+
 ## CloudWatch Logs
 variable "rds_log_configs" {
   description = "RDSログの設定"

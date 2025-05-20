@@ -12,11 +12,10 @@ RUN dnf -y update && \
 WORKDIR /app
 
 # COPY命令:ローカルのファイルをコンテナにコピー
-COPY initdata.sql /app/
 COPY entrypoint.sh /app/
 
 # RUN命令:コマンドを実行（スクリプトの実行権限を付与）
 RUN chmod +x /app/entrypoint.sh
 
 # ENTRYPOINT命令:（コンテナ起動時に）毎回スクリプトを実行
-ENTRYPOINT [ "/app/entrypoint.sh" ]
+ENTRYPOINT ["/app/entrypoint.sh"]
