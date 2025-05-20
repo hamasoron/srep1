@@ -20,18 +20,31 @@ route_table_list = [ ########## [変更可能](vpc_cidrの変更によって変�
   { name = "private", subnet = "1c", gateway_type = "none" },
 ]
 sg_definitions = { ########## [変更可能](セキュリティグループの定義を変更する場合) 
-  "ecs" = {
-    description = "ECS Security Group"
+  "alb" = {
+    description = "ALB Security Group"
     ingress = [
       {
         from_port   = 80
         to_port     = 80
         protocol    = "tcp"
-        cidr_blocks = []
-      },
+        cidr_blocks = ["0.0.0.0/0"]
+      }
+    ]
+    egress = [
       {
-        from_port   = 443
-        to_port     = 443
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+      }
+    ]
+  }
+  "ecs-front-nginx" = {
+    description = "ECS Frontend Nginx Security Group"
+    ingress = [
+      {
+        from_port   = 80
+        to_port     = 80
         protocol    = "tcp"
         cidr_blocks = []
       }
@@ -45,22 +58,28 @@ sg_definitions = { ########## [変更可能](セキュリティグループの�
       }
     ]
   }
-  "alb" = {
-    description = "ALB Security Group"
+  "ecs-api-python" = {
+    description = "ECS API Python Security Group"
     ingress = [
       {
-        from_port   = 80
-        to_port     = 80
+        from_port   = 8080
+        to_port     = 8080
         protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-      },
+        cidr_blocks = []
+      }
+    ]
+    egress = [
       {
-        from_port   = 443
-        to_port     = 443
-        protocol    = "tcp"
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
         cidr_blocks = ["0.0.0.0/0"]
       }
     ]
+  }
+  "ecs-db-init" = {
+    description = "ECS DB Init Security Group"
+    ingress = []
     egress = [
       {
         from_port   = 0
@@ -78,25 +97,6 @@ sg_definitions = { ########## [変更可能](セキュリティグループの�
         to_port     = 3306
         protocol    = "tcp"
         cidr_blocks = []
-      }
-    ]
-    egress = [
-      {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-      }
-    ]
-  }
-  "ec2" = {
-    description = "EC2 Security Group"
-    ingress = [
-      {
-        from_port   = 22
-        to_port     = 22
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
       }
     ]
     egress = [

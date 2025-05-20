@@ -1,29 +1,26 @@
-output "cluster_id" {
-  description = "Aurora MySQLクラスターのID"
-  value       = aws_rds_cluster.aurora_mysql_cluster.id
+# アウトプットの定義
+## RDS
+output "rds_cluster_id" {
+  description = "AuroraクラスターのID"
+  value       = aws_rds_cluster.terra_rds_cluster.id
 }
 
-output "cluster_endpoint" {
-  description = "ライターエンドポイント"
-  value       = aws_rds_cluster.aurora_mysql_cluster.endpoint
+output "rds_cluster_writer_endpoint" {
+  description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  value       = aws_rds_cluster.terra_rds_cluster.endpoint
 }
 
-output "cluster_reader_endpoint" {
-  description = "リーダーエンドポイント"
-  value       = aws_rds_cluster.aurora_mysql_cluster.reader_endpoint
+output "rds_cluster_reader_endpoint" {
+  description = "Auroraクラスターのリーダーエンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  value       = aws_rds_cluster.terra_rds_cluster.reader_endpoint
 }
 
-output "cluster_port" {
-  description = "クラスターのポート番号"
-  value       = aws_rds_cluster.aurora_mysql_cluster.port
+output "rds_cluster_port" {
+  description = "Aurora クラスターのポート番号（ECSモジュールの環境変数の設定等で使用）"
+  value       = aws_rds_cluster.terra_rds_cluster.port
 }
 
-output "instance_ids" {
-  description = "Aurora MySQLインスタンスのID"
-  value       = aws_rds_cluster_instance.aurora_instance[*].id
+output "rds_cluster_database_name" {
+  description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
+  value       = aws_rds_cluster.terra_rds_cluster.database_name
 }
-
-output "db_name" {
-  description = "データベース名"
-  value       = aws_rds_cluster.aurora_mysql_cluster.database_name
-} 

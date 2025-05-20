@@ -2,6 +2,8 @@
 ## VPCの作成
 resource "aws_vpc" "terra_vpc" {
   cidr_block           = var.vpc_cidr
+  instance_tenancy     = "default"
+  enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
     Name = "${var.system_name}-${var.environment_name}-vpc"
@@ -11,15 +13,18 @@ resource "aws_vpc" "terra_vpc" {
 ## サブネットの作成
 resource "aws_subnet" "terra_subnet" {
   for_each   = { for subnet in var.subnet_list : "${subnet.type}-${subnet.name}" => subnet if var.create_protected_ngw_associations || subnet.type != "protected" }
-  vpc_id     = aws_vpc.terra_vpc.id
-  cidr_block = each.value.cidr_block
   availability_zone = lookup({
     "1a" = "ap-northeast-1a",
     "1c" = "ap-northeast-1c",
     "1d" = "ap-northeast-1d"
   }, substr(each.value.name, -2, 2), "ap-northeast-1a")
+  cidr_block = each.value.cidr_block
+  vpc_id     = aws_vpc.terra_vpc.id
   tags = {
     Name = "${var.system_name}-${var.environment_name}-${each.value.type}-subnet-${each.value.name}"
+  }
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -50,18 +55,6 @@ resource "aws_nat_gateway" "terra_nat_gateway" {
     Name = "${var.system_name}-${var.environment_name}-ngw-1a"
   }
   depends_on = [aws_internet_gateway.terra_internet_gateway, aws_eip.terra_eip_ngw]
-  
-  # NATゲートウェイの関連付けが完全に完了するまで待機する設定
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# NATゲートウェイの状態が完全に利用可能になるまで待機するリソース
-resource "time_sleep" "wait_for_nat" {
-  count = var.create_protected_ngw_associations ? 1 : 0
-  depends_on = [aws_nat_gateway.terra_nat_gateway]
-  create_duration = "30s"
 }
 
 ## ルートテーブルの作成
@@ -87,7 +80,6 @@ resource "aws_route_table" "terra_route_table_protected" {
   tags = {
     Name = "${var.system_name}-${var.environment_name}-protected-rtb-${each.key}"
   }
-  depends_on = [time_sleep.wait_for_nat]
 }
 
 resource "aws_route_table" "terra_route_table_private" {
@@ -113,7 +105,7 @@ resource "aws_route_table_association" "terra_route_table_association" {
 }
 
 ## VPCエンドポイントの作成
-resource "aws_vpc_endpoint" "terra_s3_endpoint" {
+resource "aws_vpc_endpoint" "terra_vpc_endpoint_s3" {
   vpc_id       = aws_vpc.terra_vpc.id
   service_name = "com.amazonaws.ap-northeast-1.s3"
   route_table_ids = flatten(concat(
@@ -129,7 +121,7 @@ resource "aws_vpc_endpoint" "terra_s3_endpoint" {
   depends_on = [aws_route_table_association.terra_route_table_association]
 }
 
-resource "aws_vpc_endpoint" "terra_dynamodb_endpoint" {
+resource "aws_vpc_endpoint" "terra_vpc_endpoint_dynamodb" {
   vpc_id       = aws_vpc.terra_vpc.id
   service_name = "com.amazonaws.ap-northeast-1.dynamodb"
   route_table_ids = flatten(concat(
@@ -143,4 +135,17 @@ resource "aws_vpc_endpoint" "terra_dynamodb_endpoint" {
     ignore_changes = [route_table_ids]
   }
   depends_on = [aws_route_table_association.terra_route_table_association]
+}
+
+## サブネットとVPCエンドポイントの関連付け
+resource "aws_vpc_endpoint_route_table_association" "terra_vpc_endpoint_protected_associations_s3" {
+  for_each = var.create_protected_ngw_associations ? { for rt in var.route_table_list : rt.name == "protected" ? rt.subnet : "" => rt if rt.name == "protected" } : {}
+  vpc_endpoint_id = aws_vpc_endpoint.terra_vpc_endpoint_s3.id
+  route_table_id  = aws_route_table.terra_route_table_protected[each.key].id
+}
+
+resource "aws_vpc_endpoint_route_table_association" "terra_vpc_endpoint_protected_associations_dynamodb" {
+  for_each = var.create_protected_ngw_associations ? { for rt in var.route_table_list : rt.name == "protected" ? rt.subnet : "" => rt if rt.name == "protected" } : {}
+  vpc_endpoint_id = aws_vpc_endpoint.terra_vpc_endpoint_dynamodb.id
+  route_table_id  = aws_route_table.terra_route_table_protected[each.key].id
 }

@@ -1,26 +1,28 @@
 # 変数の定義
-## システム名の定義
+## 全般
 variable "system_name" {
+  description = "システム名"
   type = string
 }
 
-## 環境名の定義
 variable "environment_name" {
+  description = "環境名"
   type = string
 }
 
-## 保護された及びNATゲートウェイ関連の作成有無
+## VPC
 variable "create_protected_ngw_associations" {
+  description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無"
   type = bool
 }
 
-## VPCのCIDRブロックを定義
 variable "vpc_cidr" {
+  description = "VPCのCIDRブロック"
   type = string
 }
 
-## サブネットのリストを定義
 variable "subnet_list" {
+  description = "サブネットのリスト"
   type = list(object({
     name       = string
     cidr_block = string
@@ -28,8 +30,8 @@ variable "subnet_list" {
   }))
 }
 
-## ルートテーブルのリストを定義
 variable "route_table_list" {
+  description = "ルートテーブルのリスト"
   type = list(object({
     name         = string
     subnet       = string

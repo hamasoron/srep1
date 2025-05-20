@@ -1,39 +1,49 @@
-# ECRリポジトリの作成
-resource "aws_ecr_repository" "api_python" {
-  name                 = "${var.system_name}-${var.environment_name}-api-python-repo"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
+# リソースの定義
+## ローカル変数（ECRリポジトリ名のリストを定義）
+locals {
+  repository_map = { for repo in var.ecr_repositories : repo.name => repo }
   }
 
+## ECRリポジトリの作成
+resource "aws_ecr_repository" "terra_ecr_repository" {
+  for_each             = local.repository_map
+  name                 = "${var.system_name}-${var.environment_name}-${each.key}-repo"
+  image_tag_mutability = var.image_tag_mutability
+  image_scanning_configuration {
+    scan_on_push = lookup(each.value, "scan_on_push", true)
+  }
+  encryption_configuration {
+    encryption_type = var.encryption_type
+    kms_key = var.ecr_kms_key
+  }
+  force_delete = var.ecr_force_delete
   tags = {
-    Name = "${var.system_name}-${var.environment_name}-api-python-repo"
+    Name        = "${var.system_name}-${var.environment_name}-${each.key}-repo"
+    Description = each.value.description
   }
 }
 
-resource "aws_ecr_repository" "db_init" {
-  name                 = "${var.system_name}-${var.environment_name}-db-init-repo"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
+## ライフサイクルポリシーの作成
+resource "aws_ecr_lifecycle_policy" "terra_ecr_lifecycle_policy" {
+  for_each = {
+    for k, v in local.repository_map :
+    k => v if lookup(v, "enable_lifecycle", true)
   }
-
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-db-init-repo"
-  }
+  repository = aws_ecr_repository.terra_ecr_repository[each.key].name
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "最新の${lookup(each.value, "lifecycle_count", 5)}イメージを保持"
+        selection = {
+          tagStatus   = "any"
+          countType   = "imageCountMoreThan"
+          countNumber = lookup(each.value, "lifecycle_count", 5)
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
 }
-
-resource "aws_ecr_repository" "front_nginx" {
-  name                 = "${var.system_name}-${var.environment_name}-front-nginx-repo"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-front-nginx-repo"
-  }
-} 

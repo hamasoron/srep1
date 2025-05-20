@@ -1,30 +1,32 @@
 # 変数の定義
-## リージョン名の定義
+## 全般
+### リージョン名の定義
 variable "region_name" {
   type = string
 }
 
-## システム名の定義
+### システム名の定義
 variable "system_name" {
   type = string
 }
 
-## 環境名の定義
+### 環境名の定義
 variable "environment_name" {
   type = string
 }
 
-## 保護された及びNATゲートウェイ関連の作成有無
+## VPC
+### 保護された及びNATゲートウェイ関連の作成有無
 variable "create_protected_ngw_associations" {
   type = bool
 }
 
-## VPCのCIDRブロックを定義
+### VPCのCIDRブロックを定義
 variable "vpc_cidr" {
   type = string
 }
 
-## サブネットのリストを定義
+### サブネットのリストを定義
 variable "subnet_list" {
   type = list(object({
     name       = string
@@ -33,7 +35,7 @@ variable "subnet_list" {
   }))
 }
 
-## ルートテーブルのリストを定義
+### ルートテーブルのリストを定義
 variable "route_table_list" {
   type = list(object({
     name         = string
@@ -42,7 +44,8 @@ variable "route_table_list" {
   }))
 }
 
-## セキュリティグループのリストを定義
+## セキュリティグループ
+### セキュリティグループのリストを定義
 variable "sg_definitions" {
   type = map(object({
     description = string
@@ -61,6 +64,14 @@ variable "sg_definitions" {
   }))
 }
 
+## IAMロール
+### GitHubリポジトリ名
+variable "github_repo" {
+  description = "GitHub リポジトリ名（組織名/リポジトリ名形式）"
+  type        = string
+}
+
+### RDSのマスターパスワード
 variable "db_password" {
   description = "RDSのマスターパスワード"
   type        = string

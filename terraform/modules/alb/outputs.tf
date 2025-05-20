@@ -1,29 +1,16 @@
-output "alb_arn" {
-  description = "ALBのARN"
-  value       = aws_lb.terra_alb.arn
-}
-
+# アウトプットの定義
+## ALB
 output "alb_dns_name" {
-  description = "ALBのDNS名"
+  description = "ALBのDNS名（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
   value       = aws_lb.terra_alb.dns_name
 }
 
-output "api_target_group_arn" {
-  description = "APIターゲットグループのARN"
-  value       = aws_lb_target_group.terra_api_target_group.arn
+output "alb_zone_id" {
+  description = "ALBのゾーンID（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
+  value       = aws_lb.terra_alb.zone_id
 }
 
-output "api_target_group_name" {
-  description = "APIターゲットグループの名前"
-  value       = aws_lb_target_group.terra_api_target_group.name
-}
-
-output "front_target_group_arn" {
-  description = "フロントエンドターゲットグループのARN"
+output "alb_front_target_group_arn" {
+  description = "フロントエンドターゲットグループのARN（ECSモジュールで使用）"
   value       = aws_lb_target_group.terra_front_target_group.arn
 }
-
-output "front_target_group_name" {
-  description = "フロントエンドターゲットグループの名前"
-  value       = aws_lb_target_group.terra_front_target_group.name
-} 

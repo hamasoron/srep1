@@ -1,0 +1,105 @@
+## nameセクション（ワークフローの名前を定義）
+name: db-inituser
+
+# onセクション（ワークフローのトリガーを定義）
+on:
+  ## main/staging/developブランチで以下の2つのパスにプッシュされた時に自動実行
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+    paths:
+      - 'app/db-inituser/*'
+      - '.github/workflows/db-inituser.yml'
+      - '.github/workflows/.trigger-dbuser.txt'
+      - '.github/workflows/.trigger-all.txt'
+  ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'デプロイ環境（prod/stg/dev）'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+          - prod
+          - stg
+          - dev
+
+# jobsセクション（ワークフローの処理を定義）
+jobs:
+  detect-environment: ### job名（detect-environment:実行環境prod/stg/devを判定して検出後、outputsで出力）
+    name: Detect Environment ### 表示名
+    runs-on: ubuntu-latest ### 実行環境
+    outputs: ### 出力
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Set Environment ### 環境変数を設定
+        id: set-env ### 識別子
+        run: | ### 実行コマンド
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            echo "environment=stg" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          else
+            echo "environment=unknown" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push: ### job名（build-and-push:ビルドしたイメージをECRにpush）
+    name: Build and Push
+    needs: detect-environment ### build-and-pushjobを実行する前にdetect-environmentjobの実行が必要
+    runs-on: ubuntu-latest ### 実行環境
+    permissions: ### GitHub Actionsのアクションを実行するための権限
+      id-token: write ### OIDC（OpenID Connect）トークンを生成（AWSとの認証に使用）
+      contents: read ### リポジトリの読み込み
+    env:
+      ENVIRONMENT: ${{ needs.detect-environment.outputs.environment }} ### 前のjobで出力された環境を取得
+      AWS_REGION: ap-northeast-1
+    outputs:
+      image: ${{ steps.build-image.outputs.image }} ### ビルドしたイメージを出力
+      ecr_registry: ${{ steps.build-image.outputs.ecr_registry }} ### ビルドしたイメージのレジストリを出力
+      ecr_repository: ${{ steps.build-image.outputs.ecr_repository }} ### ビルドしたイメージのリポジトリを出力
+      image_tag: ${{ steps.build-image.outputs.image_tag }} ### ビルドしたイメージのタグを出力
+    steps:
+      - name: Checkout code ### GitHubのリポジトリからコードをGitHub Actionsの実行環境にクローンする処理（チェックアウト）
+        uses: actions/checkout@v3 ### GitHub Actionsの公式アクションを使用
+
+      - name: Configure AWS credentials ### OIDC（OpenID Connect）を使用してAWSの認証を設定
+        uses: aws-actions/configure-aws-credentials@v2 ### GitHub Actionsの公式アクションを使用
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} ### 引き受けるIAMロール（GitHubのSettingsで設定したIAMロール）
+          aws-region: ${{ env.AWS_REGION }} ### 東京リージョン（env:で設定した環境変数）
+
+      - name: Set ECR Repository name
+        id: set-ecr-repo
+        run: | ### シェルスクリプトを実行
+          ECR_REPOSITORY="srep1-${{ env.ENVIRONMENT }}-db-inituser-repo" ### シェル変数を定義
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV ### シェル変数を出力（別のstepで使用するため）
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2 ### GitHub ActionsのActionを使用
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        working-directory: ./app/db-inituser ### シェルスクリプトの実行場所をルートディレクトリからの相対パスで指定
+        run: | ### シェルスクリプトを実行
+          echo "ECR_REGISTRY: $ECR_REGISTRY" ### デバッグ情報を出力
+          echo "ECR_REPOSITORY: $ECR_REPOSITORY" ### デバッグ情報を出力
+          echo "IMAGE_TAG: $IMAGE_TAG" ### デバッグ情報を出力
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . ### タグを付けてイメージをビルド
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest ### 別のタグを付けてイメージをビルド
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ### イメージをECRにpush
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest ### 新タグがついたイメージをECRにpush
+          echo "ecr_registry=$ECR_REGISTRY" >> $GITHUB_OUTPUT ### イメージのパーツを個別に出力
+          echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_OUTPUT ### デバッグ情報を出力
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT ### デバッグ情報を出力
+          echo "Full Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ### 最終的なイメージURIを確認

@@ -1,23 +1,54 @@
+# 変数の定義
+## 全般
+variable "region_name" {
+  description = "AWSリージョン"
+  type        = string
+}
+
 variable "system_name" {
   description = "システム名"
   type        = string
 }
 
 variable "environment_name" {
-  description = "環境名（dev, stg, prod など）"
+  description = "環境名"
   type        = string
 }
 
-variable "region" {
-  description = "AWSリージョン"
+## VPC
+variable "private_subnet_ids" {
+  description = "プライベートサブネットIDのリスト（VPCモジュールのoutputs.tfの受け皿として定義）"
+  type        = list(string)
+}
+
+## SG
+variable "rds_security_group_id" {
+  description = "セキュリティグループID（SGモジュールのoutputs.tfの受け皿として定義）"
   type        = string
-  default     = "ap-northeast-1"
+}
+
+## Secrets Manager
+variable "master_username" {
+  description = "マスターユーザー名（Secrets Managerモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+}
+
+variable "master_password" {
+  description = "マスターユーザーのパスワード（Secrets Managerモジュールのoutputs.tfの受け皿として定義）"
+  type        = string
+  sensitive   = true
+}
+
+## RDS
+### クラスター関連
+variable "db_engine" {
+  description = "データベースエンジン"
+  type        = string
 }
 
 variable "engine_version" {
-  description = "Aurora MySQLのエンジンバージョン"
+  description = "データベースエンジンのバージョン"
   type        = string
-  default     = "8.0"
 }
 
 variable "database_name" {
@@ -25,65 +56,83 @@ variable "database_name" {
   type        = string
 }
 
-variable "master_username" {
-  description = "マスターユーザー名"
-  type        = string
-}
-
-variable "master_password" {
-  description = "マスターパスワード"
-  type        = string
-  sensitive   = true
-}
-
 variable "backup_retention_period" {
   description = "バックアップの保持期間（日）"
   type        = number
-  default     = 7
 }
 
 variable "preferred_backup_window" {
-  description = "バックアップウィンドウ（UTCの時間形式）"
+  description = "バックアップの実行時間帯（UTC）"
   type        = string
-  default     = "19:00-20:00"  # JST: 04:00-05:00
-}
-
-variable "security_group_id" {
-  description = "RDSセキュリティグループID"
-  type        = string
-}
-
-variable "subnet_ids" {
-  description = "サブネットIDのリスト"
-  type        = list(string)
-}
-
-variable "instance_class" {
-  description = "RDSインスタンスクラス"
-  type        = string
-  default     = "db.t3.medium"
 }
 
 variable "skip_final_snapshot" {
-  description = "削除時に最終スナップショットを取得しない場合はtrue"
+  description = "削除時にファイナルスナップショットを作成するかどうか"
   type        = bool
-  default     = false
 }
 
 variable "deletion_protection" {
-  description = "削除保護の有効化"
+  description = "終了保護の有効/無効"
   type        = bool
-  default     = true
 }
 
 variable "storage_encrypted" {
   description = "ストレージの暗号化"
   type        = bool
-  default     = true
 }
 
-variable "kms_key_id" {
+variable "rds_kms_key_id" {
   description = "KMSキーID（ストレージ暗号化用）"
   type        = string
-  default     = null
-} 
+}
+
+variable "apply_immediately" {
+  description = "即時適用かメンテナンスウィンドウ時に適用か（パラメータの更新時）"
+  type        = bool
+}
+
+variable "preferred_maintenance_window_cluster" {
+  description = "クラスターのメンテナンスウィンドウの実行時間帯（UTC）"
+  type        = string
+}
+
+variable "enabled_cloudwatch_logs_exports" {
+  description = "CloudWatch Logsのエクスポート"
+  type        = list(string)
+}
+
+variable "copy_tags_to_snapshot" {
+  description = "スナップショットにタグをコピーするかどうか"
+  type        = bool
+}
+
+### インスタンス関連
+variable "promotion_tier" {
+  description = "フェイルオーバー時の昇格階層"
+  type        = number
+}
+
+variable "instance_class" {
+  description = "RDSインスタンスクラス"
+  type        = string
+}
+
+variable "preferred_maintenance_window_instanceA" {
+  description = "インスタンスAのメンテナンスウィンドウの実行時間帯（UTC）"
+  type        = string
+}
+
+variable "auto_minor_version_upgrade" {
+  description = "マイナーバージョンの自動アップグレード"
+  type        = bool
+}
+
+variable "enable_performance_insights" {
+  description = "パフォーマンスインサイトの有効/無効"
+  type        = bool
+}
+
+variable "monitoring_interval" {
+  description = "モニタリング間隔"
+  type        = number
+}

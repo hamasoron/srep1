@@ -30,7 +30,7 @@ terraform_project/                   # プロジェクトのルートディレ�
 │   │   ├── main.tf                  # 本番環境のリソース定義
 │   │   ├── variables.tf             # 本番環境の変数定義
 │   │   ├── outputs.tf               # 本番環境の出力値定義
-│   │   ├── provider.tf              # 本番環境のプロバイダーとTerraformのバージョン設定
+│   │   ├── provider.tf              # 本番環境のプロバイダーとTerraformのバージョンの定義
 │   │   └── backend.tf               # 本番環境のバックエンド設定（S3の格納先など）
 │   ├── stg/                         # 検証環境の設定
 │   │   ├── .terraform/              # 検証環境のprovider.tf記載のプロバイダーとやり取りをするためのプラグインをダウンロード（terraform initで自動作成）
@@ -39,7 +39,7 @@ terraform_project/                   # プロジェクトのルートディレ�
 │   │   ├── main.tf                  # 検証環境のリソース定義
 │   │   ├── variables.tf             # 検証環境の変数定義
 │   │   ├── outputs.tf               # 検証環境の出力値定義
-│   │   ├── provider.tf              # 検証環境のプロバイダーとTerraformのバージョン設定
+│   │   ├── provider.tf              # 検証環境のプロバイダーとTerraformのバージョンの定義
 │   │   └── backend.tf               # 検証環境のバックエンド設定（S3の格納先など）
 │   └── dev/                         # 開発環境の設定
 │       ├── .terraform/              # 開発環境のprovider.tf記載のプロバイダーとやり取りをするためのプラグインをダウンロード（terraform initで自動作成）
@@ -48,7 +48,7 @@ terraform_project/                   # プロジェクトのルートディレ�
 │       ├── main.tf                  # 開発環境のリソース定義
 │       ├── variables.tf             # 開発環境の変数定義
 │       ├── outputs.tf               # 開発環境の出力値定義
-│   │   ├── provider.tf              # 開発環境のプロバイダーとTerraformのバージョン設定
+│       ├── provider.tf              # 開発環境のプロバイダーとTerraformのバージョンの定義
 │       └── backend.tf               # 開発環境のバックエンド設定（S3の格納先など）
 ├── documents/                       # 各種ドキュメントを格納
 ├── scripts/                         # 各種スクリプトを格納
@@ -157,7 +157,7 @@ module "vpc" {
   vpc_cidr     = var.vpc_cidr
 }
 ```
-#### （4） modules/vpc/variables.tfで受け取る
+#### （4） modules/vpc/variables.tfで受け取る（受け取ってないものについてはデフォルト値を使用）
 （例）
 ```hcl
 variable "region_name" {
@@ -233,3 +233,110 @@ cd environments/prod/
 type .\.terraform.lock.hcl
 ```
 ### 4.［補足］.terraform.lock.hclファイルをバージョン管理システム（例: Git）にコミットし、チーム全体で一貫したプロバイダーのバージョンを使用。環境間でのバージョンの不整合を防ぐことが可能
+
+### 5.使用方法
+#### （1） 外部レジストラからドメインの購入
+#### （2） Route53のモジュールの作成
+```bash
+terraform apply -target="module.route53_zone"
+```
+#### （3） 外部レジストラとRoute53の紐付けを手動実行し名前解決できるか確認（最大48時間かかる）
+```bash
+dig @9.9.9.9 srep1.jp NS
+nslookup -type=NS srep1.jp 9.9.9.9
+```
+#### （4） その他のモジュールの作成（Route53とACMのドメイン検証が自動で実行される）
+```bash
+terraform apply
+```
+### 6.二回目以降の作成
+#### （1） プランの適用
+```bash
+terraform apply
+
+### モジュール間のoutputs.tfの出力値を参照する流れ
+[子モジュールA (Route53)]
+   │
+   ├─ outputs.tf（出力）
+   │     ↓
+[親モジュール (root module)]
+   │
+   ├─ module "route53"の出力値として受け取る
+   │
+   └─ module "acm"のvariables.tfへ渡す（入力）
+         ↓
+[子モジュールB (ACM)]
+   │
+   ├─ variables.tf（入力として受け取る）
+   │
+   └─ main.tf（var.zone_id等として参照）
+```
+子モジュールAのoutputs.tf
+```hcl
+output "route53_zone_id" {
+  value = aws_route53_zone.terra_route53_zone.zone_id
+}
+```
+親モジュールのmain.tf
+```hcl
+module "route53" {
+  source = "../modules/route53"
+  # 必要な変数
+}
+
+module "acm" {
+  source  = "../modules/acm"
+  zone_id = module.route53.route53_zone_id
+  # 他の変数
+}
+```
+子モジュールBのvariables.tf
+```hcl
+variable "zone_id" {
+  type        = string
+  description = "ACMのDNS検証レコードを作成するために必要なRoute53ホストゾーンID"
+}
+```
+子モジュールBのmain.tf
+```hcl
+resource "aws_route53_record" "terra_acm_certificate_validation_record" {
+  zone_id = var.zone_id  # ここで親経由で受け取った値を使う
+  # 他の設定
+}
+```
+
+### 作成リソースの確認（最強パターン）
+#### （1） サービス名等を指定してリソースを抽出
+```bash
+terraform state list | Select-String route53（サービス名）
+```
+```bash
+terraform state list | grep route53（サービス名）
+```
+
+module.route53.aws_route53_record.terra_route53_record
+module.route53.aws_route53_zone.terra_route53_zone
+
+#### （2） リソースのIDを指定してリソースを抽出
+```bash
+terraform state show module.route53.aws_route53_record.terra_route53_record（リソース名）
+```
+```bash
+terraform state show module.route53.aws_route53_zone.terra_route53_zone（リソース名）
+```
+
+
+resource "aws_route53_record" "terra_route53_record" {
+    fqdn                             = "dev.srep1.jp"
+    health_check_id                  = null
+    id                               = "Z02521503PM8RAQD26F3Y_dev.srep1.jp_CAA"
+    multivalue_answer_routing_policy = false
+    name                             = "dev.srep1.jp"
+    records                          = [
+        "0 issue \"amazon.com\"",
+    ]
+    set_identifier                   = null
+    ttl                              = 3600
+    type                             = "CAA"
+    zone_id                          = "Z02521503PM8RAQD26F3Y"
+}

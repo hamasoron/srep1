@@ -1,4 +1,4 @@
-# Terraformとプロバイダーのバージョンの設定
+# プロバイダーとTerraformのバージョンを定義
 terraform {
   required_providers {
     aws = {
