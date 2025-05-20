@@ -12,6 +12,8 @@ on:
     paths:
       - 'app/front-nginx/*'
       - '.github/workflows/front-nginx.yml'
+      - '.github/workflows/.trigger-front.txt'
+      - '.github/workflows/.trigger-all.txt'
   ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
     inputs:

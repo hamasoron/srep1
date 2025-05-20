@@ -12,6 +12,8 @@ on:
     paths:
       - 'app/db-initdata/*'
       - '.github/workflows/db-initdata.yml'
+      - '.github/workflows/.trigger-dbdata.txt'
+      - '.github/workflows/.trigger-all.txt'
   ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
     inputs:

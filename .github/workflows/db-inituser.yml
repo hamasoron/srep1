@@ -12,6 +12,8 @@ on:
     paths:
       - 'app/db-inituser/*'
       - '.github/workflows/db-inituser.yml'
+      - '.github/workflows/.trigger-dbuser.txt'
+      - '.github/workflows/.trigger-all.txt'
   ## GitHub Actionsの画面から実行ボタンを押した時に手動実行
   workflow_dispatch:
     inputs:
