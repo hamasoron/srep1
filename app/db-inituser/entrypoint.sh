@@ -4,7 +4,7 @@
 set -e
 
 # 環境変数の中身を確認（事前にECSのタスク定義のsecretsとenvironmentを設定しておく）
-REQUIRED_VARS="DB_WRITE_HOST DB_PORT DB_MASTER_USERNAME DB_MASTER_PASSWORD DB_APP_USER DB_APP_PASSWORD DB_NAME"
+REQUIRED_VARS="DB_WRITER_HOST DB_PORT DB_MASTER_USERNAME DB_MASTER_PASSWORD DB_APP_USER DB_APP_PASSWORD DB_NAME"
 for VAR in $REQUIRED_VARS; do
   if [ -z "${!VAR:-}" ]; then
     echo "[ERROR] Environment variable $VAR is not set."
@@ -15,7 +15,7 @@ done
 # RDS/Aurora MySQLに接続できるか疎通確認（最大30回リトライ）
 echo "[INFO] Waiting for database to be available..."
 for i in $(seq 1 30); do
-  if mysqladmin ping -h"$DB_WRITE_HOST" -P"$DB_PORT" -u"$DB_MASTER_USERNAME" -p"$DB_MASTER_PASSWORD" --silent; then
+  if mysqladmin ping -h"$DB_WRITER_HOST" -P"$DB_PORT" -u"$DB_MASTER_USERNAME" -p"$DB_MASTER_PASSWORD" --silent; then
     echo "[INFO] Database is ready."
     break
   fi
@@ -24,7 +24,7 @@ for i in $(seq 1 30); do
 done
 
 # 30回試してもRDS/Aurora MySQLに接続できなければ異常終了
-if ! mysqladmin ping -h"$DB_WRITE_HOST" -P"$DB_PORT" -u"$DB_MASTER_USERNAME" -p"$DB_MASTER_PASSWORD" --silent; then
+if ! mysqladmin ping -h"$DB_WRITER_HOST" -P"$DB_PORT" -u"$DB_MASTER_USERNAME" -p"$DB_MASTER_PASSWORD" --silent; then
   echo "[ERROR] Database not reachable after 30 attempts."
   exit 1 ## 異常終了
 fi
@@ -38,7 +38,7 @@ FLUSH PRIVILEGES;
 EOF
 
 # RDS/Aurora MySQLに接続してSQLを実行
-if ! mysql -h "$DB_WRITE_HOST" -P "$DB_PORT" -u "$DB_MASTER_USERNAME" -p"$DB_MASTER_PASSWORD" < "$SQL_FILE"; then
+if ! mysql -h "$DB_WRITER_HOST" -P "$DB_PORT" -u "$DB_MASTER_USERNAME" -p"$DB_MASTER_PASSWORD" < "$SQL_FILE"; then
   echo "[ERROR]Failed to execute user creation SQL."
   exit 1 ## 異常終了
 fi
