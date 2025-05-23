@@ -137,7 +137,7 @@ resource "aws_ecs_service" "terra_ecs_service_api" {
     registry_arn = aws_service_discovery_service.terra_service_discovery_service.arn
   }
   network_configuration {
-    subnets          = var.protected_or_public_subnet_ids
+    subnets          = var.ecs_protected_or_public_subnet_ids
     security_groups  = [var.api_security_group_id]
     assign_public_ip = var.create_protected_ngw_associations ? false : true ##### protected_ngw_associationsが、trueの時パブリックIPは割り当てない、falseの時パブリックIP割り当てる
   }
@@ -218,7 +218,7 @@ resource "aws_ecs_service" "terra_ecs_service_front" {
   platform_version                  = "LATEST"
   enable_execute_command = true
   network_configuration {
-    subnets          = var.protected_or_public_subnet_ids
+    subnets          = var.ecs_protected_or_public_subnet_ids
     security_groups  = [var.front_security_group_id]
     assign_public_ip = var.create_protected_ngw_associations ? false : true
   }

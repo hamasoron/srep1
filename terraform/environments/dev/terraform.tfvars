@@ -60,6 +60,11 @@ sg_definitions = {
     ingress = []
     egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
   }
+  "lambda" = {
+    description = "Lambda Security Group"
+    ingress = []
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+  }
   "rds" = {
     description = "RDS Security Group"
     ingress = [{ from_port = 3306, to_port = 3306, protocol = "tcp", cidr_blocks = [] }]
@@ -84,14 +89,17 @@ ecs_log_configs = [
   { name = "db-initdata", retention_in_days = 1 },
   { name = "db-inituser", retention_in_days = 1 }
 ]
+lambda_log_configs = [
+  { name = "secret-rotation", retention_in_days = 1 },
+]
 
 ## Secrets Manager
 recovery_window_in_days   = 0
 secretsmanager_kms_key_id = null
-master_username           = "hamasoron"
-master_password           = "i7V956YP"
-app_username              = "hamasoron"
-app_password              = "i7V956YP"
+secrets = [
+  { name = "master", username = "root" },
+  { name = "app", username = "hamasoron" },
+]
 
 ## RDS
 ### クラスター関連
@@ -115,6 +123,13 @@ preferred_maintenance_window_instanceA = "tue:17:15-tue:17:45"
 auto_minor_version_upgrade             = true
 enable_performance_insights            = false
 monitoring_interval                    = 0
+
+## Lambda
+memory_size      = 128
+timeout          = 30
+reserved_concurrent_executions = 1
+schedule_expression = "cron(0 18 1 * ? *)"
+rotation_secrets = ["master", "app"]
 
 ## S3
 force_destroy       = true

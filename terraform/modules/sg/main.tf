@@ -101,3 +101,14 @@ resource "aws_security_group_rule" "rds_from_ecs_db_inituser" {
   source_security_group_id = local.security_group_ids["ecs-db-inituser"]
   description              = "Allow MySQL traffic from ECS DB Inituser to RDS"
 }
+
+## Lambda -> RDS: 3306番ポート
+resource "aws_security_group_rule" "rds_from_lambda" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  security_group_id        = local.security_group_ids["rds"]
+  source_security_group_id = local.security_group_ids["lambda"]
+  description              = "Allow MySQL traffic from Lambda to RDS"
+}

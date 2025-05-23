@@ -14,3 +14,11 @@ output "ecs_log_group_names" {
     name => lg.name
   }
 }
+
+output "lambda_log_group_names" {
+  description = "マップ形式のCloudWatchロググループの名前一覧（Lambdaモジュールのロググループ名として使用）"
+  value = {
+    for name, lg in aws_cloudwatch_log_group.lambda_log_group :
+    name => lg.name
+  }
+}

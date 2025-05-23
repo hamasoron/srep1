@@ -56,6 +56,7 @@ module "cloudwatch_logs" {
   environment_name   = var.environment_name
   rds_log_configs    = var.rds_log_configs
   ecs_log_configs    = var.ecs_log_configs
+  lambda_log_configs = var.lambda_log_configs
 }
 
 ## Secrets Managerのモジュール呼び出し
@@ -66,10 +67,7 @@ module "secretsmanager" {
   environment_name          = var.environment_name
   recovery_window_in_days   = var.recovery_window_in_days
   secretsmanager_kms_key_id = var.secretsmanager_kms_key_id
-  master_username           = var.master_username
-  master_password           = var.master_password
-  app_username              = var.app_username
-  app_password              = var.app_password
+  secrets = var.secrets
 }
 
 ## RDSのモジュール呼び出し
@@ -105,6 +103,35 @@ module "rds" {
   monitoring_interval                    = var.monitoring_interval
   ### その他（明示的な依存関係）
   depends_on                             = [module.cloudwatch_logs, module.secretsmanager]
+}
+
+## Lambdaのモジュール呼び出し
+module "lambda" {
+  source = "../../modules/lambda"
+  system_name     = var.system_name
+  environment_name = var.environment_name
+  # VPC設定 - プロテクテッドサブネットの有無に応じて動的選択
+  lambda_protected_or_public_subnet_ids = (
+    module.vpc.vpc_create_protected_ngw_associations
+  ? values(module.vpc.vpc_protected_subnet_ids)
+  : values(module.vpc.vpc_public_subnet_ids)
+  )
+  lambda_security_group_id = module.sg.sg_security_group_ids["lambda"]
+  # IAM設定
+  lambda_role_arn = module.iam_role.iam_role_lambda_rotation_arn
+  # RDS接続設定
+  db_lotation_writer_host = module.rds.rds_cluster_writer_endpoint
+  db_lotation_port = module.rds.rds_cluster_port
+  # Lambda設定
+  memory_size     = var.memory_size
+  timeout         = var.timeout
+  rotation_secret_arns = {
+    for secret_name in var.rotation_secrets : 
+    secret_name => module.secretsmanager.secretsmanager_secret_arns[secret_name]
+  }
+  reserved_concurrent_executions = var.reserved_concurrent_executions
+  schedule_expression = var.schedule_expression
+  depends_on = [module.secretsmanager, module.rds]
 }
 
 ## S3のモジュール呼び出し
@@ -177,7 +204,7 @@ module "ecs" {
   environment_name                    = var.environment_name
   create_protected_ngw_associations   = var.create_protected_ngw_associations
   vpc_id                              = module.vpc.vpc_id
-  protected_or_public_subnet_ids      = (
+  ecs_protected_or_public_subnet_ids      = (
     module.vpc.vpc_create_protected_ngw_associations
   ? values(module.vpc.vpc_protected_subnet_ids)
   : values(module.vpc.vpc_public_subnet_ids)
@@ -203,8 +230,8 @@ module "ecs" {
   db_inituser_task_cpu                = var.db_inituser_task_cpu
   db_inituser_task_memory             = var.db_inituser_task_memory
   ### シークレット関連
-  db_master_secret_arn                = module.secretsmanager.secretsmanager_rds_master_secret_arn
-  db_app_secret_arn                   = module.secretsmanager.secretsmanager_rds_app_secret_arn
+  db_master_secret_arn                = module.secretsmanager.secretsmanager_secret_arns["master"]
+  db_app_secret_arn                   = module.secretsmanager.secretsmanager_secret_arns["app"]
   ### 環境変数関連
   db_writer_host                      = module.rds.rds_cluster_writer_endpoint
   db_reader_host                      = module.rds.rds_cluster_reader_endpoint

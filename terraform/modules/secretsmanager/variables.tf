@@ -26,24 +26,10 @@ variable "secretsmanager_kms_key_id" {
   type        = string
 }
 
-variable "master_username" {
-  description = "マスターユーザー名"
-  type        = string
-}
-
-variable "master_password" {
-  description = "マスターユーザーのパスワード"
-  type        = string
-  sensitive   = true
-}
-
-variable "app_username" {
-  description = "アプリケーションユーザー名"
-  type        = string
-}
-
-variable "app_password" {
-  description = "アプリケーションユーザーのパスワード"
-  type        = string
-  sensitive   = true
+variable "secrets" {
+  description = "シークレット情報のリスト"
+  type = list(object({
+    name     = string
+    username = string
+  }))
 }

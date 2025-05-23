@@ -1,5 +1,7 @@
-# File: python/app.py
+# ライブラリのインポート
+## 標準ライブラリ（プリインストール）
 import os
+## 外部ライブラリ（pip install -r requirements.txtで一括インストール）
 import mysql.connector
 from flask import Flask, request, make_response, jsonify
 from dotenv import load_dotenv

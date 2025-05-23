@@ -1,40 +1,30 @@
 # リソースの定義
-## RDS（Aurora）シークレットの作成（マスターユーザー）
-resource "aws_secretsmanager_secret" "terra_secretsmanager_secret_master" {
-  name        = "${var.system_name}-${var.environment_name}-aurora-master-secret"
-  description = "Master user secret for Aurora cluster"
+## ランダムパスワード（20文字）の生成
+resource "random_password" "terra_secretsmanager_secret_password" {
+  for_each = { for secret in var.secrets : secret.name => secret }
+  length   = 20
+  special  = true
+  override_special = "!#$%&*()-_=+[]{}<>:;.,"  ##### 使用可能な特殊文字を記述（RDS側で使用できない特殊文字は除外）
+}
+
+## RDS（Aurora）シークレットの作成
+resource "aws_secretsmanager_secret" "terra_secretsmanager_secret" {
+  for_each                = { for secret in var.secrets : secret.name => secret }
+  name                    = "${var.system_name}-${var.environment_name}-aurora-${each.key}-secret"
+  description             = "${var.system_name}-${var.environment_name}-aurora-${each.key} user secret"
   recovery_window_in_days = var.recovery_window_in_days
-  kms_key_id = var.secretsmanager_kms_key_id
+  kms_key_id              = var.secretsmanager_kms_key_id
   tags = {
-    Name = "${var.system_name}-${var.environment_name}-aurora-master-secret"
+    Name = "${var.system_name}-${var.environment_name}-aurora-${each.key}-secret"
   }
 }
 
-## RDS（Aurora）シークレットの値を設定（マスターユーザー）
-resource "aws_secretsmanager_secret_version" "terra_secretsmanager_secret_version_rds_master" {
-  secret_id     = aws_secretsmanager_secret.terra_secretsmanager_secret_master.id
+## RDS（Aurora）シークレットの値を設定
+resource "aws_secretsmanager_secret_version" "terra_secretsmanager_secret_version" {
+  for_each      = { for secret in var.secrets : secret.name => secret }
+  secret_id     = aws_secretsmanager_secret.terra_secretsmanager_secret[each.key].id
   secret_string = jsonencode({
-    username = var.master_username
-    password = var.master_password
-  })
-}
-
-## RDS（Aurora）シークレットの作成（アプリケーションユーザー）
-resource "aws_secretsmanager_secret" "terra_secretsmanager_secret_app" {
-  name        = "${var.system_name}-${var.environment_name}-aurora-app-secret"
-  description = "Application user secret for Aurora cluster"
-  recovery_window_in_days = var.recovery_window_in_days
-  kms_key_id = var.secretsmanager_kms_key_id
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-aurora-app-secret"
-  }
-}
-
-## RDS（Aurora）シークレットの値を設定（アプリケーションユーザー）
-resource "aws_secretsmanager_secret_version" "terra_secretsmanager_secret_version_rds_app" {
-  secret_id     = aws_secretsmanager_secret.terra_secretsmanager_secret_app.id
-  secret_string = jsonencode({
-    username = var.app_username
-    password = var.app_password
+    username = each.value.username
+    password = random_password.terra_secretsmanager_secret_password[each.key].result
   })
 }

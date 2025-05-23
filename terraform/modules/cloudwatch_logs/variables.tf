@@ -26,3 +26,11 @@ variable "ecs_log_configs" {
     retention_in_days        = number
   }))
 } 
+
+variable "lambda_log_configs" {
+  description = "Lambdaログの設定"
+  type = list(object({
+    name                     = string
+    retention_in_days        = number
+  }))
+}

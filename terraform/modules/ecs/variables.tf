@@ -26,7 +26,7 @@ variable "vpc_id" {
   type        = string
 } 
 
-variable "protected_or_public_subnet_ids" {
+variable "ecs_protected_or_public_subnet_ids" {
   description = "ECSタスクを配置するサブネットのID（VPCモジュールのoutputs.tfの受け皿として定義）"
   type        = list(string)
 }

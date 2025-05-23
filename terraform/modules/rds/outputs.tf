@@ -6,7 +6,7 @@ output "rds_cluster_id" {
 }
 
 output "rds_cluster_writer_endpoint" {
-  description = "Auroraクラスターのエンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  description = "Auroraクラスターのエンドポイント（Lambdaモジュール、ECSモジュールの環境変数の設定等で使用）"
   value       = aws_rds_cluster.terra_rds_cluster.endpoint
 }
 
@@ -16,7 +16,7 @@ output "rds_cluster_reader_endpoint" {
 }
 
 output "rds_cluster_port" {
-  description = "Aurora クラスターのポート番号（ECSモジュールの環境変数の設定等で使用）"
+  description = "Aurora クラスターのポート番号（Lambdaモジュール、ECSモジュールの環境変数の設定等で使用）"
   value       = aws_rds_cluster.terra_rds_cluster.port
 }
 

@@ -74,6 +74,11 @@ output "iam_role_github_actions_role_arn" {
   value = module.iam_role.iam_role_github_actions_role_arn
 }
 
+output "iam_role_lambda_rotation_arn" {
+  description = "Lambda関数用のIAMロールのARN（Lambdaモジュール等で使用）"
+  value = module.iam_role.iam_role_lambda_rotation_arn
+}
+
 ## IAM AccessAnalyzer
 output "iam_accessanalyzer_arn" {
   description = "アナライザーのARN"
@@ -92,20 +97,15 @@ output "ecs_log_group_names" {
 }
 
 ## Secrets Manager
-output "secretsmanager_rds_master_secret_arn" {
-  description = "RDS master user secretのARN（ECSモジュールの環境変数の設定等で使用）"
-  value = module.secretsmanager.secretsmanager_rds_master_secret_arn
+output "secretsmanager_secret_arns" {
+  description = "マップ形式のシークレットのARN（Lambdaモジュールのシークレット関連で使用）"
+  value = module.secretsmanager.secretsmanager_secret_arns
 }
 
 output "secretsmanager_master_credentials_json" {
   description = "マスターユーザーの認証情報（RDSモジュールのmaster_usernameとmaster_passwordに使用）"
   value = module.secretsmanager.secretsmanager_master_credentials_json
   sensitive = true
-}
-
-output "secretsmanager_rds_app_secret_arn" {
-  description = "RDS app user secretのARN（ECSモジュールの環境変数の設定等で使用）"
-  value = module.secretsmanager.secretsmanager_rds_app_secret_arn
 }
 
 ## RDS
@@ -132,6 +132,12 @@ output "rds_cluster_port" {
 output "rds_cluster_database_name" {
   description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
   value = module.rds.rds_cluster_database_name
+}
+
+## Lambda
+output "lambda_function_arn" {
+  description = "Lambda関数のARN"
+  value = module.lambda.lambda_function_arn
 }
 
 ## S3

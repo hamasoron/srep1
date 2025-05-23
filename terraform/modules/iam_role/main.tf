@@ -58,7 +58,25 @@ resource "aws_iam_role" "terra_iam_role_github_actions" {
   })
 }
 
-## 外部ファイルからIAMポリシー（ECSタスク用）を読み込む
+## Lambda関数用のIAMロールを作成
+resource "aws_iam_role" "terra_iam_role_lambda_rotation" {
+  name = var.lambda_role_name
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+  tags = var.tags
+}
+
+## 外部ファイルからIAMポリシーを読み込む
 resource "aws_iam_policy" "terra_iam_policy_ecs_task" {
   name   = "CustomECSTaskPolicy"
   policy = file("${path.module}/iam_policy/CustomECSTaskPolicy.json")
@@ -70,6 +88,11 @@ resource "aws_iam_policy" "terra_iam_policy_ecs_task_execution" {
 resource "aws_iam_policy" "terra_iam_policy_github_actions" {
   name   = "CustomGitHubActionsPolicy"
   policy = file("${path.module}/iam_policy/CustomGitHubActionsPolicy.json")
+}
+resource "aws_iam_policy" "terra_iam_policy_secretsmanager" {
+  name        = "CustomLambdaPolicy"
+  description = "Allows Lambda function to rotate secrets in SecretsManager"
+  policy      = file("${path.module}/iam_policy/CustomLambdaPolicy.json")
 }
 
 ## ECSタスクロールにカスタムポリシーをアタッチ
@@ -92,7 +115,13 @@ resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_gith
   policy_arn = aws_iam_policy.terra_iam_policy_github_actions.arn
 }
 
-# GitHub OIDC（OpenID Connect）プロバイダーを作成
+## Lambda関数用のIAMロールにカスタムポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_secretsmanager" {
+  role       = aws_iam_role.terra_iam_role_lambda_rotation.name
+  policy_arn = aws_iam_policy.terra_iam_policy_secretsmanager.arn
+}
+
+## GitHub OIDC（OpenID Connect）プロバイダーを作成
 resource "aws_iam_openid_connect_provider" "github_oidc" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]

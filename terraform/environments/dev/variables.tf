@@ -106,6 +106,14 @@ variable "ecs_log_configs" {
   }))
 }
 
+variable "lambda_log_configs" {
+  description = "Lambdaログの設定"
+  type = list(object({
+    name                     = string
+    retention_in_days        = number
+  }))
+}
+
 ## Secrets Manager
 variable "recovery_window_in_days" {
   description = "削除後の復旧ウィンドウ（日数）"
@@ -117,28 +125,13 @@ variable "secretsmanager_kms_key_id" {
   type        = string
 }
 
-variable "master_username" {
-  description = "マスターユーザー名"
-  type        = string
+variable "secrets" {
+  description = "シークレットのリスト"
+  type = list(object({
+    name     = string
+    username = string
+  }))
 }
-
-variable "master_password" {
-  description = "マスターユーザーのパスワード"
-  type        = string
-  sensitive   = true
-}
-
-variable "app_username" {
-  description = "アプリケーションユーザー名"
-  type        = string
-}
-
-variable "app_password" {
-  description = "アプリケーションユーザーのパスワード"
-  type        = string
-  sensitive   = true
-}
-
 
 ## RDS
 ### クラスター関連
@@ -236,6 +229,32 @@ variable "enable_performance_insights" {
 variable "monitoring_interval" {
   description = "モニタリング間隔"
   type        = number
+}
+
+## Lambda
+variable "memory_size" {
+  description = "Lambda関数のメモリサイズ（MB）"
+  type        = number
+}
+
+variable "timeout" {
+  description = "Lambda関数のタイムアウト秒数"
+  type        = number
+}
+
+variable "reserved_concurrent_executions" {
+  description = "Lambda関数の同時実行数"
+  type        = number
+}
+
+variable "schedule_expression" {
+  description = "シークレットを自動的にローテーションする日数"
+  type        = string
+}
+
+variable "rotation_secrets" {
+  description = "自動ローテーション対象のシークレット名のリスト"
+  type        = list(string)
 }
 
 ## S3
