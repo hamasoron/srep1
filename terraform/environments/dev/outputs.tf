@@ -74,9 +74,14 @@ output "iam_role_github_actions_role_arn" {
   value = module.iam_role.iam_role_github_actions_role_arn
 }
 
-output "iam_role_lambda_rotation_arn" {
-  description = "Lambda関数用のIAMロールのARN（Lambdaモジュール等で使用）"
-  value = module.iam_role.iam_role_lambda_rotation_arn
+output "iam_role_lambda_master_rotation_arn" {
+  description = "マスターユーザー用Lambda関数のIAMロールのARN（Lambdaモジュール等で使用）"
+  value = module.iam_role.iam_role_lambda_master_rotation_arn
+}
+
+output "iam_role_lambda_app_rotation_arn" {
+  description = "アプリユーザー用Lambda関数のIAMロールのARN（Lambdaモジュール等で使用）"
+  value = module.iam_role.iam_role_lambda_app_rotation_arn
 }
 
 ## IAM AccessAnalyzer
@@ -135,9 +140,14 @@ output "rds_cluster_database_name" {
 }
 
 ## Lambda
-output "lambda_function_arn" {
-  description = "Lambda関数のARN"
-  value = module.lambda.lambda_function_arn
+output "lambda_master_function_arn" {
+  description = "マスターユーザー用Lambda関数のARN"
+  value = module.lambda.lambda_master_function_arn
+}
+
+output "lambda_app_function_arn" {
+  description = "アプリユーザー用Lambda関数のARN"
+  value = module.lambda.lambda_app_function_arn
 }
 
 ## S3

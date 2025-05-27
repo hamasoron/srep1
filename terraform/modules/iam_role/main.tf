@@ -58,9 +58,27 @@ resource "aws_iam_role" "terra_iam_role_github_actions" {
   })
 }
 
-## Lambda関数用のIAMロールを作成
-resource "aws_iam_role" "terra_iam_role_lambda_rotation" {
-  name = var.lambda_role_name
+## マスターユーザー用Lambda関数のIAMロールを作成
+resource "aws_iam_role" "terra_iam_role_lambda_master_rotation" {
+  name = "CustomLambdaMasterRotationRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+  tags = var.tags
+}
+
+## アプリユーザー用Lambda関数のIAMロールを作成
+resource "aws_iam_role" "terra_iam_role_lambda_app_rotation" {
+  name = "CustomLambdaAppRotationRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -89,10 +107,15 @@ resource "aws_iam_policy" "terra_iam_policy_github_actions" {
   name   = "CustomGitHubActionsPolicy"
   policy = file("${path.module}/iam_policy/CustomGitHubActionsPolicy.json")
 }
-resource "aws_iam_policy" "terra_iam_policy_secretsmanager" {
-  name        = "CustomLambdaPolicy"
-  description = "Allows Lambda function to rotate secrets in SecretsManager"
-  policy      = file("${path.module}/iam_policy/CustomLambdaPolicy.json")
+resource "aws_iam_policy" "terra_iam_policy_master_lambda" {
+  name        = "CustomMasterLambdaPolicy"
+  description = "Allows master Lambda function to rotate secrets and modify RDS cluster"
+  policy      = file("${path.module}/iam_policy/CustomMasterLambdaPolicy.json")
+}
+resource "aws_iam_policy" "terra_iam_policy_app_lambda" {
+  name        = "CustomAppLambdaPolicy"
+  description = "Allows app Lambda function to rotate secrets in SecretsManager"
+  policy      = file("${path.module}/iam_policy/CustomAppLambdaPolicy.json")
 }
 
 ## ECSタスクロールにカスタムポリシーをアタッチ
@@ -115,10 +138,16 @@ resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_gith
   policy_arn = aws_iam_policy.terra_iam_policy_github_actions.arn
 }
 
-## Lambda関数用のIAMロールにカスタムポリシーをアタッチ
-resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_secretsmanager" {
-  role       = aws_iam_role.terra_iam_role_lambda_rotation.name
-  policy_arn = aws_iam_policy.terra_iam_policy_secretsmanager.arn
+## マスターユーザー用Lambda関数のIAMロールにカスタムポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_master_lambda" {
+  role       = aws_iam_role.terra_iam_role_lambda_master_rotation.name
+  policy_arn = aws_iam_policy.terra_iam_policy_master_lambda.arn
+}
+
+## アプリユーザー用Lambda関数のIAMロールにカスタムポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_app_lambda" {
+  role       = aws_iam_role.terra_iam_role_lambda_app_rotation.name
+  policy_arn = aws_iam_policy.terra_iam_policy_app_lambda.arn
 }
 
 ## GitHub OIDC（OpenID Connect）プロバイダーを作成

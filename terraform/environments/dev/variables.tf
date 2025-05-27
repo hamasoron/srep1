@@ -125,8 +125,8 @@ variable "secretsmanager_kms_key_id" {
   type        = string
 }
 
-variable "secrets" {
-  description = "シークレットのリスト"
+variable "secrets_list" {
+  description = "SecretsManagerで管理されたシークレットのリスト"
   type = list(object({
     name     = string
     username = string
@@ -247,14 +247,29 @@ variable "reserved_concurrent_executions" {
   type        = number
 }
 
-variable "schedule_expression" {
-  description = "シークレットを自動的にローテーションする日数"
-  type        = string
+variable "enable_rotation_on_apply" {
+  description = "初回terraform apply時にローテーションを有効にするかどうか（false=コンソールから手動でローテーション実行）"
+  type        = bool
 }
 
 variable "rotation_secrets" {
-  description = "自動ローテーション対象のシークレット名のリスト"
+  description = "ローテーション対象のシークレットの名前"
   type        = list(string)
+}
+
+variable "master_rotation_schedule_expression" {
+  description = "マスターローテーションのスケジュール（cron式）"
+  type        = string
+}
+
+variable "app_rotation_schedule_expression" {
+  description = "アプリローテーションのスケジュール（cron式）"
+  type        = string
+}
+
+variable "lambda_kms_key_arn" {
+  description = "Lambda関数で使用するKMSキーのARN"
+  type        = string
 }
 
 ## S3

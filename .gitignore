@@ -3,3 +3,6 @@
 **.tfstate
 **.tfvars
 **/.terraform.lock.hcl
+# Python
+**/lib
+**/output

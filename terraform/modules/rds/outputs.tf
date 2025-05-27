@@ -24,3 +24,8 @@ output "rds_cluster_database_name" {
   description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
   value       = aws_rds_cluster.terra_rds_cluster.database_name
 }
+
+output "rds_cluster_identifier" {
+  description = "Aurora クラスターの識別子（Lambdaモジュールのmasterユーザーのローテーションでのみ使用。appユーザーのローテーションでは使用しない）"
+  value       = aws_rds_cluster.terra_rds_cluster.cluster_identifier
+}

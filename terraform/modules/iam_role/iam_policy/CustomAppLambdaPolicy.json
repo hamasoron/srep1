@@ -29,14 +29,6 @@
       ],
       "Effect": "Allow",
       "Resource": "*"
-    },
-    {
-      "Action": [
-        "rds:ModifyDBCluster",
-        "rds:DescribeDBClusters"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
     }
   ]
 } 

@@ -26,8 +26,8 @@ variable "secretsmanager_kms_key_id" {
   type        = string
 }
 
-variable "secrets" {
-  description = "シークレット情報のリスト"
+variable "secrets_list" {
+  description = "管理されたシークレットのリスト"
   type = list(object({
     name     = string
     username = string

@@ -249,6 +249,23 @@ nslookup -type=NS srep1.jp 9.9.9.9
 ```bash
 terraform apply
 ```
+#### （5） 各種CICDの実行（ECRの初回ビルドが自動で実行される）
+```bash
+cd .github/workflows/
+.trigger-all.txtを編集
+git add .trigger-all.txt
+git commit -m "2025-05-27 22:00 triggered for all CI/CD test"
+git push
+```
+#### （6）ECSワンショットタスクの実行
+```bash
+コンソールからECSワンショットタスクを実行
+```
+#### （7）再度モジュールの作成（ECSやappユーザーの初回ローテーションの実行）
+```bash
+terraform apply
+```
+
 ### 6.二回目以降の作成
 #### （1） プランの適用
 ```bash

@@ -22,9 +22,9 @@ resource "aws_cloudwatch_log_group" "ecs_log_group" {
 ## Lambdaログ用のCloudWatchロググループを作成
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   for_each          = { for log_config in var.lambda_log_configs : log_config.name => log_config }
-  name              = "/aws/lambda/${var.system_name}-${var.environment_name}-${each.key}"
+  name              = "/aws/lambda/${var.system_name}-${var.environment_name}-${each.key}-secret-rotation"
   retention_in_days = each.value.retention_in_days
   tags = {
-    Name = "${var.system_name}-${var.environment_name}-${each.key}-rotation-logs"
+    Name = "${var.system_name}-${var.environment_name}-${each.key}-secret-rotation-logs"
   }
 }

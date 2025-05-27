@@ -65,9 +65,9 @@ module "secretsmanager" {
   region_name               = var.region_name
   system_name               = var.system_name
   environment_name          = var.environment_name
+  secrets_list = var.secrets_list
   recovery_window_in_days   = var.recovery_window_in_days
   secretsmanager_kms_key_id = var.secretsmanager_kms_key_id
-  secrets = var.secrets
 }
 
 ## RDSのモジュール呼び出し
@@ -110,27 +110,33 @@ module "lambda" {
   source = "../../modules/lambda"
   system_name     = var.system_name
   environment_name = var.environment_name
-  # VPC設定 - プロテクテッドサブネットの有無に応じて動的選択
+  ### VPC関連
   lambda_protected_or_public_subnet_ids = (
     module.vpc.vpc_create_protected_ngw_associations
   ? values(module.vpc.vpc_protected_subnet_ids)
   : values(module.vpc.vpc_public_subnet_ids)
   )
+  ### セキュリティグループ関連
   lambda_security_group_id = module.sg.sg_security_group_ids["lambda"]
-  # IAM設定
-  lambda_role_arn = module.iam_role.iam_role_lambda_rotation_arn
-  # RDS接続設定
-  db_lotation_writer_host = module.rds.rds_cluster_writer_endpoint
-  db_lotation_port = module.rds.rds_cluster_port
-  # Lambda設定
+  ### IAM Role関連
+  lambda_master_role_arn = module.iam_role.iam_role_lambda_master_rotation_arn
+  lambda_app_role_arn = module.iam_role.iam_role_lambda_app_rotation_arn
+  ### 環境変数関連（Lambda関数の環境変数）
+  db_rotation_writer_host = module.rds.rds_cluster_writer_endpoint
+  db_rotation_port = module.rds.rds_cluster_port
+  db_cluster_identifier = module.rds.rds_cluster_identifier
+  master_secret_arn = module.secretsmanager.secretsmanager_secret_arns["master"]
+  app_secret_arn = module.secretsmanager.secretsmanager_secret_arns["app"]
+  ### Lambda関数関連
   memory_size     = var.memory_size
   timeout         = var.timeout
-  rotation_secret_arns = {
-    for secret_name in var.rotation_secrets : 
-    secret_name => module.secretsmanager.secretsmanager_secret_arns[secret_name]
-  }
   reserved_concurrent_executions = var.reserved_concurrent_executions
-  schedule_expression = var.schedule_expression
+  enable_rotation_on_apply = var.enable_rotation_on_apply
+  rotation_secrets = var.rotation_secrets
+  master_rotation_schedule_expression = var.master_rotation_schedule_expression
+  app_rotation_schedule_expression = var.app_rotation_schedule_expression
+  lambda_kms_key_arn = var.lambda_kms_key_arn
+  ### その他（明示的な依存関係）
   depends_on = [module.secretsmanager, module.rds]
 }
 

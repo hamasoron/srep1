@@ -65,6 +65,11 @@ sg_definitions = {
     ingress = []
     egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
   }
+  "cloudshell" = {
+    description = "CloudShell Security Group"
+    ingress = []
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+  }
   "rds" = {
     description = "RDS Security Group"
     ingress = [{ from_port = 3306, to_port = 3306, protocol = "tcp", cidr_blocks = [] }]
@@ -90,16 +95,18 @@ ecs_log_configs = [
   { name = "db-inituser", retention_in_days = 1 }
 ]
 lambda_log_configs = [
-  { name = "secret-rotation", retention_in_days = 1 },
+  { name = "master", retention_in_days = 1 },
+  { name = "app", retention_in_days = 1 },
 ]
 
 ## Secrets Manager
 recovery_window_in_days   = 0
 secretsmanager_kms_key_id = null
-secrets = [
+secrets_list = [
   { name = "master", username = "root" },
   { name = "app", username = "hamasoron" },
 ]
+
 
 ## RDS
 ### クラスター関連
@@ -127,9 +134,12 @@ monitoring_interval                    = 0
 ## Lambda
 memory_size      = 128
 timeout          = 30
-reserved_concurrent_executions = 1
-schedule_expression = "cron(0 18 1 * ? *)"
-rotation_secrets = ["master", "app"]
+reserved_concurrent_executions = null
+enable_rotation_on_apply = true
+rotation_secrets = ["master", "app"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
+master_rotation_schedule_expression = "cron(0 18 1 * ? *)" ##### 毎月1日の深夜3時0分にマスターをローテーション
+app_rotation_schedule_expression = "cron(0 19 1 * ? *)" ##### 毎月1日の深夜4時0分にアプリをローテーション（マスター完了後に実行される）
+lambda_kms_key_arn = null
 
 ## S3
 force_destroy       = true
@@ -202,8 +212,8 @@ db_initdata_task_memory             = 512
 db_inituser_task_cpu                = 256
 db_inituser_task_memory             = 512
 ### サービス関連
-api_desired_count                   = 0
-front_desired_count                 = 0
+api_desired_count                   = 1
+front_desired_count                 = 1
 force_new_deployment                = true
 platform_version                    = "LATEST"
 enable_execute_command              = true
