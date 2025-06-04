@@ -7,6 +7,7 @@ import json ### JSON操作（JSONデータの読み込み、書き込み）
 import logging ### ログ出力
 import random ### 乱数生成
 import string ### 文字列操作
+import time ### 時間関連の処理
 ## 外部ライブラリ
 import boto3 ### AWS SDK（import ライブラリ名）
 from botocore.exceptions import ClientError ### AWS SDKのエラーハンドリング（from ライブラリ名.モジュール名 import 関数名（def）またはクラス名（class））
@@ -90,7 +91,7 @@ def create_new_secret_value(current_secret):
     new_secret = current_secret.copy() ## current_secret変数の値をnew_secret変数に代入
     
     if 'password' in new_secret: ## new_secret変数の値の中にpasswordキーが含まれている場合
-        characters = string.ascii_letters + string.digits + "!@#$%^&*()_+-=" ## パスワードの生成に使用できる文字列を定義
+        characters = string.ascii_letters + string.digits + "!#$%&*()-_=+[]{}<>:;.," ## パスワードの生成に使用できる文字列を定義（/,',",@はAuroraが非対応）
         new_secret['password'] = ''.join(random.choice(characters) for _ in range(20)) ## 20文字のランダムな文字列を生成し、new_secret変数のpasswordキーの値として設定
     
     return new_secret ## new_secret変数の値を戻り値として返す
@@ -183,26 +184,38 @@ def set_secret(service_client, arn, token):
         logger.info(f"Updating database password for user {app_username} using master user {master_username}")
         
         # データベースに接続してパスワードを更新（マスターユーザー権限でログインして更新）
-        try: ## エラーハンドリング（try: 正常時の処理、except: エラー時の処理）
-            conn = pymysql.connect( ## pymysqlライブラリのconnect関数を実行し、以下の引数を渡す
-                host=host,
-                port=port,
-                user=master_username,
-                password=master_password,
-                connect_timeout=30,
-                read_timeout=30,
-                write_timeout=30
-            )
-            with conn.cursor() as cur:
-                # マスターユーザーの権限でアプリユーザーのパスワードを変更
-                alter_user_query = "ALTER USER %s@'%%' IDENTIFIED BY %s"
-                cur.execute(alter_user_query, (app_username, new_password))
-                logger.info(f"Successfully updated password for user {app_username}") ## アプリユーザーのパスワードが更新されたことをログ出力
-            conn.commit()
-            conn.close()
-        except pymysql.MySQLError as e:
-            logger.error(f"Database error during password update: {str(e)}") ## 実際に発生したエラー内容を文字列としてキャッチしてログ出力
-            raise
+        max_retries = 3
+        retry_delay = 1  # 初期待機時間（秒）
+        
+        for attempt in range(max_retries):
+            try: ## エラーハンドリング（try: 正常時の処理、except: エラー時の処理）
+                conn = pymysql.connect( ## pymysqlライブラリのconnect関数を実行し、以下の引数を渡す
+                    host=host,
+                    port=port,
+                    user=master_username,
+                    password=master_password,
+                    connect_timeout=30,
+                    read_timeout=30,
+                    write_timeout=30
+                )
+                with conn.cursor() as cur:
+                    # マスターユーザーの権限でアプリユーザーのパスワードを変更
+                    alter_user_query = "ALTER USER %s@'%%' IDENTIFIED BY %s"
+                    cur.execute(alter_user_query, (app_username, new_password))
+                    logger.info(f"Successfully updated password for user {app_username}") ## アプリユーザーのパスワードが更新されたことをログ出力
+                conn.commit()
+                conn.close()
+                break  # 成功した場合はループを抜ける
+                
+            except pymysql.MySQLError as e:
+                attempt_num = attempt + 1
+                if attempt_num == max_retries:
+                    logger.error(f"Database error during password update after {max_retries} attempts: {str(e)}")
+                    raise
+                else:
+                    logger.warning(f"Database error on attempt {attempt_num}/{max_retries}: {str(e)}. Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # 指数バックオフ（次回は2倍の待機時間）
             
         logger.info("App user password updated successfully") ## アプリユーザーのパスワードが更新されたことをログ出力
     except Exception as e:

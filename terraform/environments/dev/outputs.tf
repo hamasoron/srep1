@@ -1,114 +1,124 @@
 # アウトプットの定義
 ## Route53 Zone
 output "route53_zone_id" {
-  description = "作成されたRoute53ホストゾーンのID（ACMモジュールでの証明書のドメイン検証に使用）"
+  description = "The ID of the created Route53 hosted zone (used for domain validation in the ACM module)."
   value = module.route53_zone.route53_zone_id
 }
 
 output "route53_zone_name" {
-  description = "作成されたRoute53ホストゾーンの名前（Route53のホストゾーン名をACMモジュール内で証明書のドメイン名として使用）"
+  description = "The name of the created Route53 hosted zone (used as the domain name for certificates in the ACM module)."
   value = module.route53_zone.route53_zone_name
 }
 
 output "route53_zone_name_servers" {
-  description = "作成されたRoute53ホストゾーンのネームサーバー（ValueDomain等の外部レジストラにRoute53のNSレコードをコピーする際に使用）"
+  description = "The name servers of the created Route53 hosted zone (used when copying NS records to external registrars such as ValueDomain)."
   value = module.route53_zone.route53_zone_name_servers
 }
 
 ## ACM
 output "acm_certificate_arn" {
-  description = "ACM証明書のARN（ALBモジュール等で証明書を設定する際に使用）"
+  description = "The ARN of the ACM certificate (used in ALB module, etc.)"
   value = module.acm.acm_certificate_arn
 }
 
 ## VPC
 output "vpc_create_protected_ngw_associations" {
-  description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無（ECSモジュール等で使用）"
+  description = "Whether to create protected subnet and NAT gateway association (used in ECS module.)"
   value = module.vpc.vpc_create_protected_ngw_associations
 }
 
+output "vpc_nat_gateway_ids" {
+  description = "The list of NAT Gateway IDs"
+  value = module.vpc.vpc_nat_gateway_ids
+}
+
 output "vpc_id" {
-  description = "VPCのID（SGやALBモジュールなどでVPCを指定する際に使用）"
+  description = "The ID of the VPC (used in SG, ALB module, etc.)"
   value = module.vpc.vpc_id
 }
 
 output "vpc_public_subnet_ids" {
-  description = "パブリックサブネットのID（AZやNAT構成に応じて動的に変化するパブリックサブネットのIDを必ず取得。ALBモジュール等で使用）"
+  description = "The ID of the public subnet (always get the ID of the public subnet that changes dynamically according to the AZ and NAT configuration. Used in ALB module, etc.)"
   value = module.vpc.vpc_public_subnet_ids
 }
 
 output "vpc_private_subnet_ids" {
-  description = "プライベートサブネットのID（AZやNAT構成に応じて動的に変化するプライベートサブネットのIDを必ず取得。RDSモジュール等で使用）"
+  description = "The ID of the private subnet (always get the ID of the private subnet that changes dynamically according to the AZ and NAT configuration. Used in RDS module, etc.)"
   value = module.vpc.vpc_private_subnet_ids
 }
 
 output "vpc_protected_subnet_ids" {
-  description = "プロテクテッドサブネットのID（AZやNAT構成に応じて動的に変化するプロテクテッドサブネットのIDを必ず取得）"
+  description = "The ID of the protected subnet (always get the ID of the protected subnet that changes dynamically according to the AZ and NAT configuration. Used in RDS module, etc.)"
   value = module.vpc.vpc_protected_subnet_ids
 }
 
 output "vpc_route_table_ids" {
-  description = "ルートテーブルのID"
+  description = "The ID of the route table"
   value = module.vpc.vpc_route_table_ids
+}
+
+output "vpc_available_azs_count" {
+  description = "Number of available AZs determined by subnet configuration (used in RDS module for instance count calculation)"
+  value = module.vpc.vpc_available_azs_count
 }
 
 ## SG
 output "sg_security_group_ids" {
-  description = "セキュリティグループのID（RDSやALBやECSモジュール等で使用）"
+  description = "Security group IDs (used by RDS, Lambda, ALB, ECS, etc.)"
   value = module.sg.sg_security_group_ids
 }
 
 ## IAM Role
 output "iam_role_ecs_task_role_arn" {
-  description = "ECSタスク用のIAMロールのARN（ECSモジュール等で使用）"
+  description = "ECS task role ARN (used by ECS module.)"
   value = module.iam_role.iam_role_ecs_task_role_arn
 }
-
+  
 output "iam_role_ecs_task_execution_role_arn" {
-  description = "ECSタスク実行用のIAMロールのARN（ECSモジュール等で使用）"
+  description = "ECS task execution role ARN (used by ECS module.)"
   value = module.iam_role.iam_role_ecs_task_execution_role_arn
 }
 
-output "iam_role_github_actions_role_arn" {
-  description = "GitHub Actions用のIAMロールのARN（GitHubのSecrets and VariablesのAWS_ROLE_TO_ASSUMEにコピーする際に使用）"
-  value = module.iam_role.iam_role_github_actions_role_arn
-}
-
 output "iam_role_lambda_master_rotation_arn" {
-  description = "マスターユーザー用Lambda関数のIAMロールのARN（Lambdaモジュール等で使用）"
+  description = "Master user Lambda function role ARN (used by Lambda module.)"
   value = module.iam_role.iam_role_lambda_master_rotation_arn
 }
 
 output "iam_role_lambda_app_rotation_arn" {
-  description = "アプリユーザー用Lambda関数のIAMロールのARN（Lambdaモジュール等で使用）"
+  description = "App user Lambda function role ARN (used by Lambda module.)"
   value = module.iam_role.iam_role_lambda_app_rotation_arn
+}
+
+output "iam_role_github_actions_role_arn" {
+  description = "GitHub Actions role ARN (used for copying to AWS_ROLE_TO_ASSUME in GitHub Secrets and Variables)"
+  value = module.iam_role.iam_role_github_actions_role_arn
 }
 
 ## IAM AccessAnalyzer
 output "iam_accessanalyzer_arn" {
-  description = "アナライザーのARN"
+  description = "Analyzer ARN"
   value = module.iam_accessanalyzer.iam_accessanalyzer_arn
 }
 
 ## CloudWatch Logs
 output "rds_log_group_names" {
-  description = "マップ形式のCloudWatchロググループの名前一覧（RDSモジュールのロググループ名として使用）"
+  description = "Map of CloudWatch log group names (used by RDS module)"
   value = module.cloudwatch_logs.rds_log_group_names
 }
 
 output "ecs_log_group_names" {
-  description = "マップ形式のCloudWatchロググループの名前一覧（ECSモジュールのタスク定義のロググループ名として使用）"
+  description = "Map of CloudWatch log group names (used by ECS module)"
   value = module.cloudwatch_logs.ecs_log_group_names
 }
 
 ## Secrets Manager
 output "secretsmanager_secret_arns" {
-  description = "マップ形式のシークレットのARN（Lambdaモジュールのシークレット関連で使用）"
+  description = "Map of secret ARNs (used by Lambda module for secret-related settings)"
   value = module.secretsmanager.secretsmanager_secret_arns
 }
 
 output "secretsmanager_master_credentials_json" {
-  description = "マスターユーザーの認証情報（RDSモジュールのmaster_usernameとmaster_passwordに使用）"
+  description = "Master user credentials (used by RDS module for master_username and master_password)"
   value = module.secretsmanager.secretsmanager_master_credentials_json
   sensitive = true
 }
@@ -139,6 +149,11 @@ output "rds_cluster_database_name" {
   value = module.rds.rds_cluster_database_name
 }
 
+output "rds_cluster_instance_details" {
+  description = "Aurora クラスターのインスタンス詳細（ECSモジュールの環境変数の設定等で使用）"
+  value = module.rds.rds_cluster_instance_details
+}
+
 ## Lambda
 output "lambda_master_function_arn" {
   description = "マスターユーザー用Lambda関数のARN"
@@ -161,6 +176,11 @@ output "s3_alb_logs_bucket_name" {
   value = module.s3.s3_alb_logs_bucket_name
 }
 
+output "s3_cloudtrail_logs_bucket_name" {
+  description = "CloudTrailのログバケットの名前（CloudTrailモジュールでログを保存するために使用）"
+  value = module.s3.s3_cloudtrail_logs_bucket_name
+}
+
 ## ALB
 output "alb_dns_name" {
   description = "ALBのDNS名（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
@@ -175,6 +195,27 @@ output "alb_zone_id" {
 output "alb_front_target_group_arn" {
   description = "フロントエンドターゲットグループのARN（ECSモジュールで使用）"
   value = module.alb.alb_front_target_group_arn
+}
+
+## CloudTrail
+output "cloudtrail_management_trail_arn" {
+  description = "CloudTrailの管理証跡のARN"
+  value = module.cloudtrail.cloudtrail_management_trail_arn
+}
+output "cloudtrail_data_trail_arn" {
+  description = "CloudTrailのデータ証跡のARN"
+  value = module.cloudtrail.cloudtrail_data_trail_arn
+}
+
+output "cloudtrail_insight_trail_arn" {
+  description = "CloudTrailのインサイト証跡のARN"
+  value = module.cloudtrail.cloudtrail_insight_trail_arn
+}
+
+## VPC Flow Logs
+output "vpc_flow_log_arn" {
+  description = "VPC Flow LogのARN"
+  value = module.vpc_flow_logs.vpc_flow_log_arn
 }
 
 ## Route53 Records

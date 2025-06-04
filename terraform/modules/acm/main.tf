@@ -27,7 +27,7 @@ resource "aws_route53_record" "terra_acm_certificate_validation_record" {
       type   = dvo.resource_record_type
     }
   }
-  allow_overwrite = true ##### 同名レコードがある場合は上書きするかどうか
+  allow_overwrite = true ##### 同名レコードがある場合は上書きするかどうか（ACMでは推奨）
   name            = each.value.name
   records         = [each.value.record]
   ttl             = 300

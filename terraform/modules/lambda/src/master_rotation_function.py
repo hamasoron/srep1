@@ -86,7 +86,7 @@ def create_new_secret_value(current_secret):
     new_secret = current_secret.copy() ## current_secret変数の値をnew_secret変数に代入
     
     if 'password' in new_secret: ## new_secret変数の値の中にpasswordキーが含まれている場合
-        characters = string.ascii_letters + string.digits + "!#$%^&*()_+-=" ## パスワードの生成に使用できる文字列を定義（/,',",@はAuroraが非対応）
+        characters = string.ascii_letters + string.digits + "!#$%&*()-_=+[]{}<>:;.," ## パスワードの生成に使用できる文字列を定義（/,',",@はAuroraが非対応）
         new_secret['password'] = ''.join(random.choice(characters) for _ in range(20)) ## 20文字のランダムな文字列を生成し、new_secret変数のpasswordキーの値として設定
     
     return new_secret ## new_secret変数の値を戻り値として返す

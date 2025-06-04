@@ -7,22 +7,8 @@ locals {
   buckets = {
     app_contents = {
       name = "${var.system_name}-${var.environment_name}-app-contents"
-      lifecycle_rule = false
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow"
-            Principal = {
-              AWS = "arn:aws:iam::${data.aws_caller_identity.terra_caller_identity.account_id}:user/hamasoron"
-            }
-            Action = "s3:*"
-            Resource = [
-              "arn:aws:s3:::${var.system_name}-${var.environment_name}-app-contents/*"
-            ]
-          }
-        ]
-      })
+      lifecycle_rule = true
+      policy = null
     },
     alb_logs = {
       name = "${var.system_name}-${var.environment_name}-alb-logs"
@@ -33,18 +19,91 @@ locals {
           {
             Effect = "Allow"
             Principal = {
-              AWS = "arn:aws:iam::582318560864:root"
+              AWS = "arn:aws:iam::582318560864:root"  # ALB service account for ap-northeast-1
             }
             Action = "s3:PutObject"
             Resource = [
               "arn:aws:s3:::${var.system_name}-${var.environment_name}-alb-logs/accesslogs/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*",
               "arn:aws:s3:::${var.system_name}-${var.environment_name}-alb-logs/connectionlogs/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*"
             ]
+          },
+          {
+            Effect = "Allow"
+            Principal = {
+              Service = "delivery.logs.amazonaws.com"
+            }
+            Action = "s3:GetBucketAcl"
+            Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-alb-logs"
+          }
+        ]
+      })
+    },
+    cloudtrail_logs = {
+      name = "${var.system_name}-${var.environment_name}-cloudtrail-logs"
+      lifecycle_rule = true
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow"
+            Principal = {
+              Service = "cloudtrail.amazonaws.com"
+            }
+            Action = "s3:GetBucketAcl"
+            Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-cloudtrail-logs"
+          },
+          {
+            Effect = "Allow"
+            Principal = {
+              Service = "cloudtrail.amazonaws.com"
+            }
+            Action = "s3:PutObject"
+            Resource = [
+              "arn:aws:s3:::${var.system_name}-${var.environment_name}-cloudtrail-logs/management/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*",
+              "arn:aws:s3:::${var.system_name}-${var.environment_name}-cloudtrail-logs/data/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*",
+              "arn:aws:s3:::${var.system_name}-${var.environment_name}-cloudtrail-logs/insight/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*"
+            ]
+            Condition = {
+              StringEquals = {
+                "s3:x-amz-acl" = "bucket-owner-full-control"
+              }
+            }
+          }
+        ]
+      })
+    },
+    vpc_flow_logs = {
+      name = "${var.system_name}-${var.environment_name}-vpc-flow-logs"
+      lifecycle_rule = true
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow"
+            Principal = {
+              Service = "delivery.logs.amazonaws.com"
+            }
+            Action = "s3:PutObject"
+            Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-vpc-flow-logs/vpc-flow-logs/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*"
+            Condition = {
+              StringEquals = {
+                "s3:x-amz-acl" = "bucket-owner-full-control"
+              }
+            }
+          },
+          {
+            Effect = "Allow"
+            Principal = {
+              Service = "delivery.logs.amazonaws.com"
+            }
+            Action = "s3:GetBucketAcl"
+            Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-vpc-flow-logs"
           }
         ]
       })
     }
   }
+
   # contentsバケット内に疑似フォルダ構造を作成するための定義
   folder_structure = [
     "srep1/",
@@ -98,9 +157,20 @@ resource "aws_s3_bucket_ownership_controls" "terra_s3_bucket_ownership_controls"
 
 ## S3バケットのバケットポリシー
 resource "aws_s3_bucket_policy" "terra_s3_bucket_policy" {
-  for_each = local.buckets
+  for_each = {
+    for k, v in local.buckets : k => v if v.policy != null
+  }
   bucket   = aws_s3_bucket.terra_s3_bucket[each.key].id
   policy   = each.value.policy
+}
+
+## S3バケットの初期化待機（ライフサイクルポリシーの作成時点でバケットが作成されない問題を事前に回避）
+resource "time_sleep" "wait_for_logging_bucket_initialization" {
+  depends_on = [
+    aws_s3_bucket.terra_s3_bucket,
+    aws_s3_bucket_policy.terra_s3_bucket_policy
+  ]
+  create_duration = "30s"
 }
 
 ## S3バケットのライフサイクルポリシー（条件付き）
@@ -119,6 +189,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "terra_s3_bucket_lifecycle_conf
       days = var.log_expiration_days
     }
   }
+  depends_on = [
+    time_sleep.wait_for_logging_bucket_initialization,
+  ]
 }
 
 ## contentsバケットの疑似フォルダ構造を作成

@@ -5,6 +5,7 @@ module "route53_zone" {
   system_name           = var.system_name
   environment_name      = var.environment_name
   route53_force_destroy = var.route53_force_destroy
+  caa_records           = var.caa_records
 }
 
 ## ACMのモジュール呼び出し
@@ -23,8 +24,10 @@ module "vpc" {
   system_name                       = var.system_name
   environment_name                  = var.environment_name
   create_protected_ngw_associations = var.create_protected_ngw_associations
+  nat_gateway_list                  = var.nat_gateway_list
   vpc_cidr                          = var.vpc_cidr
   subnet_list                       = var.subnet_list
+  map_public_ip_on_launch           = var.map_public_ip_on_launch
   route_table_list                  = var.route_table_list
 }
 
@@ -39,33 +42,37 @@ module "sg" {
 
 ## IAM Roleのモジュール呼び出し
 module "iam_role" {
-  source      = "../../modules/iam_role"
-  github_repo = var.github_repo
+  source           = "../../modules/iam_role"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  github_repo      = var.github_repo
 }
 
 ## IAM AccessAnalyzerのモジュール呼び出し
 module "iam_accessanalyzer" {
-  source      = "../../modules/iam_accessanalyzer"
-  analyzer_type = var.analyzer_type
+  source           = "../../modules/iam_accessanalyzer"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  analyzer_type    = var.analyzer_type
 }
 
 ## CloudWatch Logsのモジュール呼び出し
 module "cloudwatch_logs" {
-  source             = "../../modules/cloudwatch_logs"
-  system_name        = var.system_name
-  environment_name   = var.environment_name
-  rds_log_configs    = var.rds_log_configs
-  ecs_log_configs    = var.ecs_log_configs
-  lambda_log_configs = var.lambda_log_configs
+  source                     = "../../modules/cloudwatch_logs"
+  system_name                = var.system_name
+  environment_name           = var.environment_name
+  rds_log_configs            = var.rds_log_configs
+  ecs_log_configs            = var.ecs_log_configs
+  lambda_log_configs         = var.lambda_log_configs
+  cloudwatch_logs_kms_key_id = var.cloudwatch_logs_kms_key_id
 }
 
 ## Secrets Managerのモジュール呼び出し
 module "secretsmanager" {
   source                    = "../../modules/secretsmanager"
-  region_name               = var.region_name
   system_name               = var.system_name
   environment_name          = var.environment_name
-  secrets_list = var.secrets_list
+  secrets_list              = var.secrets_list
   recovery_window_in_days   = var.recovery_window_in_days
   secretsmanager_kms_key_id = var.secretsmanager_kms_key_id
 }
@@ -78,6 +85,9 @@ module "rds" {
   environment_name                       = var.environment_name
   private_subnet_ids                     = values(module.vpc.vpc_private_subnet_ids)
   rds_security_group_id                  = module.sg.sg_security_group_ids["rds"]
+  available_azs_count                    = module.vpc.vpc_available_azs_count
+  available_azs_names                    = module.vpc.vpc_available_azs_names
+  use_all_azs_for_aurora                 = var.use_all_azs_for_aurora
   ### クラスター関連
   db_engine                              = var.db_engine
   engine_version                         = var.engine_version
@@ -137,7 +147,7 @@ module "lambda" {
   app_rotation_schedule_expression = var.app_rotation_schedule_expression
   lambda_kms_key_arn = var.lambda_kms_key_arn
   ### その他（明示的な依存関係）
-  depends_on = [module.secretsmanager, module.rds]
+  depends_on = [module.secretsmanager, module.rds, module.iam_role, module.sg]
 }
 
 ## S3のモジュール呼び出し
@@ -178,6 +188,40 @@ module "alb" {
   certificate_arn                  = module.acm.acm_certificate_arn
   ### その他（明示的な依存関係）
   depends_on                       = [module.s3]
+}
+
+## CloudTrailのモジュール呼び出し
+module "cloudtrail" {
+  source = "../../modules/cloudtrail"
+  region_name                            = var.region_name
+  system_name                            = var.system_name
+  environment_name                       = var.environment_name
+  s3_cloudtrail_logs_bucket_name         = module.s3.s3_cloudtrail_logs_bucket_name
+  enable_management_logging              = var.enable_management_logging
+  enable_data_logging                    = var.enable_data_logging
+  enable_insight_logging                 = var.enable_insight_logging
+  include_global_service_events          = var.include_global_service_events
+  is_multi_region_trail                  = var.is_multi_region_trail
+  enable_log_file_validation             = var.enable_log_file_validation
+  event_selector_include_management_events = var.event_selector_include_management_events
+  event_selector_read_write_type = var.event_selector_read_write_type
+  exclude_management_event_sources = var.exclude_management_event_sources
+  depends_on                       = [module.s3]
+}
+
+## VPC Flow Logsのモジュール呼び出し
+module "vpc_flow_logs" {
+  source = "../../modules/vpc_flow_logs"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  vpc_id           = module.vpc.vpc_id
+  enable_vpc_flow_logs                    = var.enable_vpc_flow_logs
+  s3_vpc_flow_logs_bucket_arn             = module.s3.s3_vpc_flow_logs_bucket_arn
+  traffic_type                           = var.traffic_type
+  max_aggregation_interval               = var.max_aggregation_interval
+  log_format                             = var.log_format
+  destination_options = var.destination_options
+  depends_on = [module.vpc, module.s3]
 }
 
 ## Route53 Recordsのモジュール呼び出し

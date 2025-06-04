@@ -136,3 +136,25 @@ variable "monitoring_interval" {
   description = "モニタリング間隔"
   type        = number
 }
+
+variable "available_azs_count" {
+  description = "利用可能なAZの数（VPCモジュールから取得）"
+  type        = number
+}
+
+variable "available_azs_names" {
+  description = "実際に使用されているAZ名のリスト（VPCモジュールから取得）"
+  type        = list(string)
+}
+
+variable "cluster_instance_count" {
+  description = "環境別のAuroraインスタンス数設定（明示的に指定する場合）"
+  type        = number
+  default     = null
+}
+
+variable "use_all_azs_for_aurora" {
+  description = "3AZ環境で全AZにAuroraインスタンスを配置するかどうか（false=2台、true=3台）"
+  type        = bool
+  default     = true
+}

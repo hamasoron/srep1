@@ -70,6 +70,9 @@ resource "aws_lambda_function" "terra_lambda_function_master_rotation" {
   tags = {
     Name = "${var.system_name}-${var.environment_name}-master-secret-rotation"
   }
+
+  # ENIクリーンアップが先に実行されるように依存関係を設定
+  depends_on = [null_resource.lambda_eni_cleanup_wait]
 }
 
 ## アプリユーザー用Lambda関数の作成
@@ -99,6 +102,66 @@ resource "aws_lambda_function" "terra_lambda_function_app_rotation" {
   }
   tags = {
     Name = "${var.system_name}-${var.environment_name}-app-secret-rotation"
+  }
+
+  # ENIクリーンアップが先に実行されるように依存関係を設定
+  depends_on = [null_resource.lambda_eni_cleanup_wait]
+}
+
+## Lambda関数削除時のENIクリーンアップ待機（VPC LambdaはENIが削除可能（In-use → Available）になるまで最大20分かかる）
+### なお、AvailableになったらLambdaサービスが実行ロールを使用してENIを自動で削除してくれる
+### 参考：https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html
+resource "null_resource" "lambda_eni_cleanup_wait" {
+  # 作成時は何もしない、削除時のみENIクリーンアップを実行
+  lifecycle {
+    create_before_destroy = false
+  }
+  # 削除時にENIがクリーンアップ（Availableになる）されるまで待機（最大20分）
+  provisioner "local-exec" {
+    # terraform destroy時のみ以下のコマンドを実行
+    when    = destroy
+    command = <<-EOT
+      Write-Host "Starting ENI cleanup process..."
+      
+      $timeout = 1200
+      $elapsed = 0
+      
+      do {
+        try {
+          $enis = aws ec2 describe-network-interfaces --filters "Name=description,Values=AWS Lambda VPC ENI*" --query "NetworkInterfaces[].NetworkInterfaceId" --output text 2>$null
+          
+          if ([string]::IsNullOrWhiteSpace($enis) -or $enis -eq "None") {
+            Write-Host "No Lambda VPC ENIs found. Cleanup completed."
+            break
+          }
+          
+          $eniArray = ($enis -split '\s+') | Where-Object { $_ -ne '' -and $_ -ne 'None' }
+          
+          if ($eniArray.Count -eq 0) {
+            Write-Host "ENI cleanup completed - no ENIs to process"
+            break
+          }
+          
+          Write-Host "Found $($eniArray.Count) Lambda VPC ENI(s) still present. Waiting for automatic cleanup by AWS..."
+          
+          Write-Host "ENI cleanup in progress... ($elapsed seconds elapsed)"
+          Start-Sleep 60
+          $elapsed += 60
+          
+        } catch {
+          Write-Host "Error during ENI cleanup: $_.Exception.Message"
+          Start-Sleep 60
+          $elapsed += 60
+        }
+      } while ($elapsed -lt $timeout)
+      
+      if ($elapsed -ge $timeout) {
+        Write-Host "ENI cleanup timed out after $timeout seconds"
+      } else {
+        Write-Host "ENI cleanup completed successfully"
+      }
+    EOT
+    interpreter = ["PowerShell", "-Command"]
   }
 }
 

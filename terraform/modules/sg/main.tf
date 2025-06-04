@@ -6,7 +6,7 @@ resource "aws_security_group" "terra_security_group" {
   description = each.value.description
   vpc_id      = var.vpc_id
 
-  ## インバウンドルール（cidr_blocksがあるルールのみ。他のSGを参照する場合は対象外）
+  ## インバウンドルール（cidr_blocksキーがあるルールのみ。security_groupsキーがあるルールは対象外）
   dynamic "ingress" {
     for_each = [
       for rule in each.value.ingress : rule
@@ -45,70 +45,35 @@ locals {
   security_group_ids = {
     for k, v in aws_security_group.terra_security_group : k => v.id
   }
+  
+  # security_groupsフィールドを使用するingressルールをフラット化
+  sg_ingress_rules = flatten([
+    for sg_key, sg_config in var.sg_definitions : [
+      for rule in sg_config.ingress : [
+        for source_sg in lookup(rule, "security_groups", []) : {
+          sg_key      = sg_key
+          from_port   = rule.from_port
+          to_port     = rule.to_port
+          protocol    = rule.protocol
+          source_sg   = source_sg
+          description = lookup(rule, "description", null)
+        }
+      ]
+      if length(lookup(rule, "security_groups", [])) > 0
+    ]
+  ])
 }
 
-## ALB -> ECS-FRONT-NGINX: 80番ポート
-resource "aws_security_group_rule" "ecs_front_nginx_from_alb_80" {
+## Security Group間の参照ルール
+resource "aws_security_group_rule" "sg_ingress_rules" {
+  for_each = {
+    for rule in local.sg_ingress_rules : "${rule.sg_key}-${rule.source_sg}-${rule.from_port}-${rule.to_port}" => rule
+  }
   type                     = "ingress"
-  from_port                = 80
-  to_port                  = 80
-  protocol                 = "tcp"
-  security_group_id        = local.security_group_ids["ecs-front-nginx"]
-  source_security_group_id = local.security_group_ids["alb"]
-  description              = "Allow HTTP traffic from ALB to ECS Frontend Nginx"
-}
-
-## ECS-FRONT-NGINX -> ECS-API-PYTHON: 8080番ポート
-resource "aws_security_group_rule" "ecs_api_python_from_ecs_front_nginx" {
-  type                     = "ingress"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = local.security_group_ids["ecs-api-python"]
-  source_security_group_id = local.security_group_ids["ecs-front-nginx"]
-  description              = "Allow traffic on port 8080 from ECS Frontend Nginx to ECS API Python"
-}
-
-## ECS-API-PYTHON -> RDS: 3306番ポート
-resource "aws_security_group_rule" "rds_from_ecs_api_python" {
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = local.security_group_ids["rds"]
-  source_security_group_id = local.security_group_ids["ecs-api-python"]
-  description              = "Allow MySQL traffic from ECS API Python to RDS"
-}
-
-## ECS-DB-INITDATA -> RDS: 3306番ポート
-resource "aws_security_group_rule" "rds_from_ecs_db_initdata" {
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = local.security_group_ids["rds"]
-  source_security_group_id = local.security_group_ids["ecs-db-initdata"]
-  description              = "Allow MySQL traffic from ECS DB Initdata to RDS"
-}
-
-## ECS-DB-INITUSER -> RDS: 3306番ポート
-resource "aws_security_group_rule" "rds_from_ecs_db_inituser" {
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = local.security_group_ids["rds"]
-  source_security_group_id = local.security_group_ids["ecs-db-inituser"]
-  description              = "Allow MySQL traffic from ECS DB Inituser to RDS"
-}
-
-## Lambda -> RDS: 3306番ポート
-resource "aws_security_group_rule" "rds_from_lambda" {
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = local.security_group_ids["rds"]
-  source_security_group_id = local.security_group_ids["lambda"]
-  description              = "Allow MySQL traffic from Lambda to RDS"
+  from_port                = each.value.from_port
+  to_port                  = each.value.to_port
+  protocol                 = each.value.protocol
+  security_group_id        = local.security_group_ids[each.value.sg_key]
+  source_security_group_id = local.security_group_ids[each.value.source_sg]
+  description              = each.value.description
 }

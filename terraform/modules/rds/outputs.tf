@@ -29,3 +29,15 @@ output "rds_cluster_identifier" {
   description = "Aurora クラスターの識別子（Lambdaモジュールのmasterユーザーのローテーションでのみ使用。appユーザーのローテーションでは使用しない）"
   value       = aws_rds_cluster.terra_rds_cluster.cluster_identifier
 }
+
+output "rds_cluster_instance_details" {
+  description = "Auroraインスタンスの詳細情報（ID、AZ、役割）"
+  value = [
+    for i, instance in aws_rds_cluster_instance.terra_rds_cluster_instance : {
+      id   = instance.id
+      az   = instance.availability_zone
+      role = i == 0 ? "writer" : "reader"
+      promotion_tier = instance.promotion_tier
+    }
+  ]
+}
