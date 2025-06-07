@@ -1,29 +1,29 @@
 # アウトプットの定義
 ## Route53 Zone
 output "route53_zone_id" {
-  description = "The ID of the created Route53 hosted zone (used for domain validation in the ACM module)."
+  description = "ID of the created Route53 hosted zone (used for domain validation in the ACM module)."
   value = module.route53_zone.route53_zone_id
 }
 
 output "route53_zone_name" {
-  description = "The name of the created Route53 hosted zone (used as the domain name for certificates in the ACM module)."
+  description = "Name of the created Route53 hosted zone (used as the domain name for certificates in the ACM module)."
   value = module.route53_zone.route53_zone_name
 }
 
 output "route53_zone_name_servers" {
-  description = "The name servers of the created Route53 hosted zone (used when copying NS records to external registrars such as ValueDomain)."
+  description = "Name servers of the created Route53 hosted zone (used when copying NS records to external registrars)."
   value = module.route53_zone.route53_zone_name_servers
 }
 
 ## ACM
 output "acm_certificate_arn" {
-  description = "The ARN of the ACM certificate (used in ALB module, etc.)"
+  description = "ARN of the ACM certificate (used in ALB module, etc.)"
   value = module.acm.acm_certificate_arn
 }
 
 ## VPC
 output "vpc_create_protected_ngw_associations" {
-  description = "Whether to create protected subnet and NAT gateway association (used in ECS module.)"
+  description = "Whether to create protected subnet and NAT gateway association (used in ECS module)."
   value = module.vpc.vpc_create_protected_ngw_associations
 }
 

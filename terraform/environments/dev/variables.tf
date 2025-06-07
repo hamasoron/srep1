@@ -36,12 +36,20 @@ variable "route53_force_destroy" {
 variable "caa_records" {
   description = "CAA records for the domain."
   type        = list(string)
+  validation {
+    condition     = length(var.caa_records) > 0
+    error_message = "At least one CAA record must be specified in caa_records." ##### specify: 指定する
+  }
 }
 
 ## ACM
 variable "subject_alternative_names" {
-  description = "The subject alternative names."
+  description = "Subject alternative names."
   type = list(string)
+  validation {
+    condition     = alltrue([for v in var.subject_alternative_names : length(v) > 0])
+    error_message = "All subject alternative names must not be empty."
+  }
 }
 
 ## VPC
@@ -95,7 +103,7 @@ variable "use_all_azs_for_nat" {
 }
 
 variable "vpc_cidr" {
-  description = "The CIDR block of the VPC"
+  description = "CIDR block of the VPC"
   type = string
 }
 
@@ -105,7 +113,7 @@ variable "map_public_ip_on_launch" {
 }
 
 variable "subnet_list" {
-  description = "The list of subnets"
+  description = "List of subnets"
   type = list(object({
     name       = string
     cidr_block = string
@@ -126,7 +134,7 @@ variable "subnet_list" {
 }
 
 variable "route_table_list" {
-  description = "The list of route table"
+  description = "List of route table"
   type = list(object({
     name         = string
     subnet       = string
@@ -187,7 +195,7 @@ variable "github_repo" {
 
 ## IAM AccessAnalyzer
 variable "analyzer_type" {
-  description = "Analyzer type (ACCOUNT or ORGANIZATION)"
+  description = "Type of analyzer (ACCOUNT or ORGANIZATION)"
   type        = string
   validation {
     condition     = contains(["ACCOUNT", "ORGANIZATION"], var.analyzer_type)
@@ -268,7 +276,7 @@ variable "cloudwatch_logs_kms_key_id" {
 
 ## Secrets Manager
 variable "recovery_window_in_days" {
-  description = "The recovery window in days after deletion"
+  description = "Recovery window in days after deletion"
   type        = number
   validation {
     condition     = var.recovery_window_in_days >= 0
@@ -277,7 +285,7 @@ variable "recovery_window_in_days" {
 }
 
 variable "secretsmanager_kms_key_id" {
-  description = "The KMS key ID for SecretsManager"
+  description = "KMS key ID for SecretsManager"
   type        = string
   validation {
     condition     = var.secretsmanager_kms_key_id == null || can(length(var.secretsmanager_kms_key_id) > 0)
@@ -286,7 +294,7 @@ variable "secretsmanager_kms_key_id" {
 }
 
 variable "secrets_list" {
-  description = "The list of secrets managed by SecretsManager"
+  description = "List of secrets managed by SecretsManager"
   type = list(object({
     name     = string
     username = string

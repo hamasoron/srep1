@@ -1,0 +1,40 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "RDSEnhancedMonitoringCloudWatchLogs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+            ],
+            "Resource": [
+                "arn:aws:logs:*:*:log-group:RDSOSMetrics:*"
+            ]
+        },
+        {
+            "Sid": "RDSEnhancedMonitoringCloudWatchMetrics",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:PutMetricData"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "cloudwatch:namespace": "AWS/RDS"
+                }
+            }
+        },
+        {
+            "Sid": "RDSEnhancedMonitoringEC2",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeVolumes",
+                "ec2:DescribeVolumeStatus"
+            ],
+            "Resource": "*"
+        }
+    ]
+} 

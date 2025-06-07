@@ -12,7 +12,7 @@ resource "aws_route53_zone" "terra_route53_zone" {
 ## Route53レコードの作成（CAAレコード）
 resource "aws_route53_record" "terra_route53_record_caa" {
   zone_id = aws_route53_zone.terra_route53_zone.zone_id
-  name = "${var.system_name}.jp" ##### ドメインの全てのサブドメイン（dev/stg）にも継承
+  name = "${var.system_name}.jp" ##### CAAレコードは、サブドメイン（dev/stg）にも継承
   type = "CAA" ##### Certificate Authority Authorization
   ttl = 3600
   records = var.caa_records

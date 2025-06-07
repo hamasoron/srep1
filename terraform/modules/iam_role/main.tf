@@ -87,6 +87,28 @@ resource "aws_iam_role" "terra_iam_role_lambda_app_rotation" {
   }
 }
 
+## RDS Enhanced Monitoringロールを作成
+resource "aws_iam_role" "terra_iam_role_rds_enhanced_monitoring" {
+  name = "CustomRDSEnhancedMonitoringRole"
+  description = "Custom IAM role for RDS enhanced monitoring"
+  max_session_duration = 3600 ##### セッションを保持する時間（1時間~12時間の間で設定）
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomRDSEnhancedMonitoringRole"
+  }
+}
+
 ## GitHub Actions用のIAMロールを作成
 resource "aws_iam_role" "terra_iam_role_github_actions" {
   name = "CustomGitHubActionsRole"
@@ -134,14 +156,6 @@ resource "aws_iam_policy" "terra_iam_policy_ecs_task_execution" {
     Name = "${var.system_name}-${var.environment_name}-CustomECSTaskExecutionPolicy"
   }
 }
-resource "aws_iam_policy" "terra_iam_policy_github_actions" {
-  name   = "CustomGitHubActionsPolicy"
-  description = "Custom IAM policy for GitHub Actions"
-  policy = file("${path.module}/iam_policy/CustomGitHubActionsPolicy.json")
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-CustomGitHubActionsPolicy"
-  }
-}
 resource "aws_iam_policy" "terra_iam_policy_master_lambda" {
   name        = "CustomMasterLambdaPolicy"
   description = "Custom IAM policy for master Lambda function"
@@ -156,6 +170,22 @@ resource "aws_iam_policy" "terra_iam_policy_app_lambda" {
   policy      = file("${path.module}/iam_policy/CustomAppLambdaPolicy.json")
   tags = {
     Name = "${var.system_name}-${var.environment_name}-CustomAppLambdaPolicy"
+  }
+}
+resource "aws_iam_policy" "terra_iam_policy_rds_enhanced_monitoring" {
+  name        = "CustomRDSEnhancedMonitoringPolicy"
+  description = "Custom IAM policy for RDS enhanced monitoring"
+  policy      = file("${path.module}/iam_policy/CustomRDSEnhancedMonitoringPolicy.json")
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomRDSEnhancedMonitoringPolicy"
+  }
+}
+resource "aws_iam_policy" "terra_iam_policy_github_actions" {
+  name   = "CustomGitHubActionsPolicy"
+  description = "Custom IAM policy for GitHub Actions"
+  policy = file("${path.module}/iam_policy/CustomGitHubActionsPolicy.json")
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomGitHubActionsPolicy"
   }
 }
 
@@ -181,6 +211,12 @@ resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_mast
 resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_app_lambda" {
   role       = aws_iam_role.terra_iam_role_lambda_app_rotation.name
   policy_arn = aws_iam_policy.terra_iam_policy_app_lambda.arn
+}
+
+## RDS Enhanced Monitoringロールにカスタムポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_rds_enhanced_monitoring" {
+  role       = aws_iam_role.terra_iam_role_rds_enhanced_monitoring.name
+  policy_arn = aws_iam_policy.terra_iam_policy_rds_enhanced_monitoring.arn
 }
 
 ## GitHub Actionsロールにカスタムポリシーをアタッチ

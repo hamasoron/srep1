@@ -1,7 +1,7 @@
 # 変数の定義
 ## 全般
 variable "system_name" {
-  description = "The system name"
+  description = "System name"
   type = string
   validation {
     condition     = length(var.system_name) > 0
@@ -10,7 +10,7 @@ variable "system_name" {
 }
 
 variable "environment_name" {
-  description = "The environment name"
+  description = "Environment name"
   type = string
   validation {
     condition     = contains(["prod", "stg", "dev"], var.environment_name)
@@ -69,7 +69,7 @@ variable "use_all_azs_for_nat" {
 }
 
 variable "vpc_cidr" {
-  description = "The CIDR block of the VPC"
+  description = "CIDR block of the VPC"
   type = string
 }
 
@@ -79,7 +79,7 @@ variable "map_public_ip_on_launch" {
 }
 
 variable "subnet_list" {
-  description = "The list of subnets"
+  description = "List of subnets"
   type = list(object({
     name       = string
     cidr_block = string
@@ -100,7 +100,7 @@ variable "subnet_list" {
 }
 
 variable "route_table_list" {
-  description = "The list of route table"
+  description = "List of route table"
   type = list(object({
     name         = string
     subnet       = string

@@ -1,7 +1,7 @@
 # 変数の定義
 ## 全般
 variable "system_name" {
-  description = "The system name"
+  description = "System name"
   type = string
   validation {
     condition     = length(var.system_name) > 0
@@ -10,7 +10,7 @@ variable "system_name" {
 }
 
 variable "environment_name" {
-  description = "The environment name"
+  description = "Environment name"
   type = string
   validation {
     condition     = contains(["prod", "stg", "dev"], var.environment_name)
@@ -20,13 +20,13 @@ variable "environment_name" {
 
 ## VPC
 variable "vpc_id" {
-  description = "VPC ID (used as a placeholder for the VPC module's outputs.tf)"
+  description = "ID of the VPC (used as a placeholder for the VPC module's outputs.tf)"
   type = string
 }
 
 ## SG
 variable "sg_definitions" {
-  description = "Security group list"
+  description = "List of security groups"
   type = map(object({
     description = string
     ingress = list(object({

@@ -1,9 +1,9 @@
 # ローカル変数の定義
 ## NATゲートウェイの数を計算するロジック
 locals {
-  ### subnet_listからAZの数をチェック
+  ### terraform.tfvarsのsubnet_listのnameからAZの数をチェック
   available_azs = length(distinct([for subnet in var.subnet_list : substr(subnet.name, -2, 2)]))
-  ### protected subnetが存在するかチェック
+  ### terraform.tfvarsのsubnet_listのtypeがprotectedのものが存在するかチェック
   has_protected_subnets = length([for subnet in var.subnet_list : subnet if subnet.type == "protected"]) > 0
   ### NATゲートウェイ設定の優先順位決定
   # 1. nat_gateway_list (新しいlist型設定)
