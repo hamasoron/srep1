@@ -16,6 +16,9 @@ resource "aws_acm_certificate" "terra_acm_certificate" {
 resource "aws_acm_certificate_validation" "terra_acm_certificate_validation" {
   certificate_arn         = aws_acm_certificate.terra_acm_certificate.arn
   validation_record_fqdns = [for record in aws_route53_record.terra_acm_certificate_validation_record : record.fqdn]
+  timeouts {
+    create = "30m" ##### 証明書の検証が30分で終わらなかったらタイムアウト（通常は10分程度）
+  }
 }
 
 ## Route53レコード（CNAME）の作成

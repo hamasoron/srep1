@@ -29,7 +29,7 @@ variable "domain_name" {
 }
 
 variable "route53_zone_id" {
-  description = "Route53 hosted zone ID (used as a placeholder for the route53_zone module's outputs.tf)."
+  description = "ID of the Route53 hosted zone (used as a placeholder for the route53_zone module's outputs.tf)."
   type        = string
   validation {
     condition     = length(var.route53_zone_id) > 0
