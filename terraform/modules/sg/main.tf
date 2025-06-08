@@ -5,7 +5,6 @@ resource "aws_security_group" "terra_security_group" {
   name        = "${var.system_name}-${var.environment_name}-${each.key}-sg"
   description = each.value.description
   vpc_id      = var.vpc_id
-
   ## インバウンドルール（cidr_blocksキーがあるルールのみ。security_groupsキーがあるルールは対象外）
   dynamic "ingress" {
     for_each = [
@@ -20,7 +19,6 @@ resource "aws_security_group" "terra_security_group" {
       description = lookup(ingress.value, "description", null)
     }
   }
-
   ## アウトバウンドルール（cidr_blocksによる宛先指定）
   dynamic "egress" {
     for_each = each.value.egress
@@ -45,7 +43,6 @@ locals {
   security_group_ids = {
     for k, v in aws_security_group.terra_security_group : k => v.id
   }
-  
   # security_groupsフィールドを使用するingressルールをフラット化
   sg_ingress_rules = flatten([
     for sg_key, sg_config in var.sg_definitions : [

@@ -64,7 +64,7 @@ output "vpc_available_azs_count" {
 
 ## SG
 output "sg_security_group_ids" {
-  description = "Security group IDs (used by RDS, Lambda, ALB, ECS, etc.)"
+  description = "IDs of security groups (used by RDS, Lambda, ALB, ECS, CloudShell etc.)"
   value = module.sg.sg_security_group_ids
 }
 
