@@ -12,18 +12,16 @@ caa_records = ["0 issue \"amazon.com\""]
 subject_alternative_names = ["*.srep1.jp"]
 
 ## VPC
-create_protected_ngw_associations = true
+create_protected_ngw_associations = true ### protected及びnat_gatewayを使用するか否か 
 vpc_cidr                          = "10.0.0.0/19"
 map_public_ip_on_launch = true
-# NATゲートウェイ設定（新しいlist型）
-# stg環境：2AZ時は2個、3AZ時は2個（コスト重視）または3個（高可用性）
 nat_gateway_list = [
-  { az = "1a", enabled = true },   # prod環境では高可用性のため最低2個配置
+  { az = "1a", enabled = true },  ### prod環境：2AZ時は2個、3AZ時は2個（コスト重視）または3個（高可用性）が推奨
   { az = "1c", enabled = true },
-  { az = "1d", enabled = true },   # prod環境では高可用性重視で3個配置
+  { az = "1d", enabled = true },
 ]
 subnet_list = [
-  { name = "1a", cidr_block = "10.0.0.0/24", type = "public" },
+  { name = "1a", cidr_block = "10.0.0.0/24", type = "public" }, ### create_protected_ngw_associationsとnat_gateway_listに合わせて設定
   { name = "1c", cidr_block = "10.0.1.0/24", type = "public" },
   { name = "1d", cidr_block = "10.0.2.0/24", type = "public" },
   { name = "1a", cidr_block = "10.0.3.0/24", type = "protected" },
@@ -34,7 +32,7 @@ subnet_list = [
   { name = "1d", cidr_block = "10.0.8.0/24", type = "private" },
 ]
 route_table_list = [
-  { name = "public", subnet = "1a", gateway_type = "internet_gateway" },
+  { name = "public", subnet = "1a", gateway_type = "internet_gateway" }, ### create_protected_ngw_associationsとnat_gateway_listに合わせて設定
   { name = "public", subnet = "1c", gateway_type = "internet_gateway" },
   { name = "public", subnet = "1d", gateway_type = "internet_gateway" },
   { name = "protected", subnet = "1a", gateway_type = "nat_gateway" },
@@ -50,45 +48,45 @@ sg_definitions = {
   "alb" = {
     description = "ALB Security Group"
     ingress = [
-      { from_port = 80, to_port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
-      { from_port = 443, to_port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"] },
+      { from_port = 80, to_port = 80, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"], description = "HTTP from internet" },
+      { from_port = 443, to_port = 443, protocol = "tcp", cidr_blocks = ["0.0.0.0/0"], description = "HTTPS from internet" },
     ]
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "ecs-front-nginx" = {
     description = "ECS Frontend Nginx Security Group"
-    ingress = [{ from_port = 80, to_port = 80, protocol = "tcp", cidr_blocks = [] }]
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    ingress = [{ from_port = 80, to_port = 80, protocol = "tcp", security_groups = ["alb"], description = "HTTP from ALB" }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "ecs-api-python" = {
     description = "ECS API Python Security Group"
-    ingress = [{ from_port = 8080, to_port = 8080, protocol = "tcp", cidr_blocks = [] }]
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    ingress = [{ from_port = 8080, to_port = 8080, protocol = "tcp", security_groups = ["ecs-front-nginx"], description = "API access from frontend" }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "ecs-db-initdata" = {
     description = "ECS DB Initdata Security Group"
     ingress = []
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "ecs-db-inituser" = {
     description = "ECS DB Inituser Security Group"
     ingress = []
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "lambda" = {
     description = "Lambda Security Group"
     ingress = []
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "cloudshell" = {
     description = "CloudShell Security Group"
     ingress = []
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
   "rds" = {
     description = "RDS Security Group"
-    ingress = [{ from_port = 3306, to_port = 3306, protocol = "tcp", cidr_blocks = [] }]
-    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"] }]
+    ingress = [{ from_port = 3306, to_port = 3306, protocol = "tcp", security_groups = ["ecs-api-python", "ecs-db-initdata", "ecs-db-inituser", "lambda", "cloudshell"], description = "MySQL access from application services" }]
+    egress = [{ from_port = 0, to_port = 0, protocol = "-1", cidr_blocks = ["0.0.0.0/0"], description = "All outbound traffic" }]
   }
 }
 
@@ -113,6 +111,7 @@ lambda_log_configs = [
   { name = "master", retention_in_days = 1 },
   { name = "app", retention_in_days = 1 },
 ]
+cloudwatch_logs_kms_key_id = null
 
 ## Secrets Manager
 recovery_window_in_days   = 0
@@ -125,7 +124,7 @@ secrets_list = [
 ## RDS
 ### クラスター関連
 db_engine                              = "aurora-mysql"
-engine_version                         = "8.0.mysql_aurora.3.05.2"
+engine_version                         = "8.0.mysql_aurora.3.08.2"
 database_name                          = "hamasorondb"
 backup_retention_period                = 2
 preferred_backup_window                = "16:15-16:45"
@@ -144,6 +143,8 @@ preferred_maintenance_window_instanceA = "tue:17:15-tue:17:45"
 auto_minor_version_upgrade             = true
 enable_performance_insights            = false
 monitoring_interval                    = 0
+### Aurora 3AZ設定
+use_all_azs_for_aurora                 = false  ##### dev環境：コスト重視で1台構成（この設定は実際にはdev環境では無視される）
 
 ## Lambda
 memory_size      = 128

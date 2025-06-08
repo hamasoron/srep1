@@ -87,6 +87,7 @@ module "rds" {
   rds_security_group_id                  = module.sg.sg_security_group_ids["rds"]
   available_azs_count                    = module.vpc.vpc_available_azs_count
   available_azs_names                    = module.vpc.vpc_available_azs_names
+  use_all_azs_for_aurora                 = var.use_all_azs_for_aurora
   ### クラスター関連
   db_engine                              = var.db_engine
   engine_version                         = var.engine_version

@@ -63,43 +63,18 @@ variable "nat_gateway_list" {
   type = list(object({
     az      = string
     enabled = bool
-    # 将来の拡張用（optional）
-    instance_type = optional(string, "default")
-    bandwidth     = optional(string, "default")
   }))
-  default = [
-    { az = "1a", enabled = false },
-    { az = "1c", enabled = false },
-    { az = "1d", enabled = false },
-  ]
   validation {
     condition = alltrue([
       for ngw in var.nat_gateway_list : contains(["1a", "1c", "1d"], ngw.az)
     ])
     error_message = "az must be one of 1a, 1c, 1d."
   }
-}
-
-variable "nat_gateway_count" {
-  description = "Number of NAT Gateways to create (0, 1, 2, 3) - for backward compatibility" ##### backward compatibility: 後方互換性
-  type        = number
-  default     = null
+  # エラーハンドリング1: nat_gateway_listでenabledがtrueの場合、create_protected_ngw_associationsもtrueである必要がある
   validation {
-    condition     = var.nat_gateway_count == null ? true : (var.nat_gateway_count >= 0 && var.nat_gateway_count <= 3)
-    error_message = "nat_gateway_count must be between 0 and 3."
+    condition = length([for ngw in var.nat_gateway_list : ngw if ngw.enabled]) == 0 || var.create_protected_ngw_associations
+    error_message = "When any NAT gateway is enabled, create_protected_ngw_associations must be true."
   }
-}
-
-variable "enable_auto_nat_calculation" {
-  description = "Whether to automatically calculate the number of NAT Gateways based on the environment and AZ number - for backward compatibility"
-  type        = bool
-  default     = true
-}
-
-variable "use_all_azs_for_nat" {
-  description = "Whether to configure NAT Gateways in all AZs in stg/prod environments with 3 AZs - for backward compatibility"
-  type        = bool
-  default     = false
 }
 
 variable "vpc_cidr" {
@@ -131,6 +106,25 @@ variable "subnet_list" {
     ])
     error_message = "type must be one of public, protected, private."
   }
+  # エラーハンドリング2: create_protected_ngw_associations = false の場合、protectedサブネットが存在してはいけない
+  validation {
+    condition = var.create_protected_ngw_associations || length([
+      for subnet in var.subnet_list : subnet if subnet.type == "protected"
+    ]) == 0
+    error_message = "Protected subnets cannot exist when create_protected_ngw_associations is false."
+  }
+  # エラーハンドリング3: create_protected_ngw_associations = true の場合、protectedサブネットが存在する必要がある
+  validation {
+    condition = !var.create_protected_ngw_associations || length([
+      for subnet in var.subnet_list : subnet if subnet.type == "protected"
+    ]) > 0
+    error_message = "When create_protected_ngw_associations is true, protected subnets must exist in subnet_list."
+  }
+  # エラーハンドリング4: subnet_listのtypeにprotectedが存在する場合、少なくとも1つ以上nat_gateway_listのenabledがtrueである必要がある
+  validation {
+    condition = length([for subnet in var.subnet_list : subnet if subnet.type == "protected"]) == 0 || length([for ngw in var.nat_gateway_list : ngw if ngw.enabled]) > 0
+    error_message = "When protected subnets exist, at least one NAT gateway must be enabled in nat_gateway_list."
+  }
 }
 
 variable "route_table_list" {
@@ -157,6 +151,52 @@ variable "route_table_list" {
       for route_table in var.route_table_list : contains(["internet_gateway", "nat_gateway", "none"], route_table.gateway_type)
     ])
     error_message = "gateway_type must be one of internet_gateway, nat_gateway, none."
+  }
+  # エラーハンドリング5: route_table_listの数とsubnet_listの数が一致している必要がある
+  validation {
+    condition = length(var.route_table_list) == length(var.subnet_list)
+    error_message = "The number of route_table_list must match the number of subnet_list."
+  }
+  # エラーハンドリング6: publicルートテーブルはinternet_gatewayを、privateルートテーブルはnoneを指定する必要がある
+  validation {
+    condition = alltrue([
+      for rt in var.route_table_list : 
+      (rt.name == "public" && rt.gateway_type == "internet_gateway") ||
+      (rt.name == "private" && rt.gateway_type == "none") ||
+      (rt.name == "protected" && contains(["nat_gateway", "none"], rt.gateway_type))
+    ])
+    error_message = "public route table must specify internet_gateway, private route table must specify none, protected route table must specify nat_gateway or none."
+  }
+  # エラーハンドリング7: create_protected_ngw_associations = false の場合、protectedルートテーブルが存在してはいけない
+  validation {
+    condition = var.create_protected_ngw_associations || length([
+      for rt in var.route_table_list : rt if rt.name == "protected"
+    ]) == 0
+    error_message = "Protected route tables cannot exist when create_protected_ngw_associations is false."
+  }
+  # エラーハンドリング8: create_protected_ngw_associations = true の場合、protectedルートテーブルが存在する必要がある
+  validation {
+    condition = !var.create_protected_ngw_associations || length([
+      for rt in var.route_table_list : rt if rt.name == "protected"
+    ]) > 0
+    error_message = "When create_protected_ngw_associations is true, protected route tables must exist in route_table_list."
+  }
+  # エラーハンドリング9: protectedルートテーブルは少なくとも1つ以上nat_gateway_listのenabledがtrueである必要がある
+  validation {
+    condition = alltrue([
+      for rt in var.route_table_list : 
+      rt.name != "protected" || rt.gateway_type != "nat_gateway" || 
+      length([for ngw in var.nat_gateway_list : ngw if ngw.enabled]) > 0
+    ])
+    error_message = "When a protected route table uses nat_gateway, at least one NAT gateway must be enabled in nat_gateway_list."
+  }
+  # エラーハンドリング10: サブネットとルートテーブルの対応関係（同じAZ・同じタイプ）の整合性チェック
+  validation {
+    condition = alltrue([
+      for rt in var.route_table_list : 
+      length([for subnet in var.subnet_list : subnet if subnet.name == rt.subnet && subnet.type == rt.name]) > 0
+    ])
+    error_message = "Each route table must have a corresponding subnet with the same AZ and type."
   }
 }
 

@@ -1,61 +1,21 @@
 # ローカル変数の定義
-## NATゲートウェイの数を計算するロジック
+## NATゲートウェイの設定
 locals {
-  ### terraform.tfvarsのsubnet_listのnameからAZの数をチェック
+  ### terraform.tfvarsのsubnet_listの情報を抽出
   available_azs = length(distinct([for subnet in var.subnet_list : substr(subnet.name, -2, 2)]))
-  ### terraform.tfvarsのsubnet_listのtypeがprotectedのものが存在するかチェック
-  has_protected_subnets = length([for subnet in var.subnet_list : subnet if subnet.type == "protected"]) > 0
-  ### NATゲートウェイ設定の優先順位決定
-  # 1. nat_gateway_list (新しいlist型設定)
-  # 2. nat_gateway_count (従来の変数)
-  # 3. 自動計算 (後方互換性)
-  ### nat_gateway_listから有効なNATゲートウェイを抽出
-  enabled_nat_gateways = [for ngw in var.nat_gateway_list : ngw if ngw.enabled]
-  ### 後方互換性のためのデフォルトマッピングテーブル
-  default_nat_count_map = {
-    # dev環境（2az:0個か1個、3az:0個か1個）
-    "dev-2az-true"  = 1
-    "dev-3az-true"  = 1
-    "dev-2az-false" = 0
-    "dev-3az-false" = 0
-    # stg環境（2az:2個、3az:2個か3個）
-    "stg-2az-true"  = 2
-    "stg-3az-true"  = var.use_all_azs_for_nat ? 3 : 2
-    "stg-2az-false" = 0
-    "stg-3az-false" = 0
-    # prod環境（2az:2個、3az:2個か3個）
-    "prod-2az-true"  = 2
-    "prod-3az-true"  = var.use_all_azs_for_nat ? 3 : 2
-    "prod-2az-false" = 0
-    "prod-3az-false" = 0
-  }
-  ### キーを生成してマップから値を取得
-  lookup_key = "${var.environment_name}-${local.available_azs}az-${local.has_protected_subnets}"
-  ### 後方互換性のための従来ロジック
-  legacy_calculated_nat_count = var.enable_auto_nat_calculation ? lookup(local.default_nat_count_map, local.lookup_key, 0) : 0
-  ### 最終的なNATゲートウェイ数の決定（優先順位順）
-  final_nat_count = (
-    # 1. nat_gateway_listでの明示的指定
-    length(local.enabled_nat_gateways) > 0 ? length(local.enabled_nat_gateways) :
-    # 2. 従来のnat_gateway_count変数
-    var.nat_gateway_count != null ? var.nat_gateway_count :
-    # 3. 従来の自動計算（後方互換性）
-    local.legacy_calculated_nat_count
-  ) 
-  ### NATゲートウェイ配置用のpublic subnet（既存ロジック）
-  public_subnets = [for subnet in var.subnet_list : subnet if subnet.type == "public"]
-  ### NATゲートウェイを配置するサブネット名のリスト
-  nat_gateway_subnets = length(local.enabled_nat_gateways) > 0 ? [
-    # nat_gateway_listが指定されている場合は、enabledなAZのpublic subnetを使用
+  ### create_protected_ngw_associationsがfalseの場合はprotectedサブネット自体を除外
+  filtered_subnet_list = [
+    for subnet in var.subnet_list : subnet 
+    if var.create_protected_ngw_associations || subnet.type != "protected"
+  ]
+  has_protected_subnets = var.create_protected_ngw_associations && length([for subnet in var.subnet_list : subnet if subnet.type == "protected"]) > 0
+  ### NATゲートウェイ設定（nat_gateway_listのみ使用、ただしcreate_protected_ngw_associationsがfalseの場合は無効化）
+  enabled_nat_gateways = var.create_protected_ngw_associations ? [for ngw in var.nat_gateway_list : ngw if ngw.enabled] : []
+  final_nat_count = length(local.enabled_nat_gateways)
+  nat_gateway_subnets = [
     for ngw in local.enabled_nat_gateways : 
       { name = ngw.az, cidr_block = "", type = "public" }
-  ] : slice(local.public_subnets, 0, min(local.final_nat_count, length(local.public_subnets)))
-  ### 設定ソース情報
-  config_source = (
-    length(local.enabled_nat_gateways) > 0 ? "nat_gateway_list" :
-    var.nat_gateway_count != null ? "legacy_variable" :
-    "legacy_auto"
-  )
+  ]
 }
 
 # リソースの定義
@@ -72,7 +32,7 @@ resource "aws_vpc" "terra_vpc" {
 
 ## サブネットの作成
 resource "aws_subnet" "terra_subnet" {
-  for_each   = { for subnet in var.subnet_list : "${subnet.type}-${subnet.name}" => subnet if local.has_protected_subnets || subnet.type != "protected" }
+  for_each   = { for subnet in local.filtered_subnet_list : "${subnet.type}-${subnet.name}" => subnet }
   availability_zone = lookup({
     "1a" = "ap-northeast-1a",
     "1c" = "ap-northeast-1c",
@@ -134,25 +94,49 @@ resource "aws_route_table" "terra_route_table_public" {
 resource "aws_route_table" "terra_route_table_protected" {
   for_each = local.has_protected_subnets ? { for rt in var.route_table_list : rt.name == "protected" ? rt.subnet : "" => rt if rt.name == "protected" } : {}
   vpc_id   = aws_vpc.terra_vpc.id
-  
   dynamic "route" {
     for_each = local.final_nat_count > 0 ? [1] : []
     content {
       cidr_block = "0.0.0.0/0"
-      # 改善されたNATゲートウェイ選択ロジック
-      nat_gateway_id = local.final_nat_count == 1 ? aws_nat_gateway.terra_nat_gateway[0].id : (
-        # 完全一致する場合はそのNAT gatewayを使用
-        length([for ngw in aws_nat_gateway.terra_nat_gateway : ngw if can(regex(each.key, ngw.tags.Name))]) > 0 ?
-        [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex(each.key, ngw.tags.Name))][0] :
-        # フォールバック: 3AZ環境でNAT gateway数が少ない場合の賢い選択
-        # 1d → 最後のNAT gateway (通常1c), 1c → 最後から2番目または最後, 1a → 最初
-        each.key == "1d" ? aws_nat_gateway.terra_nat_gateway[local.final_nat_count - 1].id :
-        each.key == "1c" ? aws_nat_gateway.terra_nat_gateway[min(1, local.final_nat_count - 1)].id :
+      ### 要件に基づいたNATゲートウェイ選択ロジック
+      nat_gateway_id = (
+        ### 2AZ環境の場合（local.available_azs == 2）
+        local.available_azs == 2 ? (
+          ### NATゲートウェイが1つの場合：全てのprotectedサブネットが1aのNATゲートウェイを経由
+          local.final_nat_count == 1 ? 
+            aws_nat_gateway.terra_nat_gateway[0].id :
+          ### NATゲートウェイが2つの場合：各protectedサブネットが同じAZ内のNATゲートウェイを経由
+          (each.key == "1a" ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1a", ngw.tags.Name))][0] :
+           each.key == "1c" ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1c", ngw.tags.Name))][0] :
+           aws_nat_gateway.terra_nat_gateway[0].id)
+        ) :
+        ### 3AZ環境の場合（local.available_azs == 3）
+        local.available_azs == 3 ? (
+          ### NATゲートウェイが1つの場合：全てのprotectedサブネットが1aのNATゲートウェイを経由
+          local.final_nat_count == 1 ? 
+            aws_nat_gateway.terra_nat_gateway[0].id :
+          ### NATゲートウェイが2つの場合
+          local.final_nat_count == 2 ? (
+            each.key == "1a" ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1a", ngw.tags.Name))][0] :
+            ### 1cと1dは両方ともcのルートテーブルを使用
+            (each.key == "1c" || each.key == "1d") ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1c", ngw.tags.Name))][0] :
+            aws_nat_gateway.terra_nat_gateway[0].id
+          ) :
+          ### NATゲートウェイが3つの場合
+          local.final_nat_count == 3 ? (
+            each.key == "1a" ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1a", ngw.tags.Name))][0] :
+            each.key == "1c" ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1c", ngw.tags.Name))][0] :
+            each.key == "1d" ? [for ngw in aws_nat_gateway.terra_nat_gateway : ngw.id if can(regex("1d", ngw.tags.Name))][0] :
+            aws_nat_gateway.terra_nat_gateway[0].id
+          ) :
+          ### その他の場合（デフォルト）
+          aws_nat_gateway.terra_nat_gateway[0].id
+        ) :
+        ### その他の場合（1AZなど）
         aws_nat_gateway.terra_nat_gateway[0].id
       )
     }
   }
-  
   tags = {
     Name = "${var.system_name}-${var.environment_name}-protected-rtb-${each.key}"
   }
@@ -168,7 +152,7 @@ resource "aws_route_table" "terra_route_table_private" {
 
 ## サブネットとルートテーブルの関連付け
 resource "aws_route_table_association" "terra_route_table_association" {
-  for_each  = { for subnet in var.subnet_list : "${subnet.type}-${subnet.name}" => subnet if local.has_protected_subnets || subnet.type != "protected" }
+  for_each  = { for subnet in local.filtered_subnet_list : "${subnet.type}-${subnet.name}" => subnet }
   subnet_id = aws_subnet.terra_subnet[each.key].id
   route_table_id = lookup(
     merge(

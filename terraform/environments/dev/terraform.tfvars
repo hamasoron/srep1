@@ -12,31 +12,35 @@ caa_records = ["0 issue \"amazon.com\""]
 subject_alternative_names = ["*.srep1.jp"]
 
 ## VPC
-create_protected_ngw_associations = true
+create_protected_ngw_associations = true ### protected及びnat_gatewayを使用するか否か
 vpc_cidr                          = "10.0.64.0/19"
 map_public_ip_on_launch = true
-# NATゲートウェイ設定（新しいlist型）
-# dev環境：protectedがある時1個（1a）、ない時0個
 nat_gateway_list = [
-  { az = "1a", enabled = true },   # dev環境では1aにのみNAT gatewayを配置（コスト最優先）
+  { az = "1a", enabled = true }, ### dev環境：protectedがある時1個（1a）、ない時0個が推奨
   { az = "1c", enabled = false },
   { az = "1d", enabled = false },
 ]
 subnet_list = [
-  { name = "1a", cidr_block = "10.0.64.0/24", type = "public" },
+  { name = "1a", cidr_block = "10.0.64.0/24", type = "public" }, ### create_protected_ngw_associationsとnat_gateway_listに合わせて設定
   { name = "1c", cidr_block = "10.0.65.0/24", type = "public" },
-  { name = "1a", cidr_block = "10.0.66.0/24", type = "protected" },
-  { name = "1c", cidr_block = "10.0.67.0/24", type = "protected" },
-  { name = "1a", cidr_block = "10.0.68.0/24", type = "private" },
-  { name = "1c", cidr_block = "10.0.69.0/24", type = "private" },
+  { name = "1d", cidr_block = "10.0.66.0/24", type = "public" },
+  { name = "1a", cidr_block = "10.0.67.0/24", type = "protected" },
+  { name = "1c", cidr_block = "10.0.68.0/24", type = "protected" },
+  { name = "1d", cidr_block = "10.0.69.0/24", type = "protected" },
+  { name = "1a", cidr_block = "10.0.70.0/24", type = "private" },
+  { name = "1c", cidr_block = "10.0.71.0/24", type = "private" },
+  { name = "1d", cidr_block = "10.0.72.0/24", type = "private" },
 ]
 route_table_list = [
-  { name = "public", subnet = "1a", gateway_type = "internet_gateway" },
+  { name = "public", subnet = "1a", gateway_type = "internet_gateway" }, ### create_protected_ngw_associationsとnat_gateway_listに合わせて設定
   { name = "public", subnet = "1c", gateway_type = "internet_gateway" },
+  { name = "public", subnet = "1d", gateway_type = "internet_gateway" },
   { name = "protected", subnet = "1a", gateway_type = "nat_gateway" },
   { name = "protected", subnet = "1c", gateway_type = "nat_gateway" },
+  { name = "protected", subnet = "1d", gateway_type = "nat_gateway" },  
   { name = "private", subnet = "1a", gateway_type = "none" },
   { name = "private", subnet = "1c", gateway_type = "none" },
+  { name = "private", subnet = "1d", gateway_type = "none" },
 ]
 
 ## SG

@@ -42,33 +42,37 @@ module "sg" {
 
 ## IAM Roleのモジュール呼び出し
 module "iam_role" {
-  source      = "../../modules/iam_role"
-  github_repo = var.github_repo
+  source           = "../../modules/iam_role"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  github_repo      = var.github_repo
 }
 
 ## IAM AccessAnalyzerのモジュール呼び出し
 module "iam_accessanalyzer" {
-  source      = "../../modules/iam_accessanalyzer"
-  analyzer_type = var.analyzer_type
+  source           = "../../modules/iam_accessanalyzer"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  analyzer_type    = var.analyzer_type
 }
 
 ## CloudWatch Logsのモジュール呼び出し
 module "cloudwatch_logs" {
-  source             = "../../modules/cloudwatch_logs"
-  system_name        = var.system_name
-  environment_name   = var.environment_name
-  rds_log_configs    = var.rds_log_configs
-  ecs_log_configs    = var.ecs_log_configs
-  lambda_log_configs = var.lambda_log_configs
+  source                     = "../../modules/cloudwatch_logs"
+  system_name                = var.system_name
+  environment_name           = var.environment_name
+  rds_log_configs            = var.rds_log_configs
+  ecs_log_configs            = var.ecs_log_configs
+  lambda_log_configs         = var.lambda_log_configs
+  cloudwatch_logs_kms_key_id = var.cloudwatch_logs_kms_key_id
 }
 
 ## Secrets Managerのモジュール呼び出し
 module "secretsmanager" {
   source                    = "../../modules/secretsmanager"
-  region_name               = var.region_name
   system_name               = var.system_name
   environment_name          = var.environment_name
-  secrets_list = var.secrets_list
+  secrets_list              = var.secrets_list
   recovery_window_in_days   = var.recovery_window_in_days
   secretsmanager_kms_key_id = var.secretsmanager_kms_key_id
 }
@@ -83,6 +87,7 @@ module "rds" {
   rds_security_group_id                  = module.sg.sg_security_group_ids["rds"]
   available_azs_count                    = module.vpc.vpc_available_azs_count
   available_azs_names                    = module.vpc.vpc_available_azs_names
+  use_all_azs_for_aurora                 = var.use_all_azs_for_aurora
   ### クラスター関連
   db_engine                              = var.db_engine
   engine_version                         = var.engine_version
@@ -299,4 +304,3 @@ module "ecs" {
   ### その他（明示的な依存関係）
   depends_on                          = [module.vpc, module.iam_role, module.cloudwatch_logs, module.alb, module.ecr]
 }
-

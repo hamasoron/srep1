@@ -148,13 +148,21 @@ variable "available_azs_names" {
 }
 
 variable "cluster_instance_count" {
-  description = "環境別のAuroraインスタンス数設定（明示的に指定する場合）"
+  description = "Auroraインスタンス数の明示的指定（nullの場合は環境に応じて自動計算）"
   type        = number
   default     = null
+  validation {
+    condition     = var.cluster_instance_count == null ? true : (var.cluster_instance_count >= 1 && var.cluster_instance_count <= 3)
+    error_message = "cluster_instance_count must be between 1 and 3, or null for auto calculation."
+  }
 }
 
 variable "use_all_azs_for_aurora" {
-  description = "3AZ環境で全AZにAuroraインスタンスを配置するかどうか（false=2台、true=3台）"
+  description = "3AZ環境でのAuroraインスタンス配置戦略（false=2台でコスト重視、true=3台で可用性重視）"
   type        = bool
-  default     = true
+  default     = false  # コスト重視をデフォルトに変更
+  validation {
+    condition     = contains([true, false], var.use_all_azs_for_aurora)
+    error_message = "use_all_azs_for_aurora must be true or false."
+  }
 }

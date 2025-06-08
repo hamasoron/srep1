@@ -1,20 +1,23 @@
 # リソースの定義
-## ローカル変数でインスタンス数とAZ配置を計算
+## Aurora設定の自動計算ロジック
 locals {
-  # 環境別・AZ数別のインスタンス数決定ロジック
-  calculated_instance_count = var.cluster_instance_count != null ? var.cluster_instance_count : (
-    var.environment_name == "dev" ? 1 : (
-      # stg・prod環境：AZ数と設定に応じて台数決定
-      var.available_azs_count >= 3 ? (var.use_all_azs_for_aurora ? 3 : 2) : 2
-    )
-  )
-  # AZ配置戦略（VPCから動的に取得したAZを使用）
-  # VPCで実際に使用されているAZ名を順番に使用
-  az_mapping = var.available_azs_names
-  # インスタンス数に応じて使用するAZを決定
-  instance_azs = slice(local.az_mapping, 0, min(local.calculated_instance_count, length(local.az_mapping)))
-  # プロモーション階層の設定（writer=0、reader=1）
-  promotion_tiers = [for i in range(local.calculated_instance_count) : i == 0 ? 0 : 1]
+  ### インスタンス数の決定（環境とAZ数に基づく自動計算）
+  auto_calculated_count = {
+    # dev環境：常に1台（1a）
+    dev = 1
+    # stg・prod環境：AZ数と可用性戦略に応じて決定
+    stg = var.available_azs_count >= 3 ? (var.use_all_azs_for_aurora ? 3 : 2) : 2
+    prod = var.available_azs_count >= 3 ? (var.use_all_azs_for_aurora ? 3 : 2) : 2
+  }
+  
+  ### 最終的なインスタンス数（明示指定 > 自動計算）
+  final_instance_count = var.cluster_instance_count != null ? var.cluster_instance_count : local.auto_calculated_count[var.environment_name]
+  
+  ### AZ配置戦略（VPCから取得したAZを順番に使用）
+  instance_azs = slice(var.available_azs_names, 0, min(local.final_instance_count, length(var.available_azs_names)))
+  
+  ### プロモーション階層の設定（writer=0、reader=1）
+  promotion_tiers = [for i in range(local.final_instance_count) : i == 0 ? 0 : 1]
 }
 
 ## クラスター用の一意なスナップショットIDの生成（skip_final_snapshotがfalseの場合に使用）
@@ -75,7 +78,7 @@ resource "aws_db_subnet_group" "terra_db_subnet_group" {
 
 ## Aurora MySQL インスタンス作成（環境・AZ数に応じた台数）
 resource "aws_rds_cluster_instance" "terra_rds_cluster_instance" {
-  count                   = local.calculated_instance_count
+  count                   = local.final_instance_count
   identifier              = "${var.system_name}-${var.environment_name}-aurora-instance-${count.index}"
   cluster_identifier      = aws_rds_cluster.terra_rds_cluster.id
   promotion_tier          = local.promotion_tiers[count.index]

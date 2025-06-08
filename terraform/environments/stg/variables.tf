@@ -1,18 +1,30 @@
 # 変数の定義
 ## 全般
 variable "region_name" {
-  description = "The region name."
+  description = "Region name."
   type = string
+  validation {
+    condition     = contains(["ap-northeast-1"], var.region_name)
+    error_message = "region_name must be one of ap-northeast-1."
+  }
 }
 
 variable "system_name" {
-  description = "The system name."
+  description = "System name."
   type = string
+  validation {
+    condition     = length(var.system_name) > 0
+    error_message = "system_name must not be empty."
+  }
 }
 
 variable "environment_name" {
-  description = "The environment name."
+  description = "Environment name."
   type = string
+  validation {
+    condition     = contains(["prod", "stg", "dev"], var.environment_name)
+    error_message = "environment_name must be one of prod, stg, dev."
+  }
 }
 
 ## Route53 Zone
@@ -24,74 +36,173 @@ variable "route53_force_destroy" {
 variable "caa_records" {
   description = "CAA records for the domain."
   type        = list(string)
+  validation {
+    condition     = length(var.caa_records) > 0
+    error_message = "At least one CAA record must be specified in caa_records." ##### specify: 指定する
+  }
 }
 
 ## ACM
 variable "subject_alternative_names" {
-  description = "The subject alternative names."
+  description = "Subject alternative names."
   type = list(string)
+  validation {
+    condition     = alltrue([for v in var.subject_alternative_names : length(v) > 0])
+    error_message = "All subject alternative names must not be empty."
+  }
 }
 
 ## VPC
 variable "create_protected_ngw_associations" {
-  description = "プロテクテッドサブネット及びNATゲートウェイ関連の作成有無"
+  description = "Whether to create protected subnet and NAT gateway association"
   type = bool
 }
 
-# NATゲートウェイ設定（既存のsubnet_list、route_table_listパターンに合わせたlist型）
 variable "nat_gateway_list" {
-  description = "NATゲートウェイの設定リスト（各AZごとの有効/無効を明示的に指定）"
+  description = "NAT Gateway Setting List (explicitly specify enabled/disabled for each AZ)"
   type = list(object({
     az      = string
     enabled = bool
-    # 将来の拡張用（optional）
-    instance_type = optional(string, "default")
-    bandwidth     = optional(string, "default")
   }))
-  default = [
-    { az = "1a", enabled = false },
-    { az = "1c", enabled = false },
-    { az = "1d", enabled = false },
-  ]
   validation {
     condition = alltrue([
       for ngw in var.nat_gateway_list : contains(["1a", "1c", "1d"], ngw.az)
     ])
-    error_message = "azは1a、1c、1dのいずれかである必要があります。"
+    error_message = "az must be one of 1a, 1c, 1d."
+  }
+  # エラーハンドリング1: nat_gateway_listでenabledがtrueの場合、create_protected_ngw_associationsもtrueである必要がある
+  validation {
+    condition = length([for ngw in var.nat_gateway_list : ngw if ngw.enabled]) == 0 || var.create_protected_ngw_associations
+    error_message = "When any NAT gateway is enabled, create_protected_ngw_associations must be true."
   }
 }
 
 variable "vpc_cidr" {
-  description = "VPCのCIDRブロック"
+  description = "CIDR block of the VPC"
   type = string
 }
 
+variable "map_public_ip_on_launch" {
+  description = "Whether to automatically attach an Internet Gateway when launching a public subnet"
+  type = bool
+}
+
 variable "subnet_list" {
-  description = "サブネットのリスト"
+  description = "List of subnets"
   type = list(object({
     name       = string
     cidr_block = string
     type       = string
   }))
-}
-
-variable "map_public_ip_on_launch" {
-  description = "パブリックサブネットの場合、インターネットゲートウェイを起動時に自動的にアタッチするかどうか"
-  type = bool
+  validation {
+    condition = alltrue([
+      for subnet in var.subnet_list : contains(["1a", "1c", "1d"], subnet.name)
+    ])
+    error_message = "name must be one of 1a, 1c, 1d."
+  }
+  validation {
+    condition = alltrue([
+      for subnet in var.subnet_list : contains(["public", "protected", "private"], subnet.type)
+    ])
+    error_message = "type must be one of public, protected, private."
+  }
+  # エラーハンドリング2: create_protected_ngw_associations = false の場合、protectedサブネットが存在してはいけない
+  validation {
+    condition = var.create_protected_ngw_associations || length([
+      for subnet in var.subnet_list : subnet if subnet.type == "protected"
+    ]) == 0
+    error_message = "Protected subnets cannot exist when create_protected_ngw_associations is false."
+  }
+  # エラーハンドリング3: create_protected_ngw_associations = true の場合、protectedサブネットが存在する必要がある
+  validation {
+    condition = !var.create_protected_ngw_associations || length([
+      for subnet in var.subnet_list : subnet if subnet.type == "protected"
+    ]) > 0
+    error_message = "When create_protected_ngw_associations is true, protected subnets must exist in subnet_list."
+  }
+  # エラーハンドリング4: subnet_listのtypeにprotectedが存在する場合、少なくとも1つ以上nat_gateway_listのenabledがtrueである必要がある
+  validation {
+    condition = length([for subnet in var.subnet_list : subnet if subnet.type == "protected"]) == 0 || length([for ngw in var.nat_gateway_list : ngw if ngw.enabled]) > 0
+    error_message = "When protected subnets exist, at least one NAT gateway must be enabled in nat_gateway_list."
+  }
 }
 
 variable "route_table_list" {
-  description = "ルートテーブルのリスト"
+  description = "List of route table"
   type = list(object({
     name         = string
     subnet       = string
     gateway_type = string
   }))
+  validation {
+    condition = alltrue([
+      for route_table in var.route_table_list : contains(["public", "protected", "private"], route_table.name)
+    ])
+    error_message = "name must be one of public, protected, private."
+  }
+  validation {
+    condition = alltrue([
+      for route_table in var.route_table_list : contains(["1a", "1c", "1d"], route_table.subnet)
+    ])
+    error_message = "subnet must be one of 1a, 1c, 1d."
+  }
+  validation {
+    condition = alltrue([
+      for route_table in var.route_table_list : contains(["internet_gateway", "nat_gateway", "none"], route_table.gateway_type)
+    ])
+    error_message = "gateway_type must be one of internet_gateway, nat_gateway, none."
+  }
+  # エラーハンドリング5: route_table_listの数とsubnet_listの数が一致している必要がある
+  validation {
+    condition = length(var.route_table_list) == length(var.subnet_list)
+    error_message = "The number of route_table_list must match the number of subnet_list."
+  }
+  # エラーハンドリング6: publicルートテーブルはinternet_gatewayを、privateルートテーブルはnoneを指定する必要がある
+  validation {
+    condition = alltrue([
+      for rt in var.route_table_list : 
+      (rt.name == "public" && rt.gateway_type == "internet_gateway") ||
+      (rt.name == "private" && rt.gateway_type == "none") ||
+      (rt.name == "protected" && contains(["nat_gateway", "none"], rt.gateway_type))
+    ])
+    error_message = "public route table must specify internet_gateway, private route table must specify none, protected route table must specify nat_gateway or none."
+  }
+  # エラーハンドリング7: create_protected_ngw_associations = false の場合、protectedルートテーブルが存在してはいけない
+  validation {
+    condition = var.create_protected_ngw_associations || length([
+      for rt in var.route_table_list : rt if rt.name == "protected"
+    ]) == 0
+    error_message = "Protected route tables cannot exist when create_protected_ngw_associations is false."
+  }
+  # エラーハンドリング8: create_protected_ngw_associations = true の場合、protectedルートテーブルが存在する必要がある
+  validation {
+    condition = !var.create_protected_ngw_associations || length([
+      for rt in var.route_table_list : rt if rt.name == "protected"
+    ]) > 0
+    error_message = "When create_protected_ngw_associations is true, protected route tables must exist in route_table_list."
+  }
+  # エラーハンドリング9: protectedルートテーブルは少なくとも1つ以上nat_gateway_listのenabledがtrueである必要がある
+  validation {
+    condition = alltrue([
+      for rt in var.route_table_list : 
+      rt.name != "protected" || rt.gateway_type != "nat_gateway" || 
+      length([for ngw in var.nat_gateway_list : ngw if ngw.enabled]) > 0
+    ])
+    error_message = "When a protected route table uses nat_gateway, at least one NAT gateway must be enabled in nat_gateway_list."
+  }
+  # エラーハンドリング10: サブネットとルートテーブルの対応関係（同じAZ・同じタイプ）の整合性チェック
+  validation {
+    condition = alltrue([
+      for rt in var.route_table_list : 
+      length([for subnet in var.subnet_list : subnet if subnet.name == rt.subnet && subnet.type == rt.name]) > 0
+    ])
+    error_message = "Each route table must have a corresponding subnet with the same AZ and type."
+  }
 }
 
 ## SG
 variable "sg_definitions" {
-  description = "セキュリティグループのリスト"
+  description = "Security group list"
   type = map(object({
     description = string
     ingress = list(object({
@@ -114,55 +225,116 @@ variable "sg_definitions" {
 
 ## IAM Role
 variable "github_repo" {
-  description = "GitHub リポジトリ名（組織名/リポジトリ名形式）"
+  description = "GitHub repository name (owner/repository format, e.g. your-account-or-org/your-repo)"
   type        = string
+  validation {
+    condition     = can(regex("^[^/]+/[^/]+$", var.github_repo)) #### 正規表現。先頭から末尾まで「スラッシュを含まない1文字以上の文字列」/「スラッシュを含まない1文字以上の文字列。
+    error_message = "github_repo must be in 'owner/repository' format (your-account-or-organization/your-repo)."
+  }
 }
 
 ## IAM AccessAnalyzer
 variable "analyzer_type" {
-  description = "アナライザーのタイプ（ACCOUNT or ORGANIZATION）"
+  description = "Type of analyzer (ACCOUNT or ORGANIZATION)"
   type        = string
+  validation {
+    condition     = contains(["ACCOUNT", "ORGANIZATION"], var.analyzer_type)
+    error_message = "analyzer_type must be one of ACCOUNT, ORGANIZATION."
+  }
 }
-
 
 ## CloudWatch Logs
 variable "rds_log_configs" {
-  description = "RDSログの設定"
+  description = "RDS log configurations"
   type = list(object({
     name                     = string
     retention_in_days        = number
   }))
+  validation {
+    condition = alltrue([
+      for v in var.rds_log_configs : contains(
+        [
+          0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,
+          400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
+        ],
+        v.retention_in_days
+      )
+    ])
+    error_message = "retention_in_days must be a valid value: 0 (forever), or one of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653."
+  }
 }
 
 variable "ecs_log_configs" {
-  description = "ECSログの設定"
+  description = "ECS log configurations"
   type        = list(object({
     name = string
     retention_in_days = number
   }))
+  validation {  
+    condition = alltrue([
+      for v in var.ecs_log_configs : contains(
+        [
+          0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,
+          400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
+        ],
+        v.retention_in_days
+      )
+    ])
+    error_message = "retention_in_days must be a valid value: 0 (forever), or one of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653."
+  }
 }
 
 variable "lambda_log_configs" {
-  description = "Lambdaログの設定"
+  description = "Lambda log configurations"
   type = list(object({
     name                     = string
     retention_in_days        = number
   }))
+  validation {
+    condition = alltrue([
+      for v in var.lambda_log_configs : contains(
+        [
+          0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,
+          400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
+        ],
+        v.retention_in_days
+      )
+    ])
+    error_message = "retention_in_days must be a valid value: 0 (forever), or one of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653."
+  }
+}
+
+variable "cloudwatch_logs_kms_key_id" {
+  description = "CloudWatch Logs KMS key ID"
+  type        = string
+  default     = null
+  validation {
+    condition     = var.cloudwatch_logs_kms_key_id == null || can(length(var.cloudwatch_logs_kms_key_id) > 0)
+    error_message = "cloudwatch_logs_kms_key_id must be null or a non-empty string."
+  }
 }
 
 ## Secrets Manager
 variable "recovery_window_in_days" {
-  description = "削除後の復旧ウィンドウ（日数）"
+  description = "Recovery window in days after deletion"
   type        = number
+  validation {
+    condition     = var.recovery_window_in_days >= 0
+    error_message = "recovery_window_in_days must be greater than or equal to 0."
+  }
 }
 
 variable "secretsmanager_kms_key_id" {
-  description = "シークレットマネージャーのKMSキーID"
+  description = "KMS key ID for SecretsManager"
   type        = string
+  validation {
+    condition     = var.secretsmanager_kms_key_id == null || can(length(var.secretsmanager_kms_key_id) > 0)
+    error_message = "secretsmanager_kms_key_id must be null or a non-empty string."
+  }
 }
 
 variable "secrets_list" {
-  description = "SecretsManagerで管理されたシークレットのリスト"
+  description = "List of secrets managed by SecretsManager"
   type = list(object({
     name     = string
     username = string
@@ -265,6 +437,12 @@ variable "enable_performance_insights" {
 variable "monitoring_interval" {
   description = "モニタリング間隔"
   type        = number
+}
+
+variable "use_all_azs_for_aurora" {
+  description = "3AZ環境で全AZにAuroraインスタンスを配置するかどうか（false=2台構成、true=3台構成）"
+  type        = bool
+  default     = false
 }
 
 ## Lambda
