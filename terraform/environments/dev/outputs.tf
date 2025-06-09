@@ -111,6 +111,11 @@ output "ecs_log_group_names" {
   value = module.cloudwatch_logs.ecs_log_group_names
 }
 
+output "lambda_log_group_names" {
+  description = "Map of CloudWatch log group names (used by Lambda module)"
+  value = module.cloudwatch_logs.lambda_log_group_names
+}
+
 ## Secrets Manager
 output "secretsmanager_secret_arns" {
   description = "Map of secret ARNs (used by Lambda module for secret-related settings)"

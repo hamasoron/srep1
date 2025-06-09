@@ -305,7 +305,7 @@ variable "lambda_log_configs" {
 }
 
 variable "cloudwatch_logs_kms_key_id" {
-  description = "CloudWatch Logs KMS key ID"
+  description = "ID of KMS key for CloudWatch Logs"
   type        = string
   default     = null
   validation {

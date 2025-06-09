@@ -81,7 +81,7 @@ variable "lambda_log_configs" {
 }
 
 variable "cloudwatch_logs_kms_key_id" {
-  description = "CloudWatch Logs KMS key ID. Set null to use default AWS managed key."
+  description = "ID of KMS key for CloudWatch Logs."
   type        = string
   validation {
     condition     = var.cloudwatch_logs_kms_key_id == null || can(length(var.cloudwatch_logs_kms_key_id) > 0)
