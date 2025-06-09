@@ -87,7 +87,7 @@ resource "aws_iam_role" "terra_iam_role_lambda_app_rotation" {
   }
 }
 
-## RDS Enhanced Monitoringロールを作成
+## RDSの拡張モニタリング用のIAMロールを作成
 resource "aws_iam_role" "terra_iam_role_rds_enhanced_monitoring" {
   name = "CustomRDSEnhancedMonitoringRole"
   description = "Custom IAM role for RDS enhanced monitoring"
