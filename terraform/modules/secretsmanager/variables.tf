@@ -1,7 +1,7 @@
 # 変数の定義
 ## 全般
 variable "system_name" {
-  description = "The system name"
+  description = "System name"
   type        = string
   validation {
     condition     = length(var.system_name) > 0
@@ -10,7 +10,7 @@ variable "system_name" {
 }
 
 variable "environment_name" {
-  description = "The environment name"
+  description = "Environment name"
   type        = string
   validation {
     condition     = contains(["prod", "stg", "dev"], var.environment_name)
@@ -19,28 +19,28 @@ variable "environment_name" {
 }
 
 ## Secrets Manager
+variable "secrets_list" {
+  description = "List of secrets managed by SecretsManager"
+  type = list(object({
+    name     = string
+    username = string
+  }))
+}
+
 variable "recovery_window_in_days" {
-  description = "The recovery window in days after deletion"
+  description = "Recovery window in days after deletion"
   type        = number
   validation {
-    condition     = var.recovery_window_in_days >= 0
-    error_message = "recovery_window_in_days must be greater than or equal to 0."
-  }
+    condition     = var.recovery_window_in_days == 0 || (var.recovery_window_in_days >= 7 && var.recovery_window_in_days <= 30)
+    error_message = "recovery_window_in_days must be 0 or an integer between 7 and 30."
+}
 }
 
 variable "secretsmanager_kms_key_id" {
-  description = "The KMS key ID for SecretsManager"
+  description = "ID of KMS key for SecretsManager"
   type        = string
   validation {
     condition     = var.secretsmanager_kms_key_id == null || can(length(var.secretsmanager_kms_key_id) > 0)
     error_message = "secretsmanager_kms_key_id must be null or a non-empty string."
   }
-}
-
-variable "secrets_list" {
-  description = "The list of secrets managed by SecretsManager"
-  type = list(object({
-    name     = string
-    username = string
-  }))
 }

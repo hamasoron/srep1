@@ -1,12 +1,20 @@
 # リソースの定義
-## AWS Secrets Manager APIを使用したランダムパスワード（20文字）の生成
-data "aws_secretsmanager_random_password" "terra_secretsmanager_secret_password" {
+## Randomプロバイダーを使用したランダムパスワード（20文字）の生成
+resource "random_password" "terra_secretsmanager_secret_password" {
   for_each         = { for secret in var.secrets_list : secret.name => secret }
-  password_length  = 20 ##### パスワードの長さを20文字に設定
-  exclude_numbers  = false ##### 数字を除外しない
-  exclude_characters = "/'\"@"  ##### Auroraが非対応の特殊文字を除外: /, ', ", @
-  include_space    = false ##### スペースを含めない
-  require_each_included_type = true ##### パスワードに各種文字（英字、数字、記号）を含める
+  length           = 20 ##### パスワードの長さを20文字に設定
+  numeric          = true ##### 数字を含める
+  special          = true ##### 特殊文字を含める
+  override_special = "!#$%&*()-_=+[]{}<>:;.," ##### 使用する特殊文字を指定（Auroraが非対応の /, ', ", @ を除外）
+  upper            = true ##### 大文字を含める
+  lower            = true ##### 小文字を含める
+  min_lower        = 1 ##### 小文字を最低1文字含める
+  min_upper        = 1 ##### 大文字を最低1文字含める
+  min_numeric      = 1 ##### 数字を最低1文字含める
+  min_special      = 1 ##### 特殊文字を最低1文字含める
+  keepers = {
+    username = each.value.username ##### usernameが変更された時のみリソースを再生成
+  }
 }
 
 ## RDS（Aurora）シークレットの作成
@@ -27,6 +35,6 @@ resource "aws_secretsmanager_secret_version" "terra_secretsmanager_secret_versio
   secret_id     = aws_secretsmanager_secret.terra_secretsmanager_secret[each.key].id
   secret_string = jsonencode({
     username = each.value.username
-    password = data.aws_secretsmanager_random_password.terra_secretsmanager_secret_password[each.key].random_password
+    password = random_password.terra_secretsmanager_secret_password[each.key].result
   })
 }

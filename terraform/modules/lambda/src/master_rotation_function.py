@@ -5,7 +5,7 @@ import sys ### システム操作（Pythonパスの操作）
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib')) ### libディレクトリをPythonパスに追加（外部ライブラリをimportするための作業ディレクトリを指定）
 import json ### JSON操作
 import logging ### ログ出力
-import random ### 乱数生成
+import secrets ### 暗号学的に安全な乱数生成
 import string ### 文字列操作
 ## 外部ライブラリ
 import boto3 ### AWS SDK（import ライブラリ名）
@@ -87,7 +87,7 @@ def create_new_secret_value(current_secret):
     
     if 'password' in new_secret: ## new_secret変数の値の中にpasswordキーが含まれている場合
         characters = string.ascii_letters + string.digits + "!#$%&*()-_=+[]{}<>:;.," ## パスワードの生成に使用できる文字列を定義（/,',",@はAuroraが非対応）
-        new_secret['password'] = ''.join(random.choice(characters) for _ in range(20)) ## 20文字のランダムな文字列を生成し、new_secret変数のpasswordキーの値として設定
+        new_secret['password'] = ''.join(secrets.choice(characters) for _ in range(20)) ## 20文字のランダムな文字列を生成し、new_secret変数のpasswordキーの値として設定
     
     return new_secret ## new_secret変数の値を戻り値として返す
 
