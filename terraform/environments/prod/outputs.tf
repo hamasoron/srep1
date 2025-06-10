@@ -28,75 +28,75 @@ output "vpc_create_protected_ngw_associations" {
 }
 
 output "vpc_nat_gateway_ids" {
-  description = "The list of NAT Gateway IDs"
+  description = "List of NAT Gateway IDs"
   value = module.vpc.vpc_nat_gateway_ids
 }
 
 output "vpc_id" {
-  description = "The ID of the VPC (used in SG, ALB module, etc.)"
+  description = "ID of the VPC (used in SG, ALB module, etc.)"
   value = module.vpc.vpc_id
 }
 
 output "vpc_public_subnet_ids" {
-  description = "The ID of the public subnet (always get the ID of the public subnet that changes dynamically according to the AZ and NAT configuration. Used in ALB module, etc.)"
+  description = "ID of the public subnet (always get the ID of the public subnet that changes dynamically according to the AZ and NAT configuration. Used in ALB module, etc.)"
   value = module.vpc.vpc_public_subnet_ids
 }
 
 output "vpc_private_subnet_ids" {
-  description = "The ID of the private subnet (always get the ID of the private subnet that changes dynamically according to the AZ and NAT configuration. Used in RDS module, etc.)"
+  description = "ID of the private subnet (always get the ID of the private subnet that changes dynamically according to the AZ and NAT configuration. Used in RDS module, etc.)"
   value = module.vpc.vpc_private_subnet_ids
 }
 
 output "vpc_protected_subnet_ids" {
-  description = "The ID of the protected subnet (always get the ID of the protected subnet that changes dynamically according to the AZ and NAT configuration. Used in RDS module, etc.)"
+  description = "ID of the protected subnet (always get the ID of the protected subnet that changes dynamically according to the AZ and NAT configuration. Used in RDS module, etc.)"
   value = module.vpc.vpc_protected_subnet_ids
 }
 
 output "vpc_route_table_ids" {
-  description = "The ID of the route table"
+  description = "ID of the route table"
   value = module.vpc.vpc_route_table_ids
 }
 
-output "vpc_available_azs_count" {
-  description = "Number of available AZs determined by subnet configuration (used in RDS module for instance count calculation)"
-  value = module.vpc.vpc_available_azs_count
+output "vpc_available_azs_names" {
+  description = "List of actual AZ names used in VPC subnet configuration (used in RDS module for dynamic AZ mapping)"
+  value = module.vpc.vpc_available_azs_names
 }
 
 ## SG
 output "sg_security_group_ids" {
-  description = "Security group IDs (used by RDS, Lambda, ALB, ECS, etc.)"
+  description = "IDs of security groups (used by RDS, Lambda, ALB, ECS, CloudShell etc.)"
   value = module.sg.sg_security_group_ids
 }
 
 ## IAM Role
 output "iam_role_ecs_task_role_arn" {
-  description = "ECS task role ARN (used by ECS module.)"
+  description = "ARN of the ECS task role (used by ECS module.)"
   value = module.iam_role.iam_role_ecs_task_role_arn
 }
   
 output "iam_role_ecs_task_execution_role_arn" {
-  description = "ECS task execution role ARN (used by ECS module.)"
+  description = "ARN of the ECS task execution role (used by ECS module.)"
   value = module.iam_role.iam_role_ecs_task_execution_role_arn
 }
 
 output "iam_role_lambda_master_rotation_arn" {
-  description = "Master user Lambda function role ARN (used by Lambda module.)"
+  description = "ARN of the master user Lambda function role (used by Lambda module.)"
   value = module.iam_role.iam_role_lambda_master_rotation_arn
 }
 
 output "iam_role_lambda_app_rotation_arn" {
-  description = "App user Lambda function role ARN (used by Lambda module.)"
+  description = "ARN of the app user Lambda function role (used by Lambda module.)"
   value = module.iam_role.iam_role_lambda_app_rotation_arn
 }
 
 output "iam_role_github_actions_role_arn" {
-  description = "GitHub Actions role ARN (used for copying to AWS_ROLE_TO_ASSUME in GitHub Secrets and Variables)"
+  description = "ARN of the GitHub Actions role (used for copying to AWS_ROLE_TO_ASSUME in GitHub Secrets and Variables)"
   value = module.iam_role.iam_role_github_actions_role_arn
 }
 
 ## IAM AccessAnalyzer
 output "iam_accessanalyzer_arn" {
-  description = "Analyzer ARN"
+  description = "ARN of the IAM AccessAnalyzer"
   value = module.iam_accessanalyzer.iam_accessanalyzer_arn
 }
 
@@ -109,6 +109,11 @@ output "rds_log_group_names" {
 output "ecs_log_group_names" {
   description = "Map of CloudWatch log group names (used by ECS module)"
   value = module.cloudwatch_logs.ecs_log_group_names
+}
+
+output "lambda_log_group_names" {
+  description = "Map of CloudWatch log group names (used by Lambda module)"
+  value = module.cloudwatch_logs.lambda_log_group_names
 }
 
 ## Secrets Manager
@@ -125,33 +130,38 @@ output "secretsmanager_master_credentials_json" {
 
 ## RDS
 output "rds_cluster_id" {
-  description = "AuroraクラスターのID"
+  description = "ID of the Aurora cluster"
   value = module.rds.rds_cluster_id
 }
 
 output "rds_cluster_writer_endpoint" {
-  description = "Auroraクラスターの書き込み用エンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  description = "Writer endpoint of the Aurora cluster (used in ECS module.)"
   value = module.rds.rds_cluster_writer_endpoint
 }
 
 output "rds_cluster_reader_endpoint" {
-  description = "Auroraクラスターの読み込み用エンドポイント（ECSモジュールの環境変数の設定等で使用）"
+  description = "Reader endpoint of the Aurora cluster (used in ECS module.)"
   value = module.rds.rds_cluster_reader_endpoint
 }
 
 output "rds_cluster_port" {
-  description = "Aurora クラスターのポート番号（ECSモジュールの環境変数の設定等で使用）"
+  description = "Port number of the Aurora cluster (used in Lambda module, ECS module.)"
   value = module.rds.rds_cluster_port
 }
 
 output "rds_cluster_database_name" {
-  description = "Aurora クラスターのデフォルトデータベース名（ECSモジュールの環境変数の設定等で使用）"
+  description = "Default database name of the Aurora cluster (used in ECS module.)"
   value = module.rds.rds_cluster_database_name
 }
 
 output "rds_cluster_instance_details" {
-  description = "Aurora クラスターのインスタンス詳細（ECSモジュールの環境変数の設定等で使用）"
+  description = "Detailed information of the Aurora instances (ID, AZ, role)"
   value = module.rds.rds_cluster_instance_details
+}
+
+output "rds_cluster_identifier" {
+  description = "Identifier of the Aurora cluster (used in Lambda module for master user rotation only. Not used for app user rotation.)"
+  value = module.rds.rds_cluster_identifier
 }
 
 ## Lambda

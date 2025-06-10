@@ -57,11 +57,6 @@ output "vpc_route_table_ids" {
   value = module.vpc.vpc_route_table_ids
 }
 
-output "vpc_available_azs_count" {
-  description = "Number of available AZs determined by subnet configuration (used in RDS module for instance count calculation)"
-  value = module.vpc.vpc_available_azs_count
-}
-
 ## SG
 output "sg_security_group_ids" {
   description = "Security group IDs (used by RDS, Lambda, ALB, ECS, etc.)"

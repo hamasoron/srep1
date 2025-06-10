@@ -49,8 +49,3 @@ output "vpc_available_azs_names" {
     }, substr(subnet.name, -2, 2), "ap-northeast-1a")
   ])
 }
-
-output "vpc_available_azs_count" {
-  description = "Number of available AZs determined by subnet configuration (used in RDS module for instance count calculation)"
-  value       = local.available_azs
-}

@@ -80,14 +80,12 @@ module "secretsmanager" {
 ## RDSのモジュール呼び出し
 module "rds" {
   source                                 = "../../modules/rds"
-  region_name                            = var.region_name
   system_name                            = var.system_name
   environment_name                       = var.environment_name
   private_subnet_ids                     = values(module.vpc.vpc_private_subnet_ids)
   rds_security_group_id                  = module.sg.sg_security_group_ids["rds"]
-  available_azs_count                    = module.vpc.vpc_available_azs_count
   available_azs_names                    = module.vpc.vpc_available_azs_names
-  use_all_azs_for_aurora                 = var.use_all_azs_for_aurora
+  deployment_mode                        = var.deployment_mode
   ### クラスター関連
   db_engine                              = var.db_engine
   engine_version                         = var.engine_version
@@ -103,14 +101,17 @@ module "rds" {
   apply_immediately                      = var.apply_immediately
   preferred_maintenance_window_cluster   = var.preferred_maintenance_window_cluster
   enabled_cloudwatch_logs_exports        = var.enabled_cloudwatch_logs_exports
+  performance_insights_enabled           = var.performance_insights_enabled
+  performance_insights_retention_period  = var.performance_insights_retention_period
+  performance_insights_kms_key_id        = var.performance_insights_kms_key_id
+  monitoring_interval                    = var.monitoring_interval
+  monitoring_role_arn                    = var.monitoring_role_arn
   copy_tags_to_snapshot                  = var.copy_tags_to_snapshot
   ### インスタンス関連
-  promotion_tier                         = var.promotion_tier
   instance_class                         = var.instance_class
-  preferred_maintenance_window_instanceA = var.preferred_maintenance_window_instanceA
   auto_minor_version_upgrade             = var.auto_minor_version_upgrade
-  enable_performance_insights            = var.enable_performance_insights
-  monitoring_interval                    = var.monitoring_interval
+  preferred_maintenance_window_base      = var.preferred_maintenance_window_base
+  publicly_accessible                    = var.publicly_accessible
   ### その他（明示的な依存関係）
   depends_on                             = [module.cloudwatch_logs, module.secretsmanager]
 }

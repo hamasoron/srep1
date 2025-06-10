@@ -135,16 +135,18 @@ rds_kms_key_id                         = null
 apply_immediately                      = false
 preferred_maintenance_window_cluster   = "tue:16:45-tue:17:15"
 enabled_cloudwatch_logs_exports        = ["error", "slowquery"]
+performance_insights_enabled           = false
+performance_insights_retention_period  = 7
+performance_insights_kms_key_id        = null
+monitoring_interval                    = 0
+monitoring_role_arn                    = null
 copy_tags_to_snapshot                  = true
 ### インスタンス関連
-promotion_tier                         = 1
 instance_class                         = "db.t4g.medium"
-preferred_maintenance_window_instanceA = "tue:17:15-tue:17:45"
 auto_minor_version_upgrade             = true
-enable_performance_insights            = false
-monitoring_interval                    = 0
-### Aurora 3AZ設定
-use_all_azs_for_aurora                 = false  ##### dev環境：コスト重視で1台構成（この設定は実際にはdev環境では無視される）
+preferred_maintenance_window_base      = "tue:17:15-tue:17:45"
+publicly_accessible                    = false
+deployment_mode                        = "writer_only"
 
 ## Lambda
 memory_size      = 128
