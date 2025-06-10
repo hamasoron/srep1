@@ -34,18 +34,26 @@ locals {
   ### プロモーション階層の設定（writer=0、reader=1）
   promotion_tiers = [for i in range(local.final_instance_count) : i == 0 ? 0 : 1]
   
-  ### メンテナンスウィンドウの自動生成（実用的なパターン）
-  maintenance_windows = local.final_instance_count == 1 ? [
-    var.preferred_maintenance_window_base
-  ] : local.final_instance_count == 2 ? [
-    var.preferred_maintenance_window_base,
-    # 30分後にずらす（例：17:15 → 17:45）。2台目は1台目の30分後
-    "${split(":", var.preferred_maintenance_window_base)[0]}:17:45-${split(":", var.preferred_maintenance_window_base)[0]}:18:15"
-  ] : [
-    var.preferred_maintenance_window_base,
-    # 30分後、60分後にずらす。3台目は1台目の30分後、60分後
-    "${split(":", var.preferred_maintenance_window_base)[0]}:17:45-${split(":", var.preferred_maintenance_window_base)[0]}:18:15",
-    "${split(":", var.preferred_maintenance_window_base)[0]}:18:15-${split(":", var.preferred_maintenance_window_base)[0]}:18:45"
+  ### メンテナンスウィンドウの自動生成（基準時刻から動的に計算）
+  # 基準時刻（var.preferred_maintenance_window_base）から情報を抽出（形式：tue:17:15-tue:17:45）
+  base_start_part = split("-", var.preferred_maintenance_window_base)[0]  # 「-」で区切る。"tue:17:15"
+  base_parts = split(":", local.base_start_part)  # 「:」で区切る。["tue", "17", "15"]
+  base_day = local.base_parts[0]
+  base_hour = tonumber(local.base_parts[1])
+  base_minute = tonumber(local.base_parts[2])
+  
+  # 各インスタンス用のメンテナンスウィンドウを生成
+  maintenance_windows = [
+    for i in range(local.final_instance_count) : 
+    i == 0 ? var.preferred_maintenance_window_base : format(
+      "%s:%02d:%02d-%s:%02d:%02d",
+      local.base_day,
+      floor((local.base_minute + i * 30) / 60) + local.base_hour,
+      (local.base_minute + i * 30) % 60,
+      local.base_day,
+      floor((local.base_minute + i * 30 + 30) / 60) + local.base_hour,
+      (local.base_minute + i * 30 + 30) % 60
+    )
   ]
 }
 
