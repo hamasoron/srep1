@@ -1,3 +1,27 @@
+# ローカル変数の定義
+## セキュリティグループIDを参照するためのローカル変数
+locals {
+  security_group_ids = {
+    for k, v in aws_security_group.terra_security_group : k => v.id
+  }
+  ### security_groupsフィールドを使用するingressルールをフラット化
+  sg_ingress_rules = flatten([
+    for sg_key, sg_config in var.sg_definitions : [
+      for rule in sg_config.ingress : [
+        for source_sg in lookup(rule, "security_groups", []) : {
+          sg_key      = sg_key
+          from_port   = rule.from_port
+          to_port     = rule.to_port
+          protocol    = rule.protocol
+          source_sg   = source_sg
+          description = lookup(rule, "description", null)
+        }
+      ]
+      if length(lookup(rule, "security_groups", [])) > 0
+    ]
+  ])
+}
+
 #　リソースの定義
 ## セキュリティグループの作成 - 基本セキュリティグループ
 resource "aws_security_group" "terra_security_group" {
@@ -5,7 +29,7 @@ resource "aws_security_group" "terra_security_group" {
   name        = "${var.system_name}-${var.environment_name}-${each.key}-sg"
   description = each.value.description
   vpc_id      = var.vpc_id
-  ## インバウンドルール（cidr_blocksキーがあるルールのみ。security_groupsキーがあるルールは対象外）
+  ### インバウンドルール（cidr_blocksキーがあるルールのみ。security_groupsキーがあるルールは対象外）
   dynamic "ingress" {
     for_each = [
       for rule in each.value.ingress : rule
@@ -19,7 +43,7 @@ resource "aws_security_group" "terra_security_group" {
       description = lookup(ingress.value, "description", null)
     }
   }
-  ## アウトバウンドルール（cidr_blocksによる宛先指定）
+  ### アウトバウンドルール（cidr_blocksによる宛先指定）
   dynamic "egress" {
     for_each = each.value.egress
     content {
@@ -36,29 +60,6 @@ resource "aws_security_group" "terra_security_group" {
   lifecycle {
     create_before_destroy = true
   }
-}
-
-## セキュリティグループIDを参照するためのローカル変数
-locals {
-  security_group_ids = {
-    for k, v in aws_security_group.terra_security_group : k => v.id
-  }
-  # security_groupsフィールドを使用するingressルールをフラット化
-  sg_ingress_rules = flatten([
-    for sg_key, sg_config in var.sg_definitions : [
-      for rule in sg_config.ingress : [
-        for source_sg in lookup(rule, "security_groups", []) : {
-          sg_key      = sg_key
-          from_port   = rule.from_port
-          to_port     = rule.to_port
-          protocol    = rule.protocol
-          source_sg   = source_sg
-          description = lookup(rule, "description", null)
-        }
-      ]
-      if length(lookup(rule, "security_groups", [])) > 0
-    ]
-  ])
 }
 
 ## Security Group間の参照ルール

@@ -1,23 +1,23 @@
-# リソースの定義
+# ローカル変数の定義
 ## Aurora設定の自動計算ロジック
 locals {
   ### AZ数の自動計算（available_azs_namesのlengthから取得）
   available_azs_count = length(var.available_azs_names)
   ### deployment_modeとAZ数に基づくインスタンス数の決定
   deployment_config = {
-    # AZ数が1の場合の構成（単一AZ環境）
+    ##### AZ数が1の場合の構成（単一AZ環境）
     1 = {
       writer_only           = { count = 1, writer_count = 1, reader_count = 0 }
-      writer_with_1_reader  = { count = 1, writer_count = 1, reader_count = 0 } # 1AZではReader不可
-      writer_with_2_readers = { count = 1, writer_count = 1, reader_count = 0 } # 1AZではReader不可
+      writer_with_1_reader  = { count = 1, writer_count = 1, reader_count = 0 } ##### 1AZではReader不可
+      writer_with_2_readers = { count = 1, writer_count = 1, reader_count = 0 } ##### 1AZではReader不可
     }
-    # AZ数が2の場合の構成
+    #### AZ数が2の場合の構成
     2 = {
       writer_only           = { count = 1, writer_count = 1, reader_count = 0 }
       writer_with_1_reader  = { count = 2, writer_count = 1, reader_count = 1 }
-      writer_with_2_readers = { count = 2, writer_count = 1, reader_count = 1 } # 2AZでは最大2台まで
+      writer_with_2_readers = { count = 2, writer_count = 1, reader_count = 1 } ##### 2AZでは最大2台まで
     }
-    # AZ数が3の場合の構成
+    #### AZ数が3の場合の構成
     3 = {
       writer_only           = { count = 1, writer_count = 1, reader_count = 0 }
       writer_with_1_reader  = { count = 2, writer_count = 1, reader_count = 1 }
@@ -35,14 +35,13 @@ locals {
   promotion_tiers = [for i in range(local.final_instance_count) : i == 0 ? 0 : 1]
   
   ### メンテナンスウィンドウの自動生成（基準時刻から動的に計算）
-  # 基準時刻（var.preferred_maintenance_window_base）から情報を抽出（形式：tue:17:15-tue:17:45）
-  base_start_part = split("-", var.preferred_maintenance_window_base)[0]  # 「-」で区切る。"tue:17:15"
-  base_parts = split(":", local.base_start_part)  # 「:」で区切る。["tue", "17", "15"]
+  #### 基準時刻（var.preferred_maintenance_window_base）から情報を抽出（形式：tue:17:15-tue:17:45）
+  base_start_part = split("-", var.preferred_maintenance_window_base)[0]  ##### 「-」で区切る。"tue:17:15"
+  base_parts = split(":", local.base_start_part)  ##### 「:」で区切る。["tue", "17", "15"]
   base_day = local.base_parts[0]
   base_hour = tonumber(local.base_parts[1])
   base_minute = tonumber(local.base_parts[2])
-  
-  # 各インスタンス用のメンテナンスウィンドウを生成
+  ### 各インスタンス用のメンテナンスウィンドウを生成
   maintenance_windows = [
     for i in range(local.final_instance_count) : 
     i == 0 ? var.preferred_maintenance_window_base : format(
@@ -57,6 +56,7 @@ locals {
   ]
 }
 
+# リソースの定義
 ## クラスター用の一意なスナップショットIDの生成（skip_final_snapshotがfalseの場合に使用）
 resource "random_id" "final_snapshot_id" {
   byte_length = 4 ##### 4バイトの16進数（8桁のランダムなIDを生成後に接尾辞として使用）
@@ -133,6 +133,7 @@ resource "aws_rds_cluster_instance" "terra_rds_cluster_instance" {
   count                   = local.final_instance_count
   identifier              = "${var.system_name}-${var.environment_name}-aurora-instance-${count.index}"
   cluster_identifier      = aws_rds_cluster.terra_rds_cluster.id
+  availability_zone       = local.instance_azs[count.index]
   promotion_tier          = local.promotion_tiers[count.index]
   instance_class          = var.instance_class
   engine                  = var.db_engine

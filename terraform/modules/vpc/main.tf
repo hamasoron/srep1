@@ -1,17 +1,20 @@
 # ローカル変数の定義
 ## NATゲートウェイの設定
 locals {
-  ### terraform.tfvarsのsubnet_listの情報を抽出
+  ### available_azs：terraform.tfvarsのsubnet_listのnameの末尾2文字（つまりAZ名）を抽出して格納
   available_azs = length(distinct([for subnet in var.subnet_list : substr(subnet.name, -2, 2)]))
-  ### create_protected_ngw_associationsがfalseの場合はprotectedサブネット自体を除外
+  ### filtered_subnet_list：create_protected_ngw_associationsがfalseの場合は、subnet_listのtypeがprotectedのものを除外して格納
   filtered_subnet_list = [
     for subnet in var.subnet_list : subnet 
     if var.create_protected_ngw_associations || subnet.type != "protected"
   ]
+  ### has_protected_subnets：create_protected_ngw_associationsがtrueかつsubnet_listの中にtypeが"protected"のサブネットが1つ以上ある場合にtrue、そうでなければfalseを格納
   has_protected_subnets = var.create_protected_ngw_associations && length([for subnet in var.subnet_list : subnet if subnet.type == "protected"]) > 0
-  ### NATゲートウェイ設定（nat_gateway_listのみ使用、ただしcreate_protected_ngw_associationsがfalseの場合は無効化）
+  ### enabled_nat_gateways：create_protected_ngw_associationsがtrueの場合は、nat_gateway_listの中でenabledがtrueのものを抽出して格納、そうでなければ空配列を格納
   enabled_nat_gateways = var.create_protected_ngw_associations ? [for ngw in var.nat_gateway_list : ngw if ngw.enabled] : []
+  ### final_nat_count：enabled_nat_gatewaysの要素数を格納
   final_nat_count = length(local.enabled_nat_gateways)
+  ### nat_gateway_subnets：enabled_nat_gatewaysの要素数分のオブジェクトを作成して格納。nameはenabled_nat_gatewaysの要素のaz、typeは"public"
   nat_gateway_subnets = [
     for ngw in local.enabled_nat_gateways : 
       { name = ngw.az, cidr_block = "", type = "public" }
@@ -22,9 +25,9 @@ locals {
 ## VPCの作成
 resource "aws_vpc" "terra_vpc" {
   cidr_block           = var.vpc_cidr
-  instance_tenancy     = "default"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
+  instance_tenancy     = "default" ##### EC2インスタンスを起動する際に物理ハードウェアを共有するか占有するか
+  enable_dns_support   = true  ##### VPC内のリソースに、Route53のキャッシュDNSサーバー（x.x.x.2）が権威DNSサーバーに問い合わせて名前解決を行えるかどうか
+  enable_dns_hostnames = true  ##### VPC内のリソースに、パブリックDNS名やプライベートDNS名を付与するかどうか
   tags = {
     Name = "${var.system_name}-${var.environment_name}-vpc"
   }
