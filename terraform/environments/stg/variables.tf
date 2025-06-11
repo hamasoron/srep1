@@ -516,50 +516,60 @@ variable "deployment_mode" {
 
 ## Lambda
 variable "memory_size" {
-  description = "Lambda関数のメモリサイズ（MB）"
+  description = "Memory size of the Lambda function (MB)"
   type        = number
+  validation {
+    condition     = var.memory_size >= 128 && var.memory_size <= 10240
+    error_message = "memory_size must be between 128MB and 10240MB (10GB)."
+  }
 }
 
 variable "timeout" {
-  description = "Lambda関数のタイムアウト秒数"
+  description = "Timeout of the Lambda function (seconds)"
   type        = number
+  validation {
+    condition     = var.timeout >= 1 && var.timeout <= 900
+    error_message = "timeout must be between 1 second and 900 seconds (15 minutes)."
+  }
 }
 
 variable "reserved_concurrent_executions" {
-  description = "Lambda関数の同時実行数"
+  description = "Number of concurrent executions of the Lambda function (null means no limit)"
   type        = number
+  validation {  
+    condition     = var.reserved_concurrent_executions == null || try(var.reserved_concurrent_executions >= 0 && var.reserved_concurrent_executions <= 1000, false)
+    error_message = "reserved_concurrent_executions must be null (no limit, up to account limit) or between 0 (throttling) and 1000."
+  }
 }
 
 variable "enable_rotation_on_apply" {
-  description = "初回terraform apply時にローテーションを有効にするかどうか（false=コンソールから手動でローテーション実行）"
+  description = "Whether to enable rotation on the first terraform apply"
   type        = bool
 }
 
 variable "rotation_secrets" {
-  description = "ローテーション対象のシークレットの名前"
+  description = "List of names of the secrets to be rotated"
   type        = list(string)
 }
 
 variable "master_rotation_schedule_expression" {
-  description = "マスターローテーションのスケジュール（cron式）"
+  description = "Schedule for the master rotation (cron expression)"
   type        = string
 }
 
 variable "app_rotation_schedule_expression" {
-  description = "アプリローテーションのスケジュール（cron式）"
+  description = "Schedule for the app rotation (cron expression)"
   type        = string
 }
 
 variable "lambda_kms_key_arn" {
-  description = "Lambda関数で使用するKMSキーのARN"
+  description = "ARN of the KMS key used by the Lambda function (null means default encryption)"
   type        = string
+  validation {
+    condition     = var.lambda_kms_key_arn == null || can(length(var.lambda_kms_key_arn) > 0)
+    error_message = "lambda_kms_key_arn must be null or a non-empty string."
+  }
 }
-
-variable "rotation_immediately" {
-  description = "ローテーションを即時実行するかどうか（false=スケジュールに従って実行）"
-  type        = bool
-}
-
 
 ## S3
 variable "force_destroy" {
@@ -837,4 +847,3 @@ variable "deployment_controller_type" {
   description = "デプロイ制御（ECS:ローリングデプロイ、CODE_DEPLOY:ブルー/グリーンデプロイか）"
   type        = string
 }
-

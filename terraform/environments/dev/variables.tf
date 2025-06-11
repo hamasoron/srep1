@@ -537,7 +537,7 @@ variable "reserved_concurrent_executions" {
   description = "Number of concurrent executions of the Lambda function (null means no limit)"
   type        = number
   validation {  
-    condition     = var.reserved_concurrent_executions == null || (var.reserved_concurrent_executions >= 0 && var.reserved_concurrent_executions <= 1000)
+    condition     = var.reserved_concurrent_executions == null || try(var.reserved_concurrent_executions >= 0 && var.reserved_concurrent_executions <= 1000, false)
     error_message = "reserved_concurrent_executions must be null (no limit, up to account limit) or between 0 (throttling) and 1000."
   }
 }

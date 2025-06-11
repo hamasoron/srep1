@@ -146,7 +146,7 @@ instance_class                         = "db.t4g.medium"
 auto_minor_version_upgrade             = true
 preferred_maintenance_window_base      = "tue:17:15-tue:17:45"
 publicly_accessible                    = false
-deployment_mode                        = "writer_with_1_reader"
+deployment_mode                        = "writer_only"
 
 ## Lambda
 memory_size      = 128
@@ -157,7 +157,6 @@ rotation_secrets = ["master"] ##### 初回apply時は、appユーザーが存在
 master_rotation_schedule_expression = "cron(0 18 1 * ? *)" ##### 毎月1日の深夜3時0分にマスターをローテーション
 app_rotation_schedule_expression = "cron(0 19 1 * ? *)" ##### 毎月1日の深夜4時0分にアプリをローテーション（マスター完了後に実行される）
 lambda_kms_key_arn = null
-rotation_immediately = true
 
 ## S3
 force_destroy       = true
