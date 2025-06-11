@@ -146,7 +146,7 @@ instance_class                         = "db.t4g.medium"
 auto_minor_version_upgrade             = true
 preferred_maintenance_window_base      = "tue:17:15-tue:17:45"
 publicly_accessible                    = false
-deployment_mode                        = "writer_only"
+deployment_mode                        = "writer_with_1_reader" ##### writer_only, writer_with_1_reader, writer_with_2_readers
 
 ## Lambda
 memory_size      = 128

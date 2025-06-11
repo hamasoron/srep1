@@ -22,12 +22,12 @@ output "ecs_front_service_name" {
 
 output "ecs_api_container_name" {
   description = "ECS APIコンテナの名前（ECS Exec等で使用）"
-  value       = aws_ecs_task_definition.terra_ecs_task_definition_api.container_definitions
+  value       = "api-python"
 }
 
 output "ecs_front_container_name" {
   description = "ECS フロントエンドコンテナの名前（ECS Exec等で使用）"
-  value       = aws_ecs_task_definition.terra_ecs_task_definition_front.container_definitions
+  value       = "front-nginx"
 }
 
 output "ecs_api_task_definition_arn" {

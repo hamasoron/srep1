@@ -1,6 +1,7 @@
 # リソースの定義
-## データリソース（現在のAWSアカウントのIDを取得）
-data "aws_caller_identity" "terra_caller_identity" {} 
+## データリソース（現在のAWSアカウントのIDとリージョンを取得）
+data "aws_caller_identity" "terra_caller_identity" {}
+data "aws_region" "terra_current" {} 
 
 ## バケット定義
 locals {
@@ -79,25 +80,39 @@ locals {
         Version = "2012-10-17"
         Statement = [
           {
+            Sid = "AWSLogDeliveryWrite"
             Effect = "Allow"
             Principal = {
               Service = "delivery.logs.amazonaws.com"
             }
             Action = "s3:PutObject"
-            Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-vpc-flow-logs/vpc-flow-logs/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*"
+            Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-vpc-flow-logs/AWSLogs/${data.aws_caller_identity.terra_caller_identity.account_id}/*"
             Condition = {
               StringEquals = {
+                "aws:SourceAccount" = data.aws_caller_identity.terra_caller_identity.account_id
                 "s3:x-amz-acl" = "bucket-owner-full-control"
+              }
+              ArnLike = {
+                "aws:SourceArn" = "arn:aws:logs:${data.aws_region.terra_current.name}:${data.aws_caller_identity.terra_caller_identity.account_id}:*"
               }
             }
           },
           {
+            Sid = "AWSLogDeliveryAclCheck"
             Effect = "Allow"
             Principal = {
               Service = "delivery.logs.amazonaws.com"
             }
             Action = "s3:GetBucketAcl"
             Resource = "arn:aws:s3:::${var.system_name}-${var.environment_name}-vpc-flow-logs"
+            Condition = {
+              StringEquals = {
+                "aws:SourceAccount" = data.aws_caller_identity.terra_caller_identity.account_id
+              }
+              ArnLike = {
+                "aws:SourceArn" = "arn:aws:logs:${data.aws_region.terra_current.name}:${data.aws_caller_identity.terra_caller_identity.account_id}:*"
+              }
+            }
           }
         ]
       })

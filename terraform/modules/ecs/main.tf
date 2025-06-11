@@ -70,10 +70,14 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_api" {
       portMappings = [
         {
           containerPort = 8080 ##### awsvpcによりHostPortはcontainerPortと同じになる
+          hostPort      = 8080
           protocol      = "tcp"
           name          = "api-http" ##### ECSサービスのserviceのnameと一致させる
         }
       ]
+      mountPoints    = []
+      systemControls = []
+      volumesFrom    = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -183,10 +187,14 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
       portMappings = [
         {
           containerPort = 80
+          hostPort      = 80
           protocol      = "tcp"
           name          = "http-nginx"
         }
       ]
+      mountPoints    = []
+      systemControls = []
+      volumesFrom    = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
