@@ -70,8 +70,7 @@ resource "aws_lambda_function" "terra_lambda_function_master_rotation" {
   tags = {
     Name = "${var.system_name}-${var.environment_name}-master-secret-rotation"
   }
-
-  # ENIクリーンアップが先に実行されるように依存関係を設定
+  ### ENIクリーンアップが先に実行されるように依存関係を設定
   depends_on = [null_resource.lambda_eni_cleanup_wait]
 }
 
@@ -103,8 +102,7 @@ resource "aws_lambda_function" "terra_lambda_function_app_rotation" {
   tags = {
     Name = "${var.system_name}-${var.environment_name}-app-secret-rotation"
   }
-
-  # ENIクリーンアップが先に実行されるように依存関係を設定
+  ### ENIクリーンアップが先に実行されるように依存関係を設定
   depends_on = [null_resource.lambda_eni_cleanup_wait]
 }
 
@@ -122,39 +120,30 @@ resource "null_resource" "lambda_eni_cleanup_wait" {
     when    = destroy
     command = <<-EOT
       Write-Host "Starting ENI cleanup process..."
-      
       $timeout = 1200
       $elapsed = 0
-      
       do {
         try {
           $enis = aws ec2 describe-network-interfaces --filters "Name=description,Values=AWS Lambda VPC ENI*" --query "NetworkInterfaces[].NetworkInterfaceId" --output text 2>$null
-          
           if ([string]::IsNullOrWhiteSpace($enis) -or $enis -eq "None") {
             Write-Host "No Lambda VPC ENIs found. Cleanup completed."
             break
           }
-          
           $eniArray = ($enis -split '\s+') | Where-Object { $_ -ne '' -and $_ -ne 'None' }
-          
           if ($eniArray.Count -eq 0) {
             Write-Host "ENI cleanup completed - no ENIs to process"
             break
           }
-          
           Write-Host "Found $($eniArray.Count) Lambda VPC ENI(s) still present. Waiting for automatic cleanup by AWS..."
-          
           Write-Host "ENI cleanup in progress... ($elapsed seconds elapsed)"
           Start-Sleep 60
           $elapsed += 60
-          
         } catch {
           Write-Host "Error during ENI cleanup: $_.Exception.Message"
           Start-Sleep 60
           $elapsed += 60
         }
       } while ($elapsed -lt $timeout)
-      
       if ($elapsed -ge $timeout) {
         Write-Host "ENI cleanup timed out after $timeout seconds"
       } else {
@@ -172,6 +161,7 @@ resource "null_resource" "lambda_eni_cleanup_wait" {
 
 ## マスターユーザー用Lambda関数のリソースベースのポリシーを追加（SecretsManagerがLambda関数を呼び出すためのポリシー）
 resource "aws_lambda_permission" "terra_secretsmanager_master" {
+  source_arn    = var.master_secret_arn
   statement_id  = "AllowSecretsManagerToInvokeMasterLambda"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.terra_lambda_function_master_rotation.function_name
@@ -180,6 +170,7 @@ resource "aws_lambda_permission" "terra_secretsmanager_master" {
 
 ## アプリユーザー用Lambda関数のリソースベースのポリシーを追加（SecretsManagerがLambda関数を呼び出すためのポリシー）
 resource "aws_lambda_permission" "terra_secretsmanager_app" {
+  source_arn    = var.app_secret_arn
   statement_id  = "AllowSecretsManagerToInvokeAppLambda"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.terra_lambda_function_app_rotation.function_name

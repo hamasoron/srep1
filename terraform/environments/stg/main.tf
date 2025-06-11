@@ -147,6 +147,7 @@ module "lambda" {
   master_rotation_schedule_expression = var.master_rotation_schedule_expression
   app_rotation_schedule_expression = var.app_rotation_schedule_expression
   lambda_kms_key_arn = var.lambda_kms_key_arn
+  rotation_immediately = var.rotation_immediately
   ### その他（明示的な依存関係）
   depends_on = [module.secretsmanager, module.rds, module.iam_role, module.sg]
 }

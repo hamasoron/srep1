@@ -166,12 +166,12 @@ output "rds_cluster_identifier" {
 
 ## Lambda
 output "lambda_master_function_arn" {
-  description = "マスターユーザー用Lambda関数のARN"
+  description = "ARN of the Lambda function for the master user"
   value = module.lambda.lambda_master_function_arn
 }
 
 output "lambda_app_function_arn" {
-  description = "アプリユーザー用Lambda関数のARN"
+  description = "ARN of the Lambda function for the app user"
   value = module.lambda.lambda_app_function_arn
 }
 

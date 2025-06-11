@@ -78,16 +78,36 @@ def get_secret(service_client, arn, token=None, version_stage="AWSCURRENT"):
         raise
 
 def create_new_secret_value(current_secret):
-    """新しい認証情報（パスワード）を乱数で生成する"""
+    """新しい認証情報（パスワード）を乱数で生成する（最低文字数保証付き）"""
     """
-    生成されるパスワードの例（一部の特殊文字を除いた20文字）
+    生成されるパスワードの例（各カテゴリから最低1文字ずつ含む20文字）
     "b7@p_L$3vNa8c*1TrGq#"
     """
     new_secret = current_secret.copy() ## current_secret変数の値をnew_secret変数に代入
     
     if 'password' in new_secret: ## new_secret変数の値の中にpasswordキーが含まれている場合
-        characters = string.ascii_letters + string.digits + "!#$%&*()-_=+[]{}<>:;.," ## パスワードの生成に使用できる文字列を定義（/,',",@はAuroraが非対応）
-        new_secret['password'] = ''.join(secrets.choice(characters) for _ in range(20)) ## 20文字のランダムな文字列を生成し、new_secret変数のpasswordキーの値として設定
+        # 各カテゴリの文字を定義（Terraformのパスワードポリシーと一致）
+        lower = string.ascii_lowercase ## 小文字
+        upper = string.ascii_uppercase ## 大文字
+        digits = string.digits ## 数字
+        special = "!#$%&*()-_=+[]{}<>:;.," ## 特殊文字（Auroraが非対応の /,',",@ を除外）
+        
+        # 各カテゴリから最低1文字ずつ選択（Terraformのmin_*設定と一致）
+        password_chars = [
+            secrets.choice(lower),   ## 小文字から最低1文字
+            secrets.choice(upper),   ## 大文字から最低1文字
+            secrets.choice(digits),  ## 数字から最低1文字
+            secrets.choice(special)  ## 特殊文字から最低1文字
+        ]
+        
+        # 残り16文字を全文字種からランダム選択
+        all_chars = lower + upper + digits + special
+        for _ in range(16):
+            password_chars.append(secrets.choice(all_chars))
+        
+        # 文字順序をランダム化（各カテゴリの文字が先頭に固まらないようにする）
+        secrets.SystemRandom().shuffle(password_chars)
+        new_secret['password'] = ''.join(password_chars) ## 20文字の暗号学的に安全なパスワードを生成
     
     return new_secret ## new_secret変数の値を戻り値として返す
 
@@ -161,7 +181,10 @@ def test_database_connection(host, port, username, password):
             password=password,
             connect_timeout=30,
             read_timeout=30,
-            write_timeout=30
+            write_timeout=30,
+            ssl_disabled=False,  ## SSL接続を有効化（require_secure_transport = "ON"対応）
+            ssl_verify_cert=True,  ## サーバー証明書の検証を有効化
+            ssl_verify_identity=True  ## サーバーアイデンティティの検証を有効化
         )
         # 簡単なクエリでテスト
         with conn.cursor() as cur:

@@ -157,6 +157,7 @@ rotation_secrets = ["master"] ##### 初回apply時は、appユーザーが存在
 master_rotation_schedule_expression = "cron(0 18 1 * ? *)" ##### 毎月1日の深夜3時0分にマスターをローテーション
 app_rotation_schedule_expression = "cron(0 19 1 * ? *)" ##### 毎月1日の深夜4時0分にアプリをローテーション（マスター完了後に実行される）
 lambda_kms_key_arn = null
+rotation_immediately = true
 
 ## S3
 force_destroy       = true

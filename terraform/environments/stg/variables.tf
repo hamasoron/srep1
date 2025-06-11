@@ -555,6 +555,12 @@ variable "lambda_kms_key_arn" {
   type        = string
 }
 
+variable "rotation_immediately" {
+  description = "ローテーションを即時実行するかどうか（false=スケジュールに従って実行）"
+  type        = bool
+}
+
+
 ## S3
 variable "force_destroy" {
   description = "S3バケットを強制的に削除するかどうか"
