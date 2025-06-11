@@ -18,7 +18,7 @@ variable "vpc_id" {
 
 ## S3
 variable "s3_vpc_flow_logs_bucket_arn" {
-  description = "VPC Flow LogsのS3バケットのARN（S3モジュールのoutputs.tfの受け皿として定義）"
+  description = "ARN of the vpc flow logs bucket (used as a placeholder for the S3 module's outputs.tf)"
   type        = string
 }
 

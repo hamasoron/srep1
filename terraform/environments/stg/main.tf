@@ -216,8 +216,8 @@ module "vpc_flow_logs" {
   system_name      = var.system_name
   environment_name = var.environment_name
   vpc_id           = module.vpc.vpc_id
-  enable_vpc_flow_logs                    = var.enable_vpc_flow_logs
-  s3_vpc_flow_logs_bucket_arn             = module.s3.s3_vpc_flow_logs_bucket_arn
+  enable_vpc_flow_logs                   = var.enable_vpc_flow_logs
+  s3_vpc_flow_logs_bucket_arn            = module.s3.s3_vpc_flow_logs_bucket_arn
   traffic_type                           = var.traffic_type
   max_aggregation_interval               = var.max_aggregation_interval
   log_format                             = var.log_format

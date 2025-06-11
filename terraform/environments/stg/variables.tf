@@ -573,12 +573,12 @@ variable "lambda_kms_key_arn" {
 
 ## S3
 variable "force_destroy" {
-  description = "S3バケットを強制的に削除するかどうか"
+  description = "Force destroy S3 bucket"
   type        = bool
 }
 
 variable "log_expiration_days" {
-  description = "ログの保存期間（日）"
+  description = "Log expiration days"
   type        = number
 }
 

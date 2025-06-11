@@ -119,7 +119,7 @@ locals {
     }
   }
 
-  # contentsバケット内に疑似フォルダ構造を作成するための定義
+  ### contentsバケット内に疑似フォルダ構造を作成するための定義
   folder_structure = [
     "srep1/",
     "srep1/app/",
@@ -144,10 +144,10 @@ resource "aws_s3_bucket" "terra_s3_bucket" {
 resource "aws_s3_bucket_public_access_block" "terra_s3_bucket_public_access_block" {
   for_each = local.buckets
   bucket   = aws_s3_bucket.terra_s3_bucket[each.key].id
-  block_public_acls       = true
-  ignore_public_acls      = true
-  block_public_policy     = true
-  restrict_public_buckets = true
+  block_public_acls       = true ##### acl関連の設定
+  ignore_public_acls      = true ##### acl関連の設定
+  block_public_policy     = true ##### パブリックアクセス関連の設定
+  restrict_public_buckets = true ##### パブリックアクセス関連の設定
 }
 
 ## S3バケットのSSE-S3暗号化設定

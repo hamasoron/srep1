@@ -177,18 +177,23 @@ output "lambda_app_function_arn" {
 
 ## S3
 output "s3_app_contents_bucket_name" {
-  description = "アプリケーションのコンテンツバケットの名前"
+  description = "name of the app contents bucket"
   value = module.s3.s3_app_contents_bucket_name
 }
 
 output "s3_alb_logs_bucket_name" {
-  description = "ALBのログバケットの名前（ALBモジュールでアクセスログやコネクションログを保存するために使用）"
+  description = "name of the alb logs bucket (used by ALB module to save access logs and connection logs)"
   value = module.s3.s3_alb_logs_bucket_name
 }
 
 output "s3_cloudtrail_logs_bucket_name" {
-  description = "CloudTrailのログバケットの名前（CloudTrailモジュールでログを保存するために使用）"
+  description = "name of the cloudtrail logs bucket (used by CloudTrail module to save logs)"
   value = module.s3.s3_cloudtrail_logs_bucket_name
+}
+
+output "s3_vpc_flow_logs_bucket_arn" {
+  description = "ARN of the vpc flow logs bucket (used by VPC Flow Logs module to save logs)"
+  value = module.s3.s3_vpc_flow_logs_bucket_arn
 }
 
 ## ALB
