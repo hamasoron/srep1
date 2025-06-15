@@ -165,12 +165,12 @@ log_expiration_days = 2
 ## ALB
 ### ALB関連
 enable_deletion_protection       = false
+desync_mitigation_mode           = "defensive"
 enable_access_logs               = true
 enable_connection_logs           = true
 ### ターゲットグループ関連
 deregistration_delay             = 30
 load_balancing_algorithm_type    = "round_robin"
-### ヘルスチェック関連
 health_check_interval            = 30
 health_check_path                = "/"
 health_check_port                = "traffic-port"
@@ -179,17 +179,19 @@ health_check_timeout             = 5
 health_check_healthy_threshold   = 5
 health_check_unhealthy_threshold = 2
 health_check_matcher             = "200"
+### リスナー関連
+routing_http_response_server_enabled = true
 
 ## CloudTrail
 enable_management_logging = true   # 管理イベントは常に有効（セキュリティ上重要）
-enable_data_logging = false        # データイベントは大量ログのため無効
-enable_insight_logging = false     # インサイトイベントは追加コストのため無効
 include_global_service_events = true
 is_multi_region_trail = true
 enable_log_file_validation = true
 event_selector_include_management_events = true
 event_selector_read_write_type = "All" ##### 読み書きのイベントを記録
 exclude_management_event_sources = []
+enable_data_logging = false # データイベントは大量ログのため無効
+enable_insight_logging = false     # インサイトイベントは追加コストのため無効
 
 ## VPC Flow Logs
 enable_vpc_flow_logs = true

@@ -1,10 +1,5 @@
 # 変数の定義
 ## 全般
-variable "region_name" {
-  description = "リージョン名"
-  type        = string
-}
-
 variable "system_name" {
   description = "システム名"
   type        = string

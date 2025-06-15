@@ -170,6 +170,7 @@ module "alb" {
   security_group_id                = module.sg.sg_security_group_ids["alb"]
   ### ALB関連
   enable_deletion_protection       = var.enable_deletion_protection
+  desync_mitigation_mode           = var.desync_mitigation_mode
   enable_access_logs               = var.enable_access_logs
   enable_connection_logs           = var.enable_connection_logs
   s3_alb_logs_bucket_name          = module.s3.s3_alb_logs_bucket_name
@@ -186,6 +187,7 @@ module "alb" {
   health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
   health_check_matcher             = var.health_check_matcher
   ### リスナー関連
+  routing_http_response_server_enabled = var.routing_http_response_server_enabled
   certificate_arn                  = module.acm.acm_certificate_arn
   ### その他（明示的な依存関係）
   depends_on                       = [module.s3]
@@ -194,7 +196,6 @@ module "alb" {
 ## CloudTrailのモジュール呼び出し
 module "cloudtrail" {
   source = "../../modules/cloudtrail"
-  region_name                            = var.region_name
   system_name                            = var.system_name
   environment_name                       = var.environment_name
   s3_cloudtrail_logs_bucket_name         = module.s3.s3_cloudtrail_logs_bucket_name

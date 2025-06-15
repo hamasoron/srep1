@@ -177,33 +177,38 @@ output "lambda_app_function_arn" {
 
 ## S3
 output "s3_app_contents_bucket_name" {
-  description = "アプリケーションのコンテンツバケットの名前"
+  description = "name of the app contents bucket"
   value = module.s3.s3_app_contents_bucket_name
 }
 
 output "s3_alb_logs_bucket_name" {
-  description = "ALBのログバケットの名前（ALBモジュールでアクセスログやコネクションログを保存するために使用）"
+  description = "name of the alb logs bucket (used by ALB module to save access logs and connection logs)"
   value = module.s3.s3_alb_logs_bucket_name
 }
 
 output "s3_cloudtrail_logs_bucket_name" {
-  description = "CloudTrailのログバケットの名前（CloudTrailモジュールでログを保存するために使用）"
+  description = "name of the cloudtrail logs bucket (used by CloudTrail module to save logs)"
   value = module.s3.s3_cloudtrail_logs_bucket_name
+}
+
+output "s3_vpc_flow_logs_bucket_arn" {
+  description = "ARN of the vpc flow logs bucket (used by VPC Flow Logs module to save logs)"
+  value = module.s3.s3_vpc_flow_logs_bucket_arn
 }
 
 ## ALB
 output "alb_dns_name" {
-  description = "ALBのDNS名（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
+  description = "DNS name of the ALB（used by Route53 Records module to create Alias records）"
   value = module.alb.alb_dns_name
 }
 
 output "alb_zone_id" {
-  description = "ALBのゾーンID（Route53 RecordsモジュールでAliasレコードを作成する際に使用）"
+  description = "Zone ID of the ALB（used by Route53 Records module to create Alias records）"
   value = module.alb.alb_zone_id
 }
 
 output "alb_front_target_group_arn" {
-  description = "フロントエンドターゲットグループのARN（ECSモジュールで使用）"
+  description = "ARN of the front target group (used by ECS module)"
   value = module.alb.alb_front_target_group_arn
 }
 

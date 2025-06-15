@@ -573,82 +573,120 @@ variable "lambda_kms_key_arn" {
 
 ## S3
 variable "force_destroy" {
-  description = "S3バケットを強制的に削除するかどうか"
+  description = "Force destroy S3 bucket"
   type        = bool
 }
 
 variable "log_expiration_days" {
-  description = "ログの保存期間（日）"
+  description = "Log expiration days"
   type        = number
 }
 
 ## ALB
 ### ALB関連
 variable "enable_deletion_protection" {
-  description = "ALBの削除保護の有効/無効"
+  description = "Whether to enable deletion protection for ALB"
   type        = bool
 }
 
+variable "desync_mitigation_mode" {
+  description = "Mode of desync mitigation for ALB"
+  type        = string
+  validation {
+    condition     = contains(["defensive", "strictest", "monitor"], var.desync_mitigation_mode)
+    error_message = "desync_mitigation_mode must be one of defensive, strictest, monitor."
+  }
+}
+
 variable "enable_access_logs" {
-  description = "ALBのアクセスログを有効にするかどうか"
+  description = "Whether to enable access logs for ALB"
   type        = bool
 }
 
 variable "enable_connection_logs" {
-  description = "ALBの接続ログを有効にするかどうか"
+  description = "Whether to enable connection logs for ALB"
   type        = bool
 }
 
 ### ターゲットグループ関連
 variable "deregistration_delay" {
-  description = "ターゲットグループの削除遅延時間"
+  description = "Deregistration delay time for target group"
   type        = number
+  validation {
+    condition     = var.deregistration_delay >= 0 && var.deregistration_delay <= 3600
+    error_message = "deregistration_delay must be between 0 and 3600（default: 300）."
+  }
 }
 
 variable "load_balancing_algorithm_type" {
-  description = "ロードバランシングアルゴリズムのタイプ"
+  description = "Type of load balancing algorithm"
   type        = string
+  validation {
+    condition     = contains(["round_robin", "least_connections", "weighted_routing"], var.load_balancing_algorithm_type)
+    error_message = "load_balancing_algorithm_type must be one of round_robin, least_connections, weighted_routing（default: round_robin）."
+  }
 }
 
-### ヘルスチェック関連
 variable "health_check_interval" {
-  description = "ヘルスチェックの間隔"
+  description = "Interval of health check"
   type        = number
+  validation {
+    condition     = var.health_check_interval >= 5 && var.health_check_interval <= 300
+    error_message = "health_check_interval must be between 5 and 300（default: 30 seconds）."
+  }
 }
 
 variable "health_check_path" {
-  description = "ヘルスチェックのパス"
+  description = "Path of health check"
   type        = string
 }
 
 variable "health_check_port" {
-  description = "ヘルスチェックのポート"
+  description = "Port of health check"
   type        = string
 }
 
 variable "health_check_protocol" {
-  description = "ヘルスチェックのプロトコル"
+  description = "Protocol of health check"
   type        = string
 }
 
 variable "health_check_timeout" {
-  description = "ヘルスチェックのタイムアウト"
+  description = "Timeout of health check"
   type        = number
+  validation {
+    condition     = var.health_check_timeout >= 2 && var.health_check_timeout <= 120 
+    error_message = "health_check_timeout must be between 2 and 120."
+  }
 }
 
 variable "health_check_healthy_threshold" {
-  description = "ヘルスチェックの正常なしきい値"
+  description = "Healthy threshold of health check"
   type        = number
+  validation {
+    condition     = var.health_check_healthy_threshold >= 2 && var.health_check_healthy_threshold <= 10
+    error_message = "health_check_healthy_threshold must be between 2 and 10（default: 3）."
+  }
 }
 
 variable "health_check_unhealthy_threshold" {
-  description = "ヘルスチェックの異常なしきい値"
+  description = "Unhealthy threshold of health check"
   type        = number
+  validation {
+    condition     = var.health_check_unhealthy_threshold >= 2 && var.health_check_unhealthy_threshold <= 10
+    error_message = "health_check_unhealthy_threshold must be between 2 and 10（default: 3）."
+  }
 }
 
 variable "health_check_matcher" {
-  description = "ヘルスチェックのマッチャー"
+  description = "Matcher of health check"
   type        = string
+}
+
+### リスナー関連
+variable "routing_http_response_server_enabled" {
+  description = "Whether to enable server header for HTTP response"
+  type        = bool
 }
 
 ## CloudTrail

@@ -1,6 +1,7 @@
 # リソースの定義
 ## データリソース（現在のAWSアカウントのIDを取得）
 data "aws_caller_identity" "terra_caller_identity" {} 
+data "aws_region" "terra_current" {} 
 
 ## 証跡の作成（3つの証跡を作成）
 resource "aws_cloudtrail" "terra_cloudtrail_management" {
@@ -41,7 +42,7 @@ resource "aws_cloudtrail" "terra_cloudtrail_data" {
     }
     data_resource {
       type   = "AWS::Lambda::Function"
-      values = ["arn:aws:lambda:${var.region_name}:${data.aws_caller_identity.terra_caller_identity.account_id}:function:${var.system_name}-${var.environment_name}-*"]
+      values = ["arn:aws:lambda:${data.aws_region.terra_current.name}:${data.aws_caller_identity.terra_caller_identity.account_id}:function:${var.system_name}-${var.environment_name}-*"]
     }
   }
   tags = {
