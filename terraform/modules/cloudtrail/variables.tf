@@ -1,63 +1,84 @@
 # 変数の定義
 ## 全般
 variable "system_name" {
-  description = "システム名"
+  description = "System name"
   type        = string
+  validation {
+    condition     = length(var.system_name) > 0
+    error_message = "system_name must not be empty."
+  }
 }
 
 variable "environment_name" {
-  description = "環境名"
+  description = "Environment name"
   type        = string
+  validation {
+    condition     = contains(["prod", "stg", "dev"], var.environment_name)
+    error_message = "environment_name must be one of prod, stg, dev."
+  }
 }
 
 ## S3
 variable "s3_cloudtrail_logs_bucket_name" {
-  description = "CloudTrailログ用のS3バケット名（S3モジュールのoutputs.tfの受け皿として定義）"
+  description = "S3 bucket name for CloudTrail logs (used as a placeholder for the S3 module's outputs.tf)"
   type        = string
 }
 
 ## CloudTrail
 variable "enable_management_logging" {
-  description = "管理イベント証跡のログ記録を有効にするかどうか（セキュリティ・コンプライアンス上重要）"
+  description = "Whether to enable management event logging"
   type        = bool
 }
 
-variable "enable_data_logging" {
-  description = "データイベント証跡のログ記録を有効にするかどうか（大量ログ発生のため注意）"
-  type        = bool
-}
-
-variable "enable_insight_logging" {
-  description = "インサイトイベント証跡のログ記録を有効にするかどうか（追加コスト発生）"
-  type        = bool
+variable "cloudtrail_kms_key_id" {
+  description = "ID of the KMS key for CloudTrail logs"
+  type        = string
+  validation {
+    condition     = var.cloudtrail_kms_key_id == null || can(length(var.cloudtrail_kms_key_id) > 0)
+    error_message = "cloudtrail_kms_key_id must be null or a non-empty string."
+  }
 }
 
 variable "include_global_service_events" {
-  description = "グローバルサービスイベントを含めるかどうか"
+  description = "Whether to include global service events"
   type        = bool
 }
 
 variable "is_multi_region_trail" {
-  description = "マルチリージョントレイルにするかどうか"
+  description = "Whether to enable multi-region trail"
   type        = bool
 }
 
 variable "enable_log_file_validation" {
-  description = "ログファイル検証を有効にするかどうか"
+  description = "Whether to enable log file validation"
   type        = bool
 }
 
 variable "event_selector_include_management_events" {
-  description = "管理イベントを含めるかどうか"
+  description = "Whether to include management events"
   type        = bool
 }
 
 variable "event_selector_read_write_type" {
-  description = "読み書きのイベントを記録するかどうか"
+  description = "Whether to record read/write events"
   type        = string
+  validation {
+    condition     = contains(["All", "ReadOnly", "WriteOnly"], var.event_selector_read_write_type)
+    error_message = "event_selector_read_write_type must be one of All, ReadOnly, WriteOnly."
+  }
 }
 
 variable "exclude_management_event_sources" {
-  description = "管理イベントに含めないイベントソース"
+  description = "Event sources to exclude from management events"
   type        = list(string)
+}
+
+variable "enable_data_logging" {
+  description = "Whether to enable data event logging"
+  type        = bool
+}
+
+variable "enable_insight_logging" {
+  description = "Whether to enable insight event logging"
+  type        = bool
 }

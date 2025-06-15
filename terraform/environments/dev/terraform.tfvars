@@ -184,6 +184,7 @@ routing_http_response_server_enabled = true
 
 ## CloudTrail
 enable_management_logging = true   # 管理イベントは常に有効（セキュリティ上重要）
+cloudtrail_kms_key_id = null
 include_global_service_events = true
 is_multi_region_trail = true
 enable_log_file_validation = true

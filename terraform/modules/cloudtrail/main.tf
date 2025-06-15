@@ -9,6 +9,7 @@ resource "aws_cloudtrail" "terra_cloudtrail_management" {
   name           = "${var.system_name}-${var.environment_name}-cloudtrail-management"
   s3_bucket_name = var.s3_cloudtrail_logs_bucket_name
   s3_key_prefix  = "management"
+  kms_key_id     = var.cloudtrail_kms_key_id
   enable_logging = true  # 作成される場合は常に有効
   include_global_service_events = var.include_global_service_events
   is_multi_region_trail         = var.is_multi_region_trail
@@ -29,6 +30,7 @@ resource "aws_cloudtrail" "terra_cloudtrail_data" {
   name           = "${var.system_name}-${var.environment_name}-cloudtrail-data"
   s3_bucket_name = var.s3_cloudtrail_logs_bucket_name
   s3_key_prefix  = "data"
+  kms_key_id     = var.cloudtrail_kms_key_id
   enable_logging = true  # 作成される場合は常に有効
   is_multi_region_trail         = var.is_multi_region_trail
   enable_log_file_validation    = var.enable_log_file_validation
@@ -55,6 +57,7 @@ resource "aws_cloudtrail" "terra_cloudtrail_insight" {
   name           = "${var.system_name}-${var.environment_name}-cloudtrail-insight"
   s3_bucket_name = var.s3_cloudtrail_logs_bucket_name
   s3_key_prefix  = "insight"
+  kms_key_id     = var.cloudtrail_kms_key_id
   enable_logging = true  # 作成される場合は常に有効
   is_multi_region_trail         = var.is_multi_region_trail
   enable_log_file_validation    = var.enable_log_file_validation

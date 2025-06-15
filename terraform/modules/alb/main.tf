@@ -20,9 +20,9 @@ resource "aws_lb" "terra_alb" {
   dynamic "connection_logs" {
     for_each = var.enable_connection_logs ? [1] : []
     content {
-      enabled = true
       bucket  = var.s3_alb_logs_bucket_name
       prefix  = "connectionlogs"
+      enabled = true
     }
   }
   tags = {
@@ -129,28 +129,10 @@ resource "aws_lb_listener" "terra_https_listener" {
   }
 }
 
-## リスナールール（HTTPS）の作成 (/にアクセスした場合はフロントエンドのターゲットグループに転送)
+## リスナールール（HTTPS）の作成 (/maintenanceにアクセスした場合はメンテナンスページに転送)
 resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
   listener_arn = aws_lb_listener.terra_https_listener.arn
-  priority = 100
-  condition {
-    path_pattern {
-      values = ["/"]
-    }
-  }
-  action {
-    type = "forward"
-    target_group_arn = aws_lb_target_group.terra_front_target_group.arn
-  }
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-https-listener-rule1"
-  }
-}
-
-## リスナールール（HTTPS）の作成 (/maintenanceにアクセスした場合はメンテナンスページに転送)
-resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
-  listener_arn = aws_lb_listener.terra_https_listener.arn
-  priority = 10
+  priority = 10 ##### 数値が低いほど、ルールが優先
   condition {
     path_pattern {
       values = ["/maintenance"]
@@ -187,6 +169,24 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
         </html>
       HTML
     }   
+  }
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-https-listener-rule1"
+  }
+}
+
+## リスナールール（HTTPS）の作成 (/にアクセスした場合はフロントエンドのターゲットグループに転送)
+resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
+  listener_arn = aws_lb_listener.terra_https_listener.arn
+  priority = 100 ##### 数値が低いほど、ルールが優先
+  condition {
+    path_pattern {
+      values = ["/"]
+    }
+  }
+  action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.terra_front_target_group.arn
   }
   tags = {
     Name = "${var.system_name}-${var.environment_name}-https-listener-rule2"

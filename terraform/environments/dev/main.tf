@@ -200,6 +200,7 @@ module "cloudtrail" {
   environment_name                       = var.environment_name
   s3_cloudtrail_logs_bucket_name         = module.s3.s3_cloudtrail_logs_bucket_name
   enable_management_logging              = var.enable_management_logging
+  cloudtrail_kms_key_id                  = var.cloudtrail_kms_key_id
   enable_data_logging                    = var.enable_data_logging
   enable_insight_logging                 = var.enable_insight_logging
   include_global_service_events          = var.include_global_service_events

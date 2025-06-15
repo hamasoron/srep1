@@ -5,10 +5,9 @@ resource "aws_flow_log" "terra_flow_log" {
   vpc_id                  = var.vpc_id
   log_destination_type    = "s3"
   log_destination         = var.s3_vpc_flow_logs_bucket_arn
-  ### S3一択。CloudWatch Logsは使わない。
+  ### S3一択。CloudWatch Logsは使わない。（Kinesis Data Firehoseは置いていてCloudWatch LogsかS3のどちらがいいか論争）
   #### VPC Flow Logsの性質上NWトラフィックは容量が重くなりやすい（CloudWatch Logsは取り込み量高い）
   #### リアルタイム性はアプリケーションログと比べて低い（CloudWatch Logsである必要性がない）
-  #### Kinesis Data Firehoseは置いていてCloudWatch LogsかS3のどちらがいいか論争
   traffic_type            = var.traffic_type
   max_aggregation_interval = var.max_aggregation_interval
   log_format              = var.log_format

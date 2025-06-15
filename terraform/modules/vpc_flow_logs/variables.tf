@@ -1,18 +1,26 @@
 # 変数の定義
 ## 全般
 variable "system_name" {
-  description = "システム名"
+  description = "System name"
   type        = string
+  validation {
+    condition     = length(var.system_name) > 0
+    error_message = "system_name must not be empty."
+  }
 }
 
 variable "environment_name" {
-  description = "環境名"
+  description = "Environment name"
   type        = string
+  validation {
+    condition     = contains(["prod", "stg", "dev"], var.environment_name)
+    error_message = "environment_name must be one of prod, stg, dev."
+  }
 }
 
 ## VPC
 variable "vpc_id" {
-  description = "VPCのID（VPCモジュールのoutputs.tfの受け皿として定義）"
+  description = "ID of the VPC (used as a placeholder for the VPC module's outputs.tf)"
   type        = string
 }
 
@@ -24,12 +32,12 @@ variable "s3_vpc_flow_logs_bucket_arn" {
 
 ## VPC Flow Logs
 variable "enable_vpc_flow_logs" {
-  description = "VPC Flow Logsを有効にするかどうか"
+  description = "Whether to enable VPC Flow Logs"
   type        = bool
 }
 
 variable "traffic_type" {
-  description = "記録するトラフィック（ALL, ACCEPT, REJECT）"
+  description = "Traffic type to record (ALL, ACCEPT, REJECT)"
   type        = string
   validation {
     condition = contains(["ALL", "ACCEPT", "REJECT"], var.traffic_type)
@@ -38,7 +46,7 @@ variable "traffic_type" {
 }
 
 variable "max_aggregation_interval" {
-  description = "フローログの最大集約間隔（60秒または600秒）"
+  description = "Maximum aggregation interval for flow logs (60 seconds or 600 seconds)"
   type        = number
   validation {
     condition = contains([60, 600], var.max_aggregation_interval)
@@ -47,12 +55,12 @@ variable "max_aggregation_interval" {
 }
 
 variable "log_format" {
-  description = "VPC Flow Logsのログフォーマット"
+  description = "Log format for VPC Flow Logs"
   type        = string
 } 
 
 variable "destination_options" {
-  description = "VPC Flow Logsの宛先オプション"
+  description = "Destination options for VPC Flow Logs"
   type = object({
     file_format                = string
     hive_compatible_partitions = bool

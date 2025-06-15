@@ -55,11 +55,11 @@ variable "enable_deletion_protection" {
 }
 
 variable "desync_mitigation_mode" {
-  description = "Mode of desync mitigation for ALB"
+  description = "Mode of desync mitigation for ALB" ##### desync_mitigation（デシンク・ミティゲーション）: 非同期緩和
   type        = string
   validation {
     condition     = contains(["defensive", "strictest", "monitor"], var.desync_mitigation_mode)
-    error_message = "desync_mitigation_mode must be one of defensive, strictest, monitor."
+    error_message = "desync_mitigation_mode must be one of monitor, defensive, strictest." #####  monitor: 監視、defensive: 防御的、strictest: 厳しい
   }
 }
 
@@ -75,7 +75,7 @@ variable "enable_connection_logs" {
 
 ### ターゲットグループ関連
 variable "deregistration_delay" {
-  description = "Deregistration delay time for target group"
+  description = "Deregistration delay time for target group" ##### deregistration delay（登録解除遅延）:コネクション・ドレーニング
   type        = number
   validation {
     condition     = var.deregistration_delay >= 0 && var.deregistration_delay <= 3600
@@ -144,7 +144,7 @@ variable "health_check_unhealthy_threshold" {
 }
 
 variable "health_check_matcher" {
-  description = "Matcher of health check"
+  description = "Matcher of health check" ##### matcher: マッチャー（成功か失敗かを判断するための条件）
   type        = string
 }
 

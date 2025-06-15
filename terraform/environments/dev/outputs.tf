@@ -214,22 +214,22 @@ output "alb_front_target_group_arn" {
 
 ## CloudTrail
 output "cloudtrail_management_trail_arn" {
-  description = "CloudTrailの管理証跡のARN"
+  description = "ARN of the CloudTrail management trail"
   value = module.cloudtrail.cloudtrail_management_trail_arn
 }
 output "cloudtrail_data_trail_arn" {
-  description = "CloudTrailのデータ証跡のARN"
+  description = "ARN of the CloudTrail data trail"
   value = module.cloudtrail.cloudtrail_data_trail_arn
 }
 
 output "cloudtrail_insight_trail_arn" {
-  description = "CloudTrailのインサイト証跡のARN"
+  description = "ARN of the CloudTrail insight trail"
   value = module.cloudtrail.cloudtrail_insight_trail_arn
 }
 
 ## VPC Flow Logs
 output "vpc_flow_log_arn" {
-  description = "VPC Flow LogのARN"
+  description = "ARN of the VPC Flow Log"
   value = module.vpc_flow_logs.vpc_flow_log_arn
 }
 

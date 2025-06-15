@@ -691,78 +691,95 @@ variable "routing_http_response_server_enabled" {
 
 ## CloudTrail
 variable "enable_management_logging" {
-  description = "管理イベント証跡のログ記録を有効にするかどうか（セキュリティ・コンプライアンス上重要）"
+  description = "Whether to enable management event logging"
   type        = bool
 }
 
-variable "enable_data_logging" {
-  description = "データイベント証跡のログ記録を有効にするかどうか（大量ログ発生のため注意）"
-  type        = bool
-}
-
-variable "enable_insight_logging" {
-  description = "インサイトイベント証跡のログ記録を有効にするかどうか（追加コスト発生）"
-  type        = bool
+variable "cloudtrail_kms_key_id" {
+  description = "ID of the KMS key for CloudTrail logs"
+  type        = string
 }
 
 variable "include_global_service_events" {
-  description = "グローバルサービスイベントを含めるかどうか"
+  description = "Whether to include global service events"
   type        = bool
 }
 
 variable "is_multi_region_trail" {
-  description = "マルチリージョントレイルにするかどうか"
+  description = "Whether to enable multi-region trail"
   type        = bool
 }
 
 variable "enable_log_file_validation" {
-  description = "ログファイル検証を有効にするかどうか"
+  description = "Whether to enable log file validation"
   type        = bool
 }
 
 variable "event_selector_include_management_events" {
-  description = "管理イベントを含めるかどうか"
+  description = "Whether to include management events"
   type        = bool
 }
 
 variable "event_selector_read_write_type" {
-  description = "読み書きのイベントを記録するかどうか"
+  description = "Whether to record read/write events"
   type        = string
 }
 
 variable "exclude_management_event_sources" {
-  description = "管理イベントに含めないイベントソース"
+  description = "Event sources to exclude from management events"
   type        = list(string)
+}
+
+variable "enable_data_logging" {
+  description = "Whether to enable data event logging"
+  type        = bool
+}
+
+variable "enable_insight_logging" {
+  description = "Whether to enable insight event logging"
+  type        = bool
 }
 
 ## VPC Flow Logs
 variable "enable_vpc_flow_logs" {
-  description = "VPC Flow Logsを有効にするかどうか"
+  description = "Whether to enable VPC Flow Logs"
   type        = bool
 }
 
 variable "traffic_type" {
-  description = "記録するトラフィック（ALL, ACCEPT, REJECT）"
+  description = "Traffic type to record (ALL, ACCEPT, REJECT)"
   type        = string
+  validation {
+    condition = contains(["ALL", "ACCEPT", "REJECT"], var.traffic_type)
+    error_message = "traffic_type must be ALL, ACCEPT, or REJECT."
+  }
 }
 
 variable "max_aggregation_interval" {
-  description = "フローログの最大集約間隔（60秒または600秒）"
+  description = "Maximum aggregation interval for flow logs (60 seconds or 600 seconds)"
   type        = number
+  validation {
+    condition = contains([60, 600], var.max_aggregation_interval)
+    error_message = "max_aggregation_interval must be 60 or 600."
+  }
 }
 
 variable "log_format" {
-  description = "VPC Flow Logsのログフォーマット"
+  description = "Log format for VPC Flow Logs"
   type        = string
 }
 
 variable "destination_options" {
-  description = "VPC Flow Logsの宛先オプション"
+  description = "Destination options for VPC Flow Logs"
   type = object({
     file_format                = string
     hive_compatible_partitions = bool
     per_hour_partition         = bool
   })
+  validation {
+    condition = contains(["plain-text", "parquet"], var.destination_options.file_format)
+    error_message = "destination_options.file_format must be 'plain-text' or 'parquet'."
+  }
 }
 
 ## ECR
