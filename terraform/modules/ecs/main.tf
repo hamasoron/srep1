@@ -3,7 +3,7 @@
 resource "aws_ecs_cluster" "terra_ecs_cluster" {
   name = "${var.system_name}-${var.environment_name}-cluster"
   configuration {
-    execute_command_configuration {
+    execute_command_configuration { ##### Cluster内でECS Execを使用するための設定
       logging = "DEFAULT"
       kms_key_id = var.ecs_kms_key_id
     }
@@ -13,7 +13,7 @@ resource "aws_ecs_cluster" "terra_ecs_cluster" {
   }
 }
 
-## ECSクラスターの容量プロバイダーの設定
+## ECSクラスターの容量プロバイダー（購入オプション）とデフォルトの容量プロバイダー（購入オプション）の設定
 resource "aws_ecs_cluster_capacity_providers" "terra_ecs_cluster_capacity_providers" {
   cluster_name = aws_ecs_cluster.terra_ecs_cluster.name
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
@@ -39,7 +39,7 @@ resource "aws_service_discovery_service" "terra_service_discovery_service" {
   name = "api-python"
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.terra_service_discovery_private_dns_namespace.id
-    routing_policy = "MULTIVALUE" ##### 複数のタスクが存在する場合、それらのタスクのIPアドレスを返す（ラウンドロビン方式）
+    routing_policy = "MULTIVALUE" ##### 複数のタスクが存在する場合、それらのタスクのIPアドレスを返す（ラウンドロビン方式）。MULTIVALUE: 複数値（multi + value））
     dns_records {
       ttl  = 60
       type = "A"
