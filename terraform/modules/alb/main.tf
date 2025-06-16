@@ -181,7 +181,7 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
   priority = 100 ##### 数値が低いほど、ルールが優先
   condition {
     path_pattern {
-      values = ["/"]
+      values = ["/*"]
     }
   }
   action {
