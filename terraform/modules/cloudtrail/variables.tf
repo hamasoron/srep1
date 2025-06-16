@@ -25,11 +25,6 @@ variable "s3_cloudtrail_logs_bucket_name" {
 }
 
 ## CloudTrail
-variable "enable_management_logging" {
-  description = "Whether to enable management event logging"
-  type        = bool
-}
-
 variable "cloudtrail_kms_key_id" {
   description = "ID of the KMS key for CloudTrail logs"
   type        = string
@@ -37,6 +32,11 @@ variable "cloudtrail_kms_key_id" {
     condition     = var.cloudtrail_kms_key_id == null || can(length(var.cloudtrail_kms_key_id) > 0)
     error_message = "cloudtrail_kms_key_id must be null or a non-empty string."
   }
+}
+
+variable "enable_management_logging" {
+  description = "Whether to enable management event logging"
+  type        = bool
 }
 
 variable "include_global_service_events" {

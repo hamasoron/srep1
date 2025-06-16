@@ -690,14 +690,14 @@ variable "routing_http_response_server_enabled" {
 }
 
 ## CloudTrail
-variable "enable_management_logging" {
-  description = "Whether to enable management event logging"
-  type        = bool
-}
-
 variable "cloudtrail_kms_key_id" {
   description = "ID of the KMS key for CloudTrail logs"
   type        = string
+}
+
+variable "enable_management_logging" {
+  description = "Whether to enable management event logging"
+  type        = bool
 }
 
 variable "include_global_service_events" {
@@ -831,82 +831,118 @@ variable "ecs_kms_key_id" {
 
 ### タスク定義関連
 variable "api_task_cpu" {
-  description = "APIサービスのタスクのCPU数"
+  description = "CPU units for the API task (vCPU)"
   type        = number
+  validation {
+    condition     = var.api_task_cpu >= 256 && var.api_task_cpu <= 16384
+    error_message = "api_task_cpu must be between 256 and 16384 (minimum 0.25vCPU, maximum 16vCPU)."
+  }
 }
 
 variable "api_task_memory" {
-  description = "APIサービスのタスクのメモリ数"
+  description = "Memory for the API task (MB)"
   type        = number
+  validation {
+    condition     = var.api_task_memory >= 512 && var.api_task_memory <= 122880 ##### CPUとの関係性により、122880MB（120GB）が最大値（例: 0.25vCPUの場合、512MB, 1GB, 2GBのみ設定可能）
+    error_message = "api_task_memory must be between 512MB and 122880MB (minimum 0.5GB, maximum 120GB)."
+  }
 }
 
 variable "front_task_cpu" {
-  description = "フロントエンドサービスのタスクのCPU数"
+  description = "CPU units for the front-end task (vCPU)"
   type        = number
+  validation {
+    condition     = var.front_task_cpu >= 256 && var.front_task_cpu <= 16384
+    error_message = "front_task_cpu must be between 256 and 16384 (minimum 0.25vCPU, maximum 16vCPU)."
+  }
 }
 
 variable "front_task_memory" {
-  description = "フロントエンドサービスのタスクのメモリ数"
+  description = "Memory for the front-end task (MB)"
   type        = number
+  validation {
+    condition     = var.front_task_memory >= 512 && var.front_task_memory <= 122880 ##### CPUとの関係性により、122880MB（120GB）が最大値（例: 0.25vCPUの場合、512MB, 1GB, 2GBのみ設定可能）
+    error_message = "front_task_memory must be between 512MB and 122880MB (minimum 0.5GB, maximum 120GB)."
+  }
 }
 
 variable "db_initdata_task_cpu" {
-  description = "データ投入用タスクのCPU数"
+  description = "CPU units for the DB initialization task (vCPU)"
   type        = number
+  validation {
+    condition     = var.db_initdata_task_cpu >= 256 && var.db_initdata_task_cpu <= 16384
+    error_message = "db_initdata_task_cpu must be between 256 and 16384 (minimum 0.25vCPU, maximum 16vCPU)."
+  }
 }
 
 variable "db_initdata_task_memory" {
-  description = "データ投入用タスクのメモリ数"
+  description = "Memory for the DB initialization task (MB)"
   type        = number
+  validation {
+    condition     = var.db_initdata_task_memory >= 512 && var.db_initdata_task_memory <= 122880 ##### CPUとの関係性により、122880MB（120GB）が最大値（例: 0.25vCPUの場合、512MB, 1GB, 2GBのみ設定可能）
+    error_message = "db_initdata_task_memory must be between 512MB and 122880MB (minimum 0.5GB, maximum 120GB)."
+  }
 }
 
 variable "db_inituser_task_cpu" {
-  description = "ユーザー作成用タスクのCPU数"
+  description = "CPU units for the DB user creation task (vCPU)"
   type        = number
+  validation {
+    condition     = var.db_inituser_task_cpu >= 256 && var.db_inituser_task_cpu <= 16384
+    error_message = "db_inituser_task_cpu must be between 256 and 16384 (minimum 0.25vCPU, maximum 16vCPU)."
+  }
 }
 
 variable "db_inituser_task_memory" {
-  description = "ユーザー作成用タスクのメモリ数"
+  description = "Memory for the DB user creation task (MB)"
   type        = number
+  validation {
+    condition     = var.db_inituser_task_memory >= 512 && var.db_inituser_task_memory <= 122880 ##### CPUとの関係性により、122880MB（120GB）が最大値（例: 0.25vCPUの場合、512MB, 1GB, 2GBのみ設定可能）
+    error_message = "db_inituser_task_memory must be between 512MB and 122880MB (minimum 0.5GB, maximum 120GB)."
+  }
 }
 
 ### サービス関連
 variable "api_desired_count" {
-  description = "APIサービスの希望するタスク数"
+  description = "Desired number of tasks for the API service"
   type        = number
 }
 
 variable "front_desired_count" {
-  description = "フロントエンドサービスの希望するタスク数"
+  description = "Desired number of tasks for the front-end service"
   type        = number
 }
 
 variable "force_new_deployment" {
-  description = "ECSサービスの強制的なデプロイを有効にするかどうか"
+  description = "Whether to enable force deployment for the ECS service"
   type        = bool
 }
 
 variable "platform_version" {
-  description = "ECSのプラットフォームバージョン"
+  description = "Platform version for ECS"
   type        = string
 }
 
 variable "enable_execute_command" {
-  description = "ECSのコマンド実行を有効にするかどうか"
+  description = "Whether to enable ECS Exec for the ECS service"
   type        = bool
 }
 
 variable "deployment_circuit_breaker_enable" {
-  description = "デプロイの回路遮断器を有効にするかどうか"
+  description = "Whether to enable deployment circuit breaker for the ECS service"
   type        = bool
 }
 
 variable "deployment_circuit_breaker_rollback" {
-  description = "デプロイの回路遮断器をロールバックするかどうか"
+  description = "Whether to rollback the deployment circuit breaker"
   type        = bool
 }
 
 variable "deployment_controller_type" {
-  description = "デプロイ制御（ECS:ローリングデプロイ、CODE_DEPLOY:ブルー/グリーンデプロイか）"
+  description = "deployment controller type (ECS: rolling deployment, CODE_DEPLOY: blue/green deployment)"
   type        = string
+  validation {
+    condition     = contains(["ECS", "CODE_DEPLOY"], var.deployment_controller_type)
+    error_message = "deployment_controller_type must be one of ECS（rolling deployment）, CODE_DEPLOY（blue/green deployment）."
+  }
 }

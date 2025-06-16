@@ -118,9 +118,9 @@ module "rds" {
 
 ## Lambdaのモジュール呼び出し
 module "lambda" {
-  source = "../../modules/lambda"
-  system_name     = var.system_name
-  environment_name = var.environment_name
+  source                                = "../../modules/lambda"
+  system_name                           = var.system_name
+  environment_name                      = var.environment_name
   ### VPC関連
   lambda_protected_or_public_subnet_ids = (
     module.vpc.vpc_create_protected_ngw_associations
@@ -128,27 +128,27 @@ module "lambda" {
   : values(module.vpc.vpc_public_subnet_ids)
   )
   ### セキュリティグループ関連
-  lambda_security_group_id = module.sg.sg_security_group_ids["lambda"]
+  lambda_security_group_id              = module.sg.sg_security_group_ids["lambda"]
   ### IAM Role関連
-  lambda_master_role_arn = module.iam_role.iam_role_lambda_master_rotation_arn
-  lambda_app_role_arn = module.iam_role.iam_role_lambda_app_rotation_arn
+  lambda_master_role_arn                = module.iam_role.iam_role_lambda_master_rotation_arn
+  lambda_app_role_arn                   = module.iam_role.iam_role_lambda_app_rotation_arn
   ### 環境変数関連（Lambda関数の環境変数）
-  db_rotation_writer_host = module.rds.rds_cluster_writer_endpoint
-  db_rotation_port = module.rds.rds_cluster_port
-  db_cluster_identifier = module.rds.rds_cluster_identifier
-  master_secret_arn = module.secretsmanager.secretsmanager_secret_arns["master"]
-  app_secret_arn = module.secretsmanager.secretsmanager_secret_arns["app"]
+  db_rotation_writer_host               = module.rds.rds_cluster_writer_endpoint ##### マスターのエンドポイント
+  db_rotation_port                      = module.rds.rds_cluster_port
+  db_cluster_identifier                 = module.rds.rds_cluster_identifier
+  master_secret_arn                     = module.secretsmanager.secretsmanager_secret_arns["master"]
+  app_secret_arn                        = module.secretsmanager.secretsmanager_secret_arns["app"]
   ### Lambda関数関連
-  memory_size     = var.memory_size
-  timeout         = var.timeout
-  reserved_concurrent_executions = var.reserved_concurrent_executions
-  enable_rotation_on_apply = var.enable_rotation_on_apply
-  rotation_secrets = var.rotation_secrets
-  master_rotation_schedule_expression = var.master_rotation_schedule_expression
-  app_rotation_schedule_expression = var.app_rotation_schedule_expression
-  lambda_kms_key_arn = var.lambda_kms_key_arn
+  memory_size                           = var.memory_size
+  timeout                               = var.timeout
+  reserved_concurrent_executions        = var.reserved_concurrent_executions
+  enable_rotation_on_apply              = var.enable_rotation_on_apply
+  rotation_secrets                      = var.rotation_secrets
+  master_rotation_schedule_expression   = var.master_rotation_schedule_expression
+  app_rotation_schedule_expression      = var.app_rotation_schedule_expression
+  lambda_kms_key_arn                    = var.lambda_kms_key_arn
   ### その他（明示的な依存関係）
-  depends_on = [module.secretsmanager, module.rds, module.iam_role, module.sg]
+  depends_on                            = [module.secretsmanager, module.rds, module.iam_role, module.sg]
 }
 
 ## S3のモジュール呼び出し
@@ -162,69 +162,69 @@ module "s3" {
 
 ## ALBのモジュール呼び出し
 module "alb" {
-  source                           = "../../modules/alb"
-  system_name                      = var.system_name
-  environment_name                 = var.environment_name
-  vpc_id                           = module.vpc.vpc_id
-  public_subnet_ids                = values(module.vpc.vpc_public_subnet_ids)
-  security_group_id                = module.sg.sg_security_group_ids["alb"]
+  source                               = "../../modules/alb"
+  system_name                          = var.system_name
+  environment_name                     = var.environment_name
+  vpc_id                               = module.vpc.vpc_id
+  public_subnet_ids                    = values(module.vpc.vpc_public_subnet_ids)
+  security_group_id                    = module.sg.sg_security_group_ids["alb"]
   ### ALB関連
-  enable_deletion_protection       = var.enable_deletion_protection
-  desync_mitigation_mode           = var.desync_mitigation_mode
-  enable_access_logs               = var.enable_access_logs
-  enable_connection_logs           = var.enable_connection_logs
-  s3_alb_logs_bucket_name          = module.s3.s3_alb_logs_bucket_name
+  enable_deletion_protection           = var.enable_deletion_protection
+  desync_mitigation_mode               = var.desync_mitigation_mode
+  enable_access_logs                   = var.enable_access_logs
+  enable_connection_logs               = var.enable_connection_logs
+  s3_alb_logs_bucket_name              = module.s3.s3_alb_logs_bucket_name
   ### ターゲットグループ関連
-  deregistration_delay             = var.deregistration_delay
-  load_balancing_algorithm_type    = var.load_balancing_algorithm_type
+  deregistration_delay                 = var.deregistration_delay
+  load_balancing_algorithm_type        = var.load_balancing_algorithm_type
   ### ヘルスチェック関連
-  health_check_interval            = var.health_check_interval
-  health_check_path                = var.health_check_path
-  health_check_port                = var.health_check_port
-  health_check_protocol            = var.health_check_protocol
-  health_check_timeout             = var.health_check_timeout
-  health_check_healthy_threshold   = var.health_check_healthy_threshold
-  health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
-  health_check_matcher             = var.health_check_matcher
+  health_check_interval                = var.health_check_interval
+  health_check_path                    = var.health_check_path
+  health_check_port                    = var.health_check_port
+  health_check_protocol                = var.health_check_protocol
+  health_check_timeout                 = var.health_check_timeout
+  health_check_healthy_threshold       = var.health_check_healthy_threshold
+  health_check_unhealthy_threshold     = var.health_check_unhealthy_threshold
+  health_check_matcher                 = var.health_check_matcher
   ### リスナー関連
   routing_http_response_server_enabled = var.routing_http_response_server_enabled
-  certificate_arn                  = module.acm.acm_certificate_arn
+  certificate_arn                      = module.acm.acm_certificate_arn
   ### その他（明示的な依存関係）
-  depends_on                       = [module.s3]
+  depends_on                           = [module.s3]
 }
 
 ## CloudTrailのモジュール呼び出し
 module "cloudtrail" {
   source = "../../modules/cloudtrail"
-  system_name                            = var.system_name
-  environment_name                       = var.environment_name
-  s3_cloudtrail_logs_bucket_name         = module.s3.s3_cloudtrail_logs_bucket_name
-  enable_management_logging              = var.enable_management_logging
-  cloudtrail_kms_key_id                  = var.cloudtrail_kms_key_id
-  enable_data_logging                    = var.enable_data_logging
-  enable_insight_logging                 = var.enable_insight_logging
-  include_global_service_events          = var.include_global_service_events
-  is_multi_region_trail                  = var.is_multi_region_trail
-  enable_log_file_validation             = var.enable_log_file_validation
+  system_name                              = var.system_name
+  environment_name                         = var.environment_name
+  s3_cloudtrail_logs_bucket_name           = module.s3.s3_cloudtrail_logs_bucket_name
+  cloudtrail_kms_key_id                    = var.cloudtrail_kms_key_id
+  enable_management_logging                = var.enable_management_logging
+  include_global_service_events            = var.include_global_service_events
+  is_multi_region_trail                    = var.is_multi_region_trail
+  enable_log_file_validation               = var.enable_log_file_validation
   event_selector_include_management_events = var.event_selector_include_management_events
-  event_selector_read_write_type = var.event_selector_read_write_type
-  exclude_management_event_sources = var.exclude_management_event_sources
-  depends_on                       = [module.s3]
+  event_selector_read_write_type           = var.event_selector_read_write_type
+  exclude_management_event_sources         = var.exclude_management_event_sources
+  enable_data_logging                      = var.enable_data_logging
+  enable_insight_logging                   = var.enable_insight_logging
+  depends_on                               = [module.s3]
 }
 
 ## VPC Flow Logsのモジュール呼び出し
 module "vpc_flow_logs" {
-  source = "../../modules/vpc_flow_logs"
-  system_name      = var.system_name
-  environment_name = var.environment_name
-  vpc_id           = module.vpc.vpc_id
-  enable_vpc_flow_logs                    = var.enable_vpc_flow_logs
-  s3_vpc_flow_logs_bucket_arn             = module.s3.s3_vpc_flow_logs_bucket_arn
-  traffic_type                           = var.traffic_type
-  max_aggregation_interval               = var.max_aggregation_interval
-  log_format                             = var.log_format
-  destination_options = var.destination_options
-  depends_on = [module.vpc, module.s3]
+  source                      = "../../modules/vpc_flow_logs"
+  system_name                 = var.system_name
+  environment_name            = var.environment_name
+  vpc_id                      = module.vpc.vpc_id
+  s3_vpc_flow_logs_bucket_arn = module.s3.s3_vpc_flow_logs_bucket_arn
+  enable_vpc_flow_logs        = var.enable_vpc_flow_logs
+  traffic_type                = var.traffic_type
+  max_aggregation_interval    = var.max_aggregation_interval
+  log_format                  = var.log_format
+  destination_options         = var.destination_options
+  depends_on                  = [module.vpc, module.s3]
 }
 
 ## Route53 Recordsのモジュール呼び出し
@@ -239,71 +239,81 @@ module "route53_records" {
 
 ## ECRのモジュール呼び出し
 module "ecr" {
-  source                      = "../../modules/ecr"
-  system_name                 = var.system_name
-  environment_name            = var.environment_name
-  image_tag_mutability        = var.image_tag_mutability
-  ecr_force_delete            = var.ecr_force_delete
-  encryption_type             = var.encryption_type
-  ecr_kms_key                 = var.ecr_kms_key
-  ecr_repositories            = var.ecr_repositories
+  source               = "../../modules/ecr"
+  system_name          = var.system_name
+  environment_name     = var.environment_name
+  image_tag_mutability = var.image_tag_mutability
+  ecr_force_delete     = var.ecr_force_delete
+  encryption_type      = var.encryption_type
+  ecr_kms_key          = var.ecr_kms_key
+  ecr_repositories     = var.ecr_repositories
+}
+
+## CloudMapのモジュール呼び出し
+module "cloudmap" {
+  source           = "../../modules/cloudmap"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  vpc_id           = module.vpc.vpc_id
+  depends_on       = [module.vpc]
 }
 
 ## ECSのモジュール呼び出し
 module "ecs" {
-  source                              = "../../modules/ecs"
-  region_name                         = var.region_name
-  system_name                         = var.system_name
-  environment_name                    = var.environment_name
-  create_protected_ngw_associations   = var.create_protected_ngw_associations
-  vpc_id                              = module.vpc.vpc_id
+  source                                  = "../../modules/ecs"
+  region_name                             = var.region_name
+  system_name                             = var.system_name
+  environment_name                        = var.environment_name
+  create_protected_ngw_associations       = var.create_protected_ngw_associations
+  vpc_id                                  = module.vpc.vpc_id
   ecs_protected_or_public_subnet_ids      = (
     module.vpc.vpc_create_protected_ngw_associations
   ? values(module.vpc.vpc_protected_subnet_ids)
   : values(module.vpc.vpc_public_subnet_ids)
   )
-  front_security_group_id             = module.sg.sg_security_group_ids["ecs-front-nginx"]
-  api_security_group_id               = module.sg.sg_security_group_ids["ecs-api-python"]
-  ecs_task_role_arn                   = module.iam_role.iam_role_ecs_task_role_arn
-  ecs_task_execution_role_arn         = module.iam_role.iam_role_ecs_task_execution_role_arn
-  front_target_group_arn              = module.alb.alb_front_target_group_arn
-  front_ecr_repository_url            = module.ecr.ecr_repository_urls["front-nginx"]
-  api_ecr_repository_url              = module.ecr.ecr_repository_urls["api-python"]
-  db_initdata_ecr_repository_url      = module.ecr.ecr_repository_urls["db-initdata"]
-  db_inituser_ecr_repository_url      = module.ecr.ecr_repository_urls["db-inituser"]
+  front_security_group_id                 = module.sg.sg_security_group_ids["ecs-front-nginx"]
+  api_security_group_id                   = module.sg.sg_security_group_ids["ecs-api-python"]
+  ecs_task_role_arn                       = module.iam_role.iam_role_ecs_task_role_arn
+  ecs_task_execution_role_arn             = module.iam_role.iam_role_ecs_task_execution_role_arn
+  front_target_group_arn                  = module.alb.alb_front_target_group_arn
+  front_ecr_repository_url                = module.ecr.ecr_repository_urls["front-nginx"]
+  api_ecr_repository_url                  = module.ecr.ecr_repository_urls["api-python"]
+  db_initdata_ecr_repository_url          = module.ecr.ecr_repository_urls["db-initdata"]
+  db_inituser_ecr_repository_url          = module.ecr.ecr_repository_urls["db-inituser"]
+  cloudmap_service_arn                    = module.cloudmap.cloudmap_service_arn
   ### クラスター関連
-  ecs_kms_key_id                      = var.ecs_kms_key_id
+  ecs_kms_key_id                          = var.ecs_kms_key_id
   ### タスク定義関連
-  api_task_cpu                        = var.api_task_cpu
-  api_task_memory                     = var.api_task_memory
-  front_task_cpu                      = var.front_task_cpu
-  front_task_memory                   = var.front_task_memory
-  db_initdata_task_cpu                = var.db_initdata_task_cpu
-  db_initdata_task_memory             = var.db_initdata_task_memory
-  db_inituser_task_cpu                = var.db_inituser_task_cpu
-  db_inituser_task_memory             = var.db_inituser_task_memory
+  api_task_cpu                            = var.api_task_cpu
+  api_task_memory                         = var.api_task_memory
+  front_task_cpu                          = var.front_task_cpu
+  front_task_memory                       = var.front_task_memory
+  db_initdata_task_cpu                    = var.db_initdata_task_cpu
+  db_initdata_task_memory                 = var.db_initdata_task_memory
+  db_inituser_task_cpu                    = var.db_inituser_task_cpu
+  db_inituser_task_memory                 = var.db_inituser_task_memory
   ### シークレット関連
-  db_master_secret_arn                = module.secretsmanager.secretsmanager_secret_arns["master"]
-  db_app_secret_arn                   = module.secretsmanager.secretsmanager_secret_arns["app"]
+  db_master_secret_arn                    = module.secretsmanager.secretsmanager_secret_arns["master"]
+  db_app_secret_arn                       = module.secretsmanager.secretsmanager_secret_arns["app"]
   ### 環境変数関連
-  db_writer_host                      = module.rds.rds_cluster_writer_endpoint
-  db_reader_host                      = module.rds.rds_cluster_reader_endpoint
-  db_port                             = module.rds.rds_cluster_port
-  db_name                             = module.rds.rds_cluster_database_name
+  db_writer_host                          = module.rds.rds_cluster_writer_endpoint
+  db_reader_host                          = module.rds.rds_cluster_reader_endpoint
+  db_port                                 = module.rds.rds_cluster_port
+  db_name                                 = module.rds.rds_cluster_database_name
   ### サービス関連
-  api_desired_count                   = var.api_desired_count
-  front_desired_count                 = var.front_desired_count
-  force_new_deployment                = var.force_new_deployment
-  platform_version                    = var.platform_version
-  enable_execute_command              = var.enable_execute_command
-  deployment_circuit_breaker_enable   = var.deployment_circuit_breaker_enable
-  deployment_circuit_breaker_rollback = var.deployment_circuit_breaker_rollback
-  deployment_controller_type          = var.deployment_controller_type
+  api_desired_count                       = var.api_desired_count
+  front_desired_count                     = var.front_desired_count
+  force_new_deployment                    = var.force_new_deployment
+  platform_version                        = var.platform_version
+  enable_execute_command                  = var.enable_execute_command
+  deployment_circuit_breaker_enable       = var.deployment_circuit_breaker_enable
+  deployment_circuit_breaker_rollback     = var.deployment_circuit_breaker_rollback
+  deployment_controller_type              = var.deployment_controller_type
   ### CloudWatch Logs関連
-  api_log_group_name                  = module.cloudwatch_logs.ecs_log_group_names["api-python"]
-  front_log_group_name                = module.cloudwatch_logs.ecs_log_group_names["front-nginx"]
-  db_initdata_log_group_name          = module.cloudwatch_logs.ecs_log_group_names["db-initdata"]
-  db_inituser_log_group_name          = module.cloudwatch_logs.ecs_log_group_names["db-inituser"]
+  api_log_group_name                      = module.cloudwatch_logs.ecs_log_group_names["api-python"]
+  front_log_group_name                    = module.cloudwatch_logs.ecs_log_group_names["front-nginx"]
+  db_initdata_log_group_name              = module.cloudwatch_logs.ecs_log_group_names["db-initdata"]
+  db_inituser_log_group_name              = module.cloudwatch_logs.ecs_log_group_names["db-inituser"]
   ### その他（明示的な依存関係）
-  depends_on                          = [module.vpc, module.iam_role, module.cloudwatch_logs, module.alb, module.ecr]
+  depends_on                              = [module.vpc, module.iam_role, module.cloudwatch_logs, module.alb, module.ecr, module.cloudmap]
 }

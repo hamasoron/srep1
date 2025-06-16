@@ -50,7 +50,7 @@ variable "max_aggregation_interval" {
   type        = number
   validation {
     condition = contains([60, 600], var.max_aggregation_interval)
-    error_message = "max_aggregation_interval must be 60 or 600."
+    error_message = "max_aggregation_interval must be 60 seconds（1 minute） or 600 seconds（10 minutes）."
   }
 }
 
