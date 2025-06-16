@@ -99,7 +99,7 @@ resource "aws_lb_listener" "terra_https_listener" {
         <html lang="ja">
         <head>
         <meta charset="UTF-8">
-        <title>アクセス拒否</title>
+        <title>Access Denied</title>
         <style>
         body{font-family:sans-serif;background:#f5f7fa;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh}
         .container{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);text-align:center;max-width:400px;border-top:4px solid #e74c3c}
@@ -110,8 +110,8 @@ resource "aws_lb_listener" "terra_https_listener" {
         </head>
         <body>
         <div class="container">
-        <h1>アクセス拒否</h1>
-        <p>申し訳ございませんが、このページへのアクセスは許可されていません。</p>
+        <h1>Access Denied</h1>
+        <p>Sorry, you are not allowed to access this page.</p>
         <div class="status">403 Forbidden</div>
         </div>
         </body>
@@ -148,7 +148,7 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
         <html lang="ja">
         <head>
         <meta charset="UTF-8">
-        <title>メンテナンス中</title>
+        <title>Maintenance</title>
         <style>
         body{font-family:sans-serif;background:#e0f7fa;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh}
         .container{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);text-align:center;max-width:400px;border-top:4px solid #0288d1}
@@ -160,8 +160,8 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
         </head>
         <body>
         <div class="container">
-        <h1>メンテナンス中</h1>
-        <p>現在、システムのメンテナンスを実施しております。<br>ご不便をおかけし、申し訳ございません。</p>
+        <h1>Maintenance</h1>
+        <p>We are currently performing maintenance on the system.<br>We apologize for the inconvenience.</p>
         <div class="status">503 Service Unavailable</div>
         <div class="progress"></div>
         </div>
