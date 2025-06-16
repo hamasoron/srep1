@@ -235,13 +235,13 @@ output "vpc_flow_log_arn" {
 
 ## Route53 Records
 output "route53_records_alias_record_fqdn" {
-  description = "AliasレコードのFQDN（ブラウザでALBのDNS名の別名アクセスする際に使用）"
+  description = "FQDN of the Alias record (used when accessing the ALB's DNS name as an alias in the browser)"
   value = module.route53_records.route53_records_alias_record_fqdn
 }
 
 ## ECR
 output "ecr_repository_urls" {
-  description = "マップ形式のECRリポジトリのURL（ECSモジュールのタスク定義のイメージURLとして使用）"
+  description = "URL of the ECR repository (used as the image URL for the task definition in the ECS module)"
   value = module.ecr.ecr_repository_urls
 }
 

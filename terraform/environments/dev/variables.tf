@@ -784,27 +784,35 @@ variable "destination_options" {
 
 ## ECR
 variable "image_tag_mutability" {
-  description = "ECRイメージタグの変更可能/不可能"
+  description = "ECR image tag mutability"
   type        = string
+  validation {
+    condition     = contains(["MUTABLE", "IMMUTABLE"], var.image_tag_mutability)
+    error_message = "image_tag_mutability must be MUTABLE or IMMUTABLE."
+  }
 } 
 
 variable "ecr_force_delete" {
-  description = "ECRリポジトリを強制的に削除するかどうか"
+  description = "Whether to force delete ECR repository"
   type        = bool
 }
 
 variable "encryption_type" {
-  description = "ECRイメージの暗号化タイプ"
+  description = "ECR image encryption type"
   type        = string
+  validation {
+    condition     = contains(["AES256", "KMS"], var.encryption_type)
+    error_message = "encryption_type must be AES256 or KMS."
+  }
 }
 
 variable "ecr_kms_key" {
-  description = "ECRイメージの暗号化に使用するKMSキー"
+  description = "KMS key for ECR image encryption"
   type        = string
 }
 
 variable "ecr_repositories" {
-  description = "ECRリポジトリごとの設定"
+  description = "ECR repository settings"
   type = list(object({
     name             = string
     description      = string
@@ -817,7 +825,7 @@ variable "ecr_repositories" {
 ## ECS
 ### クラスター関連
 variable "ecs_kms_key_id" {
-  description = "KMSキーID（ECSタスク定義用）"
+  description = "ID of the KMS key for ECS task definition"
   type        = string
 }
 

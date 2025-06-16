@@ -34,7 +34,20 @@ resource "aws_ecr_lifecycle_policy" "terra_ecr_lifecycle_policy" {
     rules = [
       {
         rulePriority = 1
-        description  = "最新の${lookup(each.value, "lifecycle_count", 5)}イメージを保持"
+        description  = "untagged images are deleted after 30 days"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 30
+        }
+        action = {
+          type = "expire"
+        }
+      },
+      {
+        rulePriority = 2
+        description  = "Keep the latest ${lookup(each.value, "lifecycle_count", 5)} images"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
