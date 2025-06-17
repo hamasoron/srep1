@@ -212,6 +212,37 @@ output "alb_front_target_group_arn" {
   value = module.alb.alb_front_target_group_arn
 }
 
+## WAF
+# output "waf_web_acl_id" {
+#   description = "ID of the WAF Web ACL"
+#   value = module.waf.web_acl_id
+# }
+
+# output "waf_web_acl_arn" {
+#   description = "ARN of the WAF Web ACL"
+#   value = module.waf.web_acl_arn
+# }
+
+# output "waf_web_acl_name" {
+#   description = "Name of the WAF Web ACL"
+#   value = module.waf.web_acl_name
+# }
+
+# output "waf_logs_bucket_name" {
+#   description = "Name of the WAF logs S3 bucket"
+#   value = module.waf.waf_logs_bucket_name
+# }
+
+# output "waf_logs_bucket_arn" {
+#   description = "ARN of the WAF logs S3 bucket"
+#   value = module.waf.waf_logs_bucket_arn
+# }
+
+# output "waf_firehose_delivery_stream_arn" {
+#   description = "ARN of the Kinesis Firehose delivery stream for WAF logs"
+#   value = module.waf.firehose_delivery_stream_arn
+# }
+
 ## CloudTrail
 output "cloudtrail_management_trail_arn" {
   description = "ARN of the CloudTrail management trail"

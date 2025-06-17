@@ -172,7 +172,7 @@ deregistration_delay             = 30
 load_balancing_algorithm_type    = "round_robin"
 ### ヘルスチェック関連
 health_check_interval            = 30
-health_check_path                = "/"
+health_check_path                = "/health"
 health_check_port                = "traffic-port"
 health_check_protocol            = "HTTP"
 health_check_timeout             = 5

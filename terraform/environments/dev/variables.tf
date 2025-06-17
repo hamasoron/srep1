@@ -689,6 +689,45 @@ variable "routing_http_response_server_enabled" {
   type        = bool
 }
 
+## WAF
+# variable "enable_logging" {
+#   description = "WAFログの有効化"
+#   type        = bool
+#   default     = true
+# }
+
+# variable "log_retention_days" {
+#   description = "WAFログの保持日数"
+#   type        = number
+#   default     = 30
+#   validation {
+#     condition     = var.log_retention_days >= 1 && var.log_retention_days <= 365
+#     error_message = "log_retention_days must be between 1 and 365."
+#   }
+# }
+
+# variable "redacted_headers" {
+#   description = "ログから除外するヘッダー"
+#   type        = list(string)
+#   default     = ["authorization", "cookie", "x-forwarded-for"]
+# }
+
+# variable "enable_rate_limit" {
+#   description = "レート制限の有効化"
+#   type        = bool
+#   default     = true
+# }
+
+# variable "rate_limit_requests_per_5_minutes" {
+#   description = "5分間あたりのリクエスト制限数"
+#   type        = number
+#   default     = 2000
+#   validation {
+#     condition     = var.rate_limit_requests_per_5_minutes >= 100 && var.rate_limit_requests_per_5_minutes <= 100000
+#     error_message = "rate_limit_requests_per_5_minutes must be between 100 and 100000."
+#   }
+# }
+
 ## CloudTrail
 variable "cloudtrail_kms_key_id" {
   description = "ID of the KMS key for CloudTrail logs"
@@ -939,10 +978,10 @@ variable "deployment_circuit_breaker_rollback" {
 }
 
 variable "deployment_controller_type" {
-  description = "deployment controller type (ECS: rolling deployment, CODE_DEPLOY: blue/green deployment)"
+  description = "Type of deployment controller."
   type        = string
   validation {
-    condition     = contains(["ECS", "CODE_DEPLOY"], var.deployment_controller_type)
-    error_message = "deployment_controller_type must be one of ECS（rolling deployment）, CODE_DEPLOY（blue/green deployment）."
+    condition     = contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], var.deployment_controller_type)
+    error_message = "deployment_controller_type must be one of ECS, CODE_DEPLOY, EXTERNAL."
   }
 }

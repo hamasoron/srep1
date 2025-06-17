@@ -153,7 +153,7 @@ memory_size      = 128
 timeout          = 30
 reserved_concurrent_executions = null
 enable_rotation_on_apply = true
-rotation_secrets = ["master"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
+rotation_secrets = ["master", "app"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
 master_rotation_schedule_expression = "cron(0 18 1 * ? *)" ##### 毎月1日の深夜3時0分にマスターをローテーション
 app_rotation_schedule_expression = "cron(0 19 1 * ? *)" ##### 毎月1日の深夜4時0分にアプリをローテーション（マスター完了後に実行される）
 lambda_kms_key_arn = null
@@ -172,7 +172,7 @@ enable_connection_logs           = true
 deregistration_delay             = 30
 load_balancing_algorithm_type    = "round_robin"
 health_check_interval            = 30
-health_check_path                = "/"
+health_check_path                = "/health"
 health_check_port                = "traffic-port"
 health_check_protocol            = "HTTP"
 health_check_timeout             = 5
@@ -181,6 +181,13 @@ health_check_unhealthy_threshold = 2
 health_check_matcher             = "200"
 ### リスナー関連
 routing_http_response_server_enabled = true
+
+## WAF
+# enable_logging                      = true
+# log_retention_days                  = 30
+# redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
+# enable_rate_limit                   = true
+# rate_limit_requests_per_5_minutes   = 2000
 
 ## CloudTrail
 enable_management_logging = true   # 管理イベントは常に有効（セキュリティ上重要）
@@ -254,8 +261,8 @@ db_initdata_task_memory             = 512
 db_inituser_task_cpu                = 256
 db_inituser_task_memory             = 512
 ### サービス関連
-api_desired_count                   = 0
-front_desired_count                 = 0
+api_desired_count                   = 1
+front_desired_count                 = 1
 force_new_deployment                = true
 platform_version                    = "LATEST"
 enable_execute_command              = true

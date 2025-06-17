@@ -357,3 +357,8 @@ resource "aws_route53_record" "terra_route53_record" {
     type                             = "CAA"
     zone_id                          = "Z02521503PM8RAQD26F3Y"
 }
+
+#### ECSexecのログイン
+```bash
+aws ecs execute-command --cluster srep1-ecs-cluster --task タスクID --container nginx --interactive --command "/bin/sh"
+```

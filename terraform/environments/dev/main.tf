@@ -193,6 +193,18 @@ module "alb" {
   depends_on                           = [module.s3]
 }
 
+## WAFのモジュール呼び出し
+# module "waf" {
+#   source           = "../../modules/waf"
+#   system_name      = var.system_name
+#   environment_name = var.environment_name
+#   enable_logging   = var.enable_logging
+#   log_retention_days = var.log_retention_days
+#   redacted_headers = var.redacted_headers
+#   enable_rate_limit = var.enable_rate_limit
+#   rate_limit_requests_per_5_minutes = var.rate_limit_requests_per_5_minutes
+# }
+
 ## CloudTrailのモジュール呼び出し
 module "cloudtrail" {
   source = "../../modules/cloudtrail"
