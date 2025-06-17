@@ -1,7 +1,7 @@
 # リソースの定義
 ## VPC Flow Logs（S3出力のみ）
 resource "aws_flow_log" "terra_flow_log" {
-  count                    = var.enable_vpc_flow_logs ? 1 : 0
+  count                   = var.enable_vpc_flow_logs ? 1 : 0
   vpc_id                  = var.vpc_id
   log_destination_type    = "s3"
   log_destination         = var.s3_vpc_flow_logs_bucket_arn
