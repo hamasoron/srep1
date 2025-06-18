@@ -109,6 +109,28 @@ resource "aws_iam_role" "terra_iam_role_rds_enhanced_monitoring" {
   }
 }
 
+## WAF用のKinesis Firehoseロールを作成
+resource "aws_iam_role" "terra_iam_role_waf_firehose" {
+  name  = "CustomWAFFirehoseRole"
+  description = "Custom IAM role for WAF Kinesis Firehose"
+  max_session_duration = 3600
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "firehose.amazonaws.com"
+        }
+      }
+    ]
+  })
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomWAFFirehoseRole"
+  }
+}
+
 ## GitHub Actions用のIAMロールを作成
 resource "aws_iam_role" "terra_iam_role_github_actions" {
   name = "CustomGitHubActionsRole"
@@ -180,6 +202,14 @@ resource "aws_iam_policy" "terra_iam_policy_rds_enhanced_monitoring" {
     Name = "${var.system_name}-${var.environment_name}-CustomRDSEnhancedMonitoringPolicy"
   }
 }
+resource "aws_iam_policy" "terra_iam_policy_waf_firehose" {
+  name   = "CustomWAFFirehosePolicy"
+  description = "Custom IAM policy for WAF Kinesis Firehose"
+  policy = file("${path.module}/iam_policy/CustomWAFFirehosePolicy.json")
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomWAFFirehosePolicy"
+  }
+}
 resource "aws_iam_policy" "terra_iam_policy_github_actions" {
   name   = "CustomGitHubActionsPolicy"
   description = "Custom IAM policy for GitHub Actions"
@@ -223,6 +253,12 @@ resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_rds_
 resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_github_actions" {
   role       = aws_iam_role.terra_iam_role_github_actions.name
   policy_arn = aws_iam_policy.terra_iam_policy_github_actions.arn
+}
+
+## WAF Firehoseロールにカスタムポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_waf_firehose" {
+  role       = aws_iam_role.terra_iam_role_waf_firehose.name
+  policy_arn = aws_iam_policy.terra_iam_policy_waf_firehose.arn
 }
 
 ## GitHub OIDC（OpenID Connect）プロバイダーを作成

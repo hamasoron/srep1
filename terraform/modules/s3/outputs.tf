@@ -19,3 +19,8 @@ output "s3_vpc_flow_logs_bucket_arn" {
   description = "ARN of the vpc flow logs bucket (used by VPC Flow Logs module to save logs)"
   value       = aws_s3_bucket.terra_s3_bucket["vpc_flow_logs"].arn
 }
+
+output "s3_waf_logs_bucket_arn" {
+  description = "ARN of the waf logs bucket (used by WAF module to save logs)"
+  value       = aws_s3_bucket.terra_s3_bucket["waf_logs"].arn
+}

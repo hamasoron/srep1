@@ -111,6 +111,9 @@ lambda_log_configs = [
   { name = "master", retention_in_days = 1 },
   { name = "app", retention_in_days = 1 },
 ]
+waf_log_configs = [
+  { name = "waf", retention_in_days = 1 },
+]
 cloudwatch_logs_kms_key_id = null
 
 ## Secrets Manager
@@ -183,11 +186,12 @@ health_check_matcher             = "200"
 routing_http_response_server_enabled = true
 
 ## WAF
-# enable_logging                      = true
-# log_retention_days                  = 30
-# redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
-# enable_rate_limit                   = true
-# rate_limit_requests_per_5_minutes   = 2000
+scope = "REGIONAL"
+override_action = "count"
+enable_rate_limit = false
+rate_limit_requests_per_5_minutes   = 1000
+enable_logging                      = true ##### WAFのログを保存するか否か
+redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
 
 ## CloudTrail
 enable_management_logging = true   # 管理イベントは常に有効（セキュリティ上重要）

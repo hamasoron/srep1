@@ -7,8 +7,8 @@
 - **WAF Web ACL**: セキュリティルールを定義するWeb ACL
 - **AWS Managed Rules**: 一般的な攻撃パターンを検出するAWS管理ルール
 - **レート制限**: IPアドレスベースのレート制限
-- **ログ機能**: WAFログのS3保存とCloudWatchメトリクス
-- **セキュリティ設定**: S3バケットの暗号化とパブリックアクセスブロック
+- **ログ機能**: WAFログのKinesis Firehose経由でのS3保存とCloudWatchメトリクス
+- **セキュリティ設定**: 機密情報のマスキング
 
 ## 含まれるAWS Managed Rules
 
@@ -28,12 +28,12 @@ module "waf" {
   environment_name = "dev"
   
   enable_logging   = true
-  log_retention_days = 30
+  redacted_headers = ["authorization", "cookie", "x-forwarded-for"]
   
   enable_rate_limit = true
   rate_limit_requests_per_5_minutes = 2000
   
-  redacted_headers = ["authorization", "cookie", "x-forwarded-for"]
+  firehose_delivery_stream_arn = module.kinesis_firehose.delivery_stream_arns["waf_logs"]
   
   tags = {
     Environment = "dev"
@@ -48,12 +48,15 @@ module "waf" {
 |--------|------|----|-------------|------|
 | system_name | システム名 | string | - | はい |
 | environment_name | 環境名 | string | - | はい |
-| tags | リソースに付与するタグ | map(string) | {} | いいえ |
-| enable_logging | WAFログの有効化 | bool | true | いいえ |
-| log_retention_days | WAFログの保持日数 | number | 30 | いいえ |
+| scope | WAFのスコープ | string | - | はい |
+| override_action | オーバーライドアクション | string | - | はい |
+| enable_logging | WAFログの有効化 | bool | - | はい |
 | redacted_headers | ログから除外するヘッダー | list(string) | ["authorization", "cookie", "x-forwarded-for"] | いいえ |
 | enable_rate_limit | レート制限の有効化 | bool | true | いいえ |
-| rate_limit_requests_per_5_minutes | 5分間あたりのリクエスト制限数 | number | 2000 | いいえ |
+| rate_limit_requests_per_5_minutes | 5分間あたりのリクエスト制限数 | number | 1000 | いいえ |
+| firehose_role_arn | Kinesis Firehose用IAMロールのARN | string | null | いいえ |
+| firehose_delivery_stream_arn | Kinesis Firehose配信ストリームのARN | string | null | いいえ |
+| tags | リソースに付与するタグ | map(string) | {} | いいえ |
 
 ## 出力値
 
@@ -62,27 +65,16 @@ module "waf" {
 | web_acl_id | WAF Web ACLのID |
 | web_acl_arn | WAF Web ACLのARN |
 | web_acl_name | WAF Web ACLの名前 |
-| waf_logs_bucket_name | WAFログ用S3バケット名 |
-| waf_logs_bucket_arn | WAFログ用S3バケットのARN |
-| firehose_delivery_stream_arn | Kinesis Firehose配信ストリームのARN |
 
 ## 作成されるリソース
 
 - `aws_wafv2_web_acl`: WAF Web ACL
-- `aws_kinesis_firehose_delivery_stream`: WAFログ用のKinesis Firehose
-- `aws_s3_bucket`: WAFログ保存用S3バケット
-- `aws_s3_bucket_lifecycle_configuration`: S3バケットのライフサイクル設定
-- `aws_s3_bucket_versioning`: S3バケットのバージョニング設定
-- `aws_s3_bucket_server_side_encryption_configuration`: S3バケットの暗号化設定
-- `aws_s3_bucket_public_access_block`: S3バケットのパブリックアクセスブロック設定
-- `aws_iam_role`: Kinesis Firehose用のIAMロール
-- `aws_iam_role_policy`: Kinesis Firehose用のIAMポリシー
-- `random_string`: S3バケット名の重複回避用ランダム文字列
+- `aws_wafv2_web_acl_logging_configuration`: WAFログ設定
 
 ## セキュリティ考慮事項
 
 - WAFログには機密情報（認証ヘッダー、Cookie等）が含まれるため、適切にマスキングされています
-- S3バケットは暗号化され、パブリックアクセスがブロックされています
+- Kinesis Firehose経由でS3に保存されるログは暗号化されています
 - ログは設定された期間後に自動的に削除されます
 
 ## ALBへのアタッチ方法
@@ -97,8 +89,29 @@ module "alb" {
 }
 ```
 
+## Kinesis Data Firehoseとの連携
+
+WAFログは独立したKinesis Data Firehoseモジュールを介してS3に保存されます：
+
+```hcl
+module "kinesis_data_firehose" {
+  source = "../../modules/kinesis_data_firehose"
+  
+  delivery_streams = {
+    waf_logs = {
+      name        = "waf-logs"
+      destination = "extended_s3"
+      role_arn    = module.iam_role.iam_role_waf_firehose_role_arn
+      bucket_arn  = "arn:aws:s3:::srep1-dev-waf-logs"
+      prefix      = "waf-logs/"
+    }
+  }
+}
+```
+
 ## 注意事項
 
 - WAF Web ACLはリージョナルスコープで作成されます
 - レート制限はIPアドレスベースで動作します
-- ログ機能を無効にした場合、S3バケットとKinesis Firehoseは作成されません 
+- ログ機能を無効にした場合、Kinesis Data Firehoseは作成されません
+- Kinesis Data Firehoseは独立したモジュールで管理されます 

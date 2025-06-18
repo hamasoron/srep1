@@ -80,6 +80,26 @@ variable "lambda_log_configs" {
   }
 }
 
+variable "waf_log_configs" {
+  description = "WAF log configurations"
+  type = list(object({
+    name              = string
+    retention_in_days = number
+  }))
+  validation {
+    condition = alltrue([
+      for v in var.waf_log_configs : contains(
+        [
+          0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,
+          400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
+        ],
+        v.retention_in_days
+      )
+    ])
+    error_message = "retention_in_days must be a valid value: 0 (forever), or one of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653."
+  }
+}
+
 variable "cloudwatch_logs_kms_key_id" {
   description = "ID of KMS key for CloudWatch Logs."
   type        = string

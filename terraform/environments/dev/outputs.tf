@@ -238,11 +238,6 @@ output "alb_front_target_group_arn" {
 #   value = module.waf.waf_logs_bucket_arn
 # }
 
-# output "waf_firehose_delivery_stream_arn" {
-#   description = "ARN of the Kinesis Firehose delivery stream for WAF logs"
-#   value = module.waf.firehose_delivery_stream_arn
-# }
-
 ## CloudTrail
 output "cloudtrail_management_trail_arn" {
   description = "ARN of the CloudTrail management trail"
@@ -331,4 +326,15 @@ output "ecs_db_initdata_task_definition_arn" {
 output "ecs_db_inituser_task_definition_arn" {
   description = "ARN of the ECS DB user creation task definition (Used for GitHub Actions)"
   value = module.ecs.ecs_db_inituser_task_definition_arn
+}
+
+## Kinesis Data Firehose
+output "kinesis_data_firehose_delivery_stream_arns" {
+  description = "Map of Kinesis Data Firehose delivery stream ARNs"
+  value = module.kinesis_data_firehose.delivery_stream_arns
+}
+
+output "kinesis_data_firehose_delivery_stream_names" {
+  description = "Map of Kinesis Data Firehose delivery stream names"
+  value = module.kinesis_data_firehose.delivery_stream_names
 }

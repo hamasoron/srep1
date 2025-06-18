@@ -116,6 +116,33 @@ locals {
           }
         ]
       })
+    },
+    waf_logs = {
+      name = "${var.system_name}-${var.environment_name}-waf-logs"
+      lifecycle_rule = true
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow"
+            Principal = {
+              Service = "firehose.amazonaws.com"
+            }
+            Action = [
+              "s3:AbortMultipartUpload",
+              "s3:GetBucketLocation",
+              "s3:GetObject",
+              "s3:ListBucket",
+              "s3:ListBucketMultipartUploads",
+              "s3:PutObject"
+            ]
+            Resource = [
+              "arn:aws:s3:::${var.system_name}-${var.environment_name}-waf-logs",
+              "arn:aws:s3:::${var.system_name}-${var.environment_name}-waf-logs/*"
+            ]
+          }
+        ]
+      })
     }
   }
 

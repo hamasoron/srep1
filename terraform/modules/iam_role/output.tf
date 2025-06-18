@@ -24,3 +24,8 @@ output "iam_role_github_actions_role_arn" {
   description = "ARN of the GitHub Actions role (used for copying to AWS_ROLE_TO_ASSUME in GitHub Secrets and Variables)"
   value       = aws_iam_role.terra_iam_role_github_actions.arn
 }
+
+output "iam_role_waf_firehose_role_arn" {
+  description = "ARN of the WAF Firehose role (used by WAF module.)"
+  value       = aws_iam_role.terra_iam_role_waf_firehose.arn
+}

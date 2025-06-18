@@ -304,6 +304,26 @@ variable "lambda_log_configs" {
   }
 }
 
+variable "waf_log_configs" {
+  description = "WAF log configurations"
+  type = list(object({
+    name = string
+    retention_in_days = number
+  }))
+  validation {
+    condition = alltrue([
+      for v in var.waf_log_configs : contains(
+        [
+          0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,
+          400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
+        ],
+        v.retention_in_days
+      )
+    ])
+    error_message = "retention_in_days must be a valid value: 0 (forever), or one of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653."
+  }
+}
+
 variable "cloudwatch_logs_kms_key_id" {
   description = "ID of KMS key for CloudWatch Logs"
   type        = string
@@ -690,43 +710,60 @@ variable "routing_http_response_server_enabled" {
 }
 
 ## WAF
-# variable "enable_logging" {
-#   description = "WAFログの有効化"
-#   type        = bool
-#   default     = true
-# }
+variable "scope" {
+  description = "Scope to attach WAF"
+  type        = string
+  validation {
+    condition     = contains(["REGIONAL", "CLOUDFRONT"], var.scope)
+    error_message = "scope must be one of REGIONAL or CLOUDFRONT."
+  }
+}
 
-# variable "log_retention_days" {
-#   description = "WAFログの保持日数"
-#   type        = number
-#   default     = 30
-#   validation {
-#     condition     = var.log_retention_days >= 1 && var.log_retention_days <= 365
-#     error_message = "log_retention_days must be between 1 and 365."
-#   }
-# }
+variable "override_action" {
+  description = "Override action"
+  type        = string
+  validation {
+    condition     = contains(["count", "none"], var.override_action)
+    error_message = "override_action must be one of count or none."
+  }
+}
 
-# variable "redacted_headers" {
-#   description = "ログから除外するヘッダー"
-#   type        = list(string)
-#   default     = ["authorization", "cookie", "x-forwarded-for"]
-# }
+variable "enable_logging" {
+  description = "WAFログの有効化"
+  type        = bool
+}
 
-# variable "enable_rate_limit" {
-#   description = "レート制限の有効化"
-#   type        = bool
-#   default     = true
-# }
+variable "log_retention_days" {
+  description = "WAFログの保持日数"
+  type        = number
+  default     = 30
+  validation {
+    condition     = var.log_retention_days >= 1 && var.log_retention_days <= 365
+    error_message = "log_retention_days must be between 1 and 365."
+  }
+}
 
-# variable "rate_limit_requests_per_5_minutes" {
-#   description = "5分間あたりのリクエスト制限数"
-#   type        = number
-#   default     = 2000
-#   validation {
-#     condition     = var.rate_limit_requests_per_5_minutes >= 100 && var.rate_limit_requests_per_5_minutes <= 100000
-#     error_message = "rate_limit_requests_per_5_minutes must be between 100 and 100000."
-#   }
-# }
+variable "redacted_headers" {
+  description = "ログから除外するヘッダー"
+  type        = list(string)
+  default     = ["authorization", "cookie", "x-forwarded-for"]
+}
+
+variable "enable_rate_limit" {
+  description = "レート制限の有効化"
+  type        = bool
+  default     = true
+}
+
+variable "rate_limit_requests_per_5_minutes" {
+  description = "5分間あたりのリクエスト制限数"
+  type        = number
+  default     = 2000
+  validation {
+    condition     = var.rate_limit_requests_per_5_minutes >= 100 && var.rate_limit_requests_per_5_minutes <= 100000
+    error_message = "rate_limit_requests_per_5_minutes must be between 100 and 100000."
+  }
+}
 
 ## CloudTrail
 variable "cloudtrail_kms_key_id" {

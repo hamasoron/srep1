@@ -64,6 +64,7 @@ module "cloudwatch_logs" {
   rds_log_configs            = var.rds_log_configs
   ecs_log_configs            = var.ecs_log_configs
   lambda_log_configs         = var.lambda_log_configs
+  waf_log_configs            = var.waf_log_configs
   cloudwatch_logs_kms_key_id = var.cloudwatch_logs_kms_key_id
 }
 
@@ -160,6 +161,37 @@ module "s3" {
   log_expiration_days = var.log_expiration_days
 }
 
+## Kinesis Data Firehoseのモジュール呼び出し
+module "kinesis_data_firehose" {
+  source           = "../../modules/kinesis_data_firehose"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  delivery_streams = var.enable_logging ? {
+    waf_logs = {
+      name        = "${var.system_name}-${var.environment_name}-waf-logs"
+      destination = "extended_s3"
+      role_arn    = module.iam_role.iam_role_waf_firehose_role_arn
+      bucket_arn  = "arn:aws:s3:::${var.system_name}-${var.environment_name}-waf-logs"
+      prefix      = "waf-logs/"
+      
+      compression_format = "GZIP"
+      
+      enable_cloudwatch_logging = true
+      cloudwatch_log_group_name = "/aws/firehose/waf-logs"
+      cloudwatch_log_stream_name = "delivery-stream"
+      
+      tags = {
+        Purpose = "WAF Logging"
+      }
+    }
+  } : {}
+  tags = {
+    Environment = var.environment_name
+    Project     = var.system_name
+  }
+  depends_on = [module.s3, module.iam_role]
+}
+
 ## ALBのモジュール呼び出し
 module "alb" {
   source                               = "../../modules/alb"
@@ -193,17 +225,24 @@ module "alb" {
   depends_on                           = [module.s3]
 }
 
-## WAFのモジュール呼び出し
-# module "waf" {
-#   source           = "../../modules/waf"
-#   system_name      = var.system_name
-#   environment_name = var.environment_name
-#   enable_logging   = var.enable_logging
-#   log_retention_days = var.log_retention_days
-#   redacted_headers = var.redacted_headers
-#   enable_rate_limit = var.enable_rate_limit
-#   rate_limit_requests_per_5_minutes = var.rate_limit_requests_per_5_minutes
-# }
+# WAFのモジュール呼び出し
+module "waf" {
+  source           = "../../modules/waf"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  ### WAF関連
+  scope = var.scope
+  override_action = var.override_action
+  enable_rate_limit = var.enable_rate_limit
+  rate_limit_requests_per_5_minutes = var.rate_limit_requests_per_5_minutes
+  ### ログ関連
+  enable_logging   = var.enable_logging
+  redacted_headers = var.redacted_headers
+  firehose_role_arn = module.iam_role.iam_role_waf_firehose_role_arn
+  firehose_delivery_stream_arn = var.enable_logging ? module.kinesis_data_firehose.delivery_stream_arns["waf_logs"] : null
+  ### その他（明示的な依存関係）
+  depends_on       = [module.s3, module.iam_role, module.kinesis_data_firehose]
+}
 
 ## CloudTrailのモジュール呼び出し
 module "cloudtrail" {
