@@ -1,7 +1,7 @@
 # リソースの定義
-## Web ACLの作成（WCU: 最大1500以内に調整。将来的な拡張性を意識して1200を目標）
+## Web ACLの作成（WCU: 最大1500以内に調整。将来的な拡張性を意識して1200前後を目標）。現在: 1000 + 200 + 75 = 1275。
 ###「ベースラインルールグループ（約1,000WCU）＋ユースケース別ルールグループ（調整）＋IPレピュテーションルールグループ（75WCU）でアプローチ
-resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
+resource "aws_wafv2_web_acl" "terra_wafv2_web_acl" {
   name        = "${var.system_name}-${var.environment_name}-webacl"
   description = "Web ACL for ${var.system_name} ${var.environment_name}"
   scope       = var.scope
@@ -14,7 +14,7 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
   rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 1
-    dynamic "override_action" {
+    dynamic "override_action" { ##### ルールグループ内のルールのアクションの挙動を上書きするための設定（count: カウントアクションに上書き、none: 各ルールのデフォルトのアクションを使用）
       for_each = var.override_action == "count" ? [1] : []
       content {
         count {}
@@ -69,7 +69,7 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
   ###### AWSManagedRulesKnownBadInputsRuleSetの設定（WCU: 200）
   rule {
     name     = "AWSManagedRulesKnownBadInputsRuleSet"
-    priority = 2
+    priority = 3
     dynamic "override_action" { 
       for_each = var.override_action == "count" ? [1] : []
       content {
@@ -98,7 +98,7 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
   ###### AWSManagedRulesSQLiRuleSetの設定（WCU: 200）
   rule {
     name     = "AWSManagedRulesSQLiRuleSet"
-    priority = 3
+    priority = 4
     dynamic "override_action" {
       for_each = var.override_action == "count" ? [1] : []
       content {
@@ -127,7 +127,7 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
   ###### AWSManagedRulesAmazonIpReputationListの設定（WCU: 25）
   rule {
     name     = "AWSManagedRulesAmazonIpReputationList"
-    priority = 4
+    priority = 5
     dynamic "override_action" {
       for_each = var.override_action == "count" ? [1] : []
       content {
@@ -155,7 +155,7 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
   ###### AWSManagedRulesAnonymousIpListの設定（WCU: 50）
   rule {
     name     = "AWSManagedRulesAnonymousIpList"
-    priority = 5
+    priority = 6
     dynamic "override_action" {
       for_each = var.override_action == "count" ? [1] : []
       content {
@@ -186,7 +186,7 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
     for_each = var.enable_rate_limit ? [1] : []
     content {
       name     = "RateLimitRule"
-      priority = 6
+      priority = 7
       action {
         block {}
       }
@@ -213,11 +213,17 @@ resource "aws_wafv2_web_acl" "terraform_waf_web_acl" {
   }
 }
 
+# WAFと他AWSリソースの紐づけ（なお、CloudFrontは非対応でCloudFrontモジュール側で紐づける）
+resource "aws_wafv2_web_acl_association" "terra_wafv2_web_acl_association" {
+  resource_arn = var.alb_arn
+  web_acl_arn  = aws_wafv2_web_acl.terra_wafv2_web_acl.arn
+}
+
 # WAF Logging設定（別リソース）
-resource "aws_wafv2_web_acl_logging_configuration" "waf_logging" {
+resource "aws_wafv2_web_acl_logging_configuration" "terra_wafv2_web_acl_logging_configuration" {
   count = var.enable_logging ? 1 : 0
-  log_destination_configs = [var.firehose_delivery_stream_arn]
-  resource_arn           = aws_wafv2_web_acl.terraform_waf_web_acl.arn
+  log_destination_configs = [var.s3_waf_logs_bucket_arn]
+  resource_arn           = var.alb_arn
   dynamic "redacted_fields" {
     for_each = var.redacted_headers
     content {

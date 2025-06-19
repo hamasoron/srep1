@@ -213,30 +213,20 @@ output "alb_front_target_group_arn" {
 }
 
 ## WAF
-# output "waf_web_acl_id" {
-#   description = "ID of the WAF Web ACL"
-#   value = module.waf.web_acl_id
-# }
+output "waf_webacl_id" {
+  description = "ID of the WAF Web ACL"
+  value = module.waf.waf_webacl_id
+}
 
-# output "waf_web_acl_arn" {
-#   description = "ARN of the WAF Web ACL"
-#   value = module.waf.web_acl_arn
-# }
+output "waf_webacl_arn" {
+  description = "ARN of the WAF Web ACL"
+  value = module.waf.waf_webacl_arn
+}
 
-# output "waf_web_acl_name" {
-#   description = "Name of the WAF Web ACL"
-#   value = module.waf.web_acl_name
-# }
-
-# output "waf_logs_bucket_name" {
-#   description = "Name of the WAF logs S3 bucket"
-#   value = module.waf.waf_logs_bucket_name
-# }
-
-# output "waf_logs_bucket_arn" {
-#   description = "ARN of the WAF logs S3 bucket"
-#   value = module.waf.waf_logs_bucket_arn
-# }
+output "waf_webacl_name" {
+  description = "Name of the WAF Web ACL"
+  value = module.waf.waf_webacl_name
+}
 
 ## CloudTrail
 output "cloudtrail_management_trail_arn" {
@@ -326,15 +316,4 @@ output "ecs_db_initdata_task_definition_arn" {
 output "ecs_db_inituser_task_definition_arn" {
   description = "ARN of the ECS DB user creation task definition (Used for GitHub Actions)"
   value = module.ecs.ecs_db_inituser_task_definition_arn
-}
-
-## Kinesis Data Firehose
-output "kinesis_data_firehose_delivery_stream_arns" {
-  description = "Map of Kinesis Data Firehose delivery stream ARNs"
-  value = module.kinesis_data_firehose.delivery_stream_arns
-}
-
-output "kinesis_data_firehose_delivery_stream_names" {
-  description = "Map of Kinesis Data Firehose delivery stream names"
-  value = module.kinesis_data_firehose.delivery_stream_names
 }

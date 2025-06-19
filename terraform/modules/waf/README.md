@@ -7,7 +7,7 @@
 - **WAF Web ACL**: セキュリティルールを定義するWeb ACL
 - **AWS Managed Rules**: 一般的な攻撃パターンを検出するAWS管理ルール
 - **レート制限**: IPアドレスベースのレート制限
-- **ログ機能**: WAFログのKinesis Firehose経由でのS3保存とCloudWatchメトリクス
+- **ログ機能**: WAFログの直接S3保存とCloudWatchメトリクス
 - **セキュリティ設定**: 機密情報のマスキング
 
 ## 含まれるAWS Managed Rules
@@ -33,8 +33,6 @@ module "waf" {
   enable_rate_limit = true
   rate_limit_requests_per_5_minutes = 2000
   
-  firehose_delivery_stream_arn = module.kinesis_firehose.delivery_stream_arns["waf_logs"]
-  
   tags = {
     Environment = "dev"
     Project     = "srep1"
@@ -54,8 +52,6 @@ module "waf" {
 | redacted_headers | ログから除外するヘッダー | list(string) | ["authorization", "cookie", "x-forwarded-for"] | いいえ |
 | enable_rate_limit | レート制限の有効化 | bool | true | いいえ |
 | rate_limit_requests_per_5_minutes | 5分間あたりのリクエスト制限数 | number | 1000 | いいえ |
-| firehose_role_arn | Kinesis Firehose用IAMロールのARN | string | null | いいえ |
-| firehose_delivery_stream_arn | Kinesis Firehose配信ストリームのARN | string | null | いいえ |
 | tags | リソースに付与するタグ | map(string) | {} | いいえ |
 
 ## 出力値
@@ -74,7 +70,8 @@ module "waf" {
 ## セキュリティ考慮事項
 
 - WAFログには機密情報（認証ヘッダー、Cookie等）が含まれるため、適切にマスキングされています
-- Kinesis Firehose経由でS3に保存されるログは暗号化されています
+- データ保護機能により、ログ内のクレジットカード番号、メールアドレス、社会保障番号が自動的に検出・マスキングされます
+- S3に保存されるログは暗号化されています
 - ログは設定された期間後に自動的に削除されます
 
 ## ALBへのアタッチ方法
@@ -89,29 +86,18 @@ module "alb" {
 }
 ```
 
-## Kinesis Data Firehoseとの連携
+## S3ログ保存
 
-WAFログは独立したKinesis Data Firehoseモジュールを介してS3に保存されます：
+WAFログは直接S3に保存されます：
 
 ```hcl
-module "kinesis_data_firehose" {
-  source = "../../modules/kinesis_data_firehose"
-  
-  delivery_streams = {
-    waf_logs = {
-      name        = "waf-logs"
-      destination = "extended_s3"
-      role_arn    = module.iam_role.iam_role_waf_firehose_role_arn
-      bucket_arn  = "arn:aws:s3:::srep1-dev-waf-logs"
-      prefix      = "waf-logs/"
-    }
-  }
-}
+# WAFログ用のS3バケットが自動的に作成され、ログが保存されます
+# バケット名: ${system_name}-${environment_name}-waf-logs
 ```
 
 ## 注意事項
 
 - WAF Web ACLはリージョナルスコープで作成されます
 - レート制限はIPアドレスベースで動作します
-- ログ機能を無効にした場合、Kinesis Data Firehoseは作成されません
-- Kinesis Data Firehoseは独立したモジュールで管理されます 
+- ログ機能を無効にした場合、ログ設定は作成されません
+- ログは専用のS3バケットに直接保存されます 

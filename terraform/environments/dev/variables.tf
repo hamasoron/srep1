@@ -728,41 +728,24 @@ variable "override_action" {
   }
 }
 
-variable "enable_logging" {
-  description = "WAFログの有効化"
-  type        = bool
-}
-
-variable "log_retention_days" {
-  description = "WAFログの保持日数"
-  type        = number
-  default     = 30
-  validation {
-    condition     = var.log_retention_days >= 1 && var.log_retention_days <= 365
-    error_message = "log_retention_days must be between 1 and 365."
-  }
-}
-
-variable "redacted_headers" {
-  description = "ログから除外するヘッダー"
-  type        = list(string)
-  default     = ["authorization", "cookie", "x-forwarded-for"]
-}
-
 variable "enable_rate_limit" {
-  description = "レート制限の有効化"
+  description = "Enable rate limiting"
   type        = bool
-  default     = true
 }
 
 variable "rate_limit_requests_per_5_minutes" {
-  description = "5分間あたりのリクエスト制限数"
+  description = "Number of requests per 5 minutes"
   type        = number
-  default     = 2000
-  validation {
-    condition     = var.rate_limit_requests_per_5_minutes >= 100 && var.rate_limit_requests_per_5_minutes <= 100000
-    error_message = "rate_limit_requests_per_5_minutes must be between 100 and 100000."
-  }
+}
+
+variable "enable_logging" {
+  description = "Enable WAF logging"
+  type        = bool
+}
+
+variable "redacted_headers" {
+  description = "Headers to be excluded from logging"
+  type        = list(string)
 }
 
 ## CloudTrail

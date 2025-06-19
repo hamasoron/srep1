@@ -10,6 +10,11 @@ output "alb_zone_id" {
   value       = aws_lb.terra_alb.zone_id
 }
 
+output "alb_arn" {
+  description = "ARN of the ALB"
+  value       = aws_lb.terra_alb.arn
+}
+
 output "alb_front_target_group_arn" {
   description = "ARN of the front target group (used by ECS module)"
   value       = aws_lb_target_group.terra_front_target_group.arn
