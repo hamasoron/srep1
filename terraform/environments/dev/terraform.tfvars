@@ -184,8 +184,6 @@ routing_http_response_server_enabled = true
 
 ## WAF
 scope = "REGIONAL"
-enable_rate_limit = false
-rate_limit_requests_per_5_minutes   = 1000
 enable_logging                      = true ##### WAFのログを保存するか否か
 redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
 waf_managed_rules = {
@@ -236,6 +234,26 @@ waf_managed_rules = {
     override_action = "count"
     metric_name     = "AWSManagedRulesAnonymousIpListMetric"
     excluded_rules  = []
+  }
+}
+waf_rate_limit_rules = {
+  "IPRateLimit" = {
+    name               = "IPRateLimitRule"
+    priority           = 100
+    enabled            = false
+    limit              = 1000
+    aggregate_key_type = "IP"
+    action             = "count"  # 初期段階では監視モード
+    metric_name        = "IPRateLimitMetric"
+  }
+  "ForwardedIPRateLimit" = {
+    name               = "ForwardedIPRateLimitRule"
+    priority           = 101
+    enabled            = false
+    limit              = 2000
+    aggregate_key_type = "FORWARDED_IP"
+    action             = "count"  # プロキシ経由は少し緩い制限
+    metric_name        = "ForwardedIPRateLimitMetric"
   }
 }
 

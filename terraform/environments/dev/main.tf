@@ -203,8 +203,7 @@ module "waf" {
   ### WAF関連
   scope                             = var.scope
   waf_managed_rules                 = var.waf_managed_rules
-  enable_rate_limit                 = var.enable_rate_limit
-  rate_limit_requests_per_5_minutes = var.rate_limit_requests_per_5_minutes
+  waf_rate_limit_rules              = var.waf_rate_limit_rules
   ### ログ関連
   enable_logging                    = var.enable_logging
   redacted_headers                  = var.redacted_headers

@@ -64,14 +64,35 @@ variable "waf_managed_rules" {
   }
 }
 
-variable "enable_rate_limit" {
-  description = "Enable rate limiting"
-  type        = bool
-}
-
-variable "rate_limit_requests_per_5_minutes" {
-  description = "Number of requests per 5 minutes"
-  type        = number
+variable "waf_rate_limit_rules" {
+  description = "Configuration for WAF rate limit rules"
+  type = map(object({
+    name                    = string
+    priority               = number
+    enabled                = bool
+    limit                  = number
+    aggregate_key_type     = string
+    action                 = string
+    metric_name           = optional(string, null)
+    scope_down_statement  = optional(object({
+      geo_match_statement = optional(object({
+        country_codes = list(string)
+      }), null)
+    }), null)
+  }))
+  default = {}
+  validation {
+    condition = alltrue([
+      for rule in var.waf_rate_limit_rules : contains(["IP", "FORWARDED_IP"], rule.aggregate_key_type)
+    ])
+    error_message = "All aggregate_key_type values must be either 'IP' or 'FORWARDED_IP'."
+  }
+  validation {
+    condition = alltrue([
+      for rule in var.waf_rate_limit_rules : contains(["block", "count"], rule.action)
+    ])
+    error_message = "All action values must be either 'block' or 'count'."
+  }
 }
 
 variable "enable_logging" {

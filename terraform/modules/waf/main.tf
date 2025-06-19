@@ -4,6 +4,9 @@ locals {
   enabled_managed_rules = {
     for key, rule in var.waf_managed_rules : key => rule if rule.enabled
   }
+  enabled_rate_limit_rules = {
+    for key, rule in var.waf_rate_limit_rules : key => rule if rule.enabled
+  }
   ### レート制限ルールの優先度（固定値で安全に設定）
   rate_limit_priority = 100
 }
@@ -75,24 +78,45 @@ resource "aws_wafv2_web_acl" "terra_wafv2_web_acl" {
       }
     }
   }
-  #### レート制限ルールの設定（WCU: 合計2）
+  #### レート制限ルールの設定（WCU: 各ルール2）
   dynamic "rule" {
-    for_each = var.enable_rate_limit ? [1] : []
+    for_each = local.enabled_rate_limit_rules
     content {
-      name     = "RateLimitRule"
-      priority = local.rate_limit_priority
-      action {
-        block {}
+      name     = rule.value.name
+      priority = rule.value.priority
+      dynamic "action" {
+        for_each = rule.value.action == "block" ? [1] : []
+        content {
+          block {}
+        }
+      }
+      dynamic "action" {
+        for_each = rule.value.action == "count" ? [1] : []
+        content {
+          count {}
+        }
       }
       statement {
         rate_based_statement {
-          limit              = var.rate_limit_requests_per_5_minutes
-          aggregate_key_type = "IP"
+          limit              = rule.value.limit
+          aggregate_key_type = rule.value.aggregate_key_type
+          # スコープダウンステートメントの設定
+          dynamic "scope_down_statement" {
+            for_each = rule.value.scope_down_statement != null ? [rule.value.scope_down_statement] : []
+            content {
+              dynamic "geo_match_statement" {
+                for_each = scope_down_statement.value.geo_match_statement != null ? [scope_down_statement.value.geo_match_statement] : []
+                content {
+                  country_codes = geo_match_statement.value.country_codes
+                }
+              }
+            }
+          }
         }
       }
       visibility_config {
         cloudwatch_metrics_enabled = true
-        metric_name                = "RateLimitRuleMetric"
+        metric_name                = rule.value.metric_name != null ? rule.value.metric_name : "${rule.value.name}Metric"
         sampled_requests_enabled   = true
       }
     }
