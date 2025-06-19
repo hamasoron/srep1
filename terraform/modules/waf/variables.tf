@@ -40,12 +40,27 @@ variable "scope" {
   }
 }
 
-variable "override_action" {
-  description = "Override action"
-  type        = string
+variable "waf_managed_rules" {
+  description = "Configuration for WAF managed rules"
+  type = map(object({
+    name            = string
+    priority        = number
+    enabled         = bool
+    override_action = string
+    vendor_name     = optional(string, "AWS")
+    metric_name     = optional(string, null)
+    excluded_rules  = optional(list(string), [])
+    scope_down_statement = optional(object({
+      geo_match_statement = optional(object({
+        country_codes = list(string)
+      }), null)
+    }), null)
+  }))
   validation {
-    condition     = contains(["count", "none"], var.override_action)
-    error_message = "override_action must be one of count or none." ##### count: カウントアクションに上書き（開発、検証環境）、none: 各ルールごとのデフォルトのアクションを使用（本番環境）
+    condition = alltrue([
+      for rule in var.waf_managed_rules : contains(["count", "none"], rule.override_action)
+    ])
+    error_message = "All override_action values must be either 'count' or 'none'."
   }
 }
 

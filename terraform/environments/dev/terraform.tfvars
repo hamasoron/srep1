@@ -111,9 +111,6 @@ lambda_log_configs = [
   { name = "master", retention_in_days = 1 },
   { name = "app", retention_in_days = 1 },
 ]
-waf_log_configs = [
-  { name = "waf", retention_in_days = 1 },
-]
 cloudwatch_logs_kms_key_id = null
 
 ## Secrets Manager
@@ -187,11 +184,60 @@ routing_http_response_server_enabled = true
 
 ## WAF
 scope = "REGIONAL"
-override_action = "count"
 enable_rate_limit = false
 rate_limit_requests_per_5_minutes   = 1000
 enable_logging                      = true ##### WAFのログを保存するか否か
 redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
+waf_managed_rules = {
+  "CommonRuleSet" = {
+    name            = "AWSManagedRulesCommonRuleSet"
+    priority        = 1
+    enabled         = true
+    override_action = "count"
+    metric_name     = "AWSManagedRulesCommonRuleSetMetric"
+    excluded_rules  = [] # 必要に応じて特定ルールを除外
+  }
+  "AdminProtection" = {
+    name            = "AWSManagedRulesAdminProtectionRuleSet"
+    priority        = 2
+    enabled         = true
+    override_action = "count"
+    metric_name     = "AWSManagedRulesAdminProtectionMetric"
+    excluded_rules  = []
+  }
+  "KnownBadInputs" = {
+    name            = "AWSManagedRulesKnownBadInputsRuleSet"
+    priority        = 3
+    enabled         = true
+    override_action = "count"
+    metric_name     = "AWSManagedRulesKnownBadInputsRuleSetMetric"
+    excluded_rules  = []
+  }
+  "SQLiRuleSet" = {
+    name            = "AWSManagedRulesSQLiRuleSet"
+    priority        = 4
+    enabled         = true ##### 段階的導入のため一旦無効
+    override_action = "count"
+    metric_name     = "AWSManagedRulesSQLiRuleSetMetric"
+    excluded_rules  = []
+  }
+  "IpReputationList" = {
+    name            = "AWSManagedRulesAmazonIpReputationList"
+    priority        = 5
+    enabled         = true ##### 段階的導入のため一旦無効
+    override_action = "count"
+    metric_name     = "AWSManagedRulesAmazonIpReputationListMetric"
+    excluded_rules  = []
+  }
+  "AnonymousIpList" = {
+    name            = "AWSManagedRulesAnonymousIpList"
+    priority        = 6
+    enabled         = true ##### 段階的導入のため一旦無効
+    override_action = "count"
+    metric_name     = "AWSManagedRulesAnonymousIpListMetric"
+    excluded_rules  = []
+  }
+}
 
 ## CloudTrail
 enable_management_logging = true   # 管理イベントは常に有効（セキュリティ上重要）

@@ -21,6 +21,6 @@ output "s3_vpc_flow_logs_bucket_arn" {
 }
 
 output "s3_waf_logs_bucket_arn" {
-  description = "ARN of the waf logs bucket (used by WAF module to save logs)"
+  description = "ARN of the waf logs bucket with prefix (used by WAF module to save logs)"
   value       = aws_s3_bucket.terra_s3_bucket["waf_logs"].arn
 }

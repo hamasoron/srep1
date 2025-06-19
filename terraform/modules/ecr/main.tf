@@ -8,9 +8,9 @@ locals {
 resource "aws_ecr_repository" "terra_ecr_repository" {
   for_each             = local.repository_map
   name                 = "${var.system_name}-${var.environment_name}-${each.key}-repo"
-  image_tag_mutability = var.image_tag_mutability
+  image_tag_mutability = var.image_tag_mutability ##### IMMUTABLE: タグが不変（上書き不可）、MUTABLE: タグが可変（上書き可）
   image_scanning_configuration {
-    scan_on_push = lookup(each.value, "scan_on_push", true)
+    scan_on_push = lookup(each.value, "scan_on_push", true) 
   }
   encryption_configuration {
     encryption_type = var.encryption_type

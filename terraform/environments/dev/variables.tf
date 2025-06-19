@@ -304,26 +304,6 @@ variable "lambda_log_configs" {
   }
 }
 
-variable "waf_log_configs" {
-  description = "WAF log configurations"
-  type = list(object({
-    name = string
-    retention_in_days = number
-  }))
-  validation {
-    condition = alltrue([
-      for v in var.waf_log_configs : contains(
-        [
-          0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,
-          400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653
-        ],
-        v.retention_in_days
-      )
-    ])
-    error_message = "retention_in_days must be a valid value: 0 (forever), or one of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653."
-  }
-}
-
 variable "cloudwatch_logs_kms_key_id" {
   description = "ID of KMS key for CloudWatch Logs"
   type        = string
@@ -647,6 +627,7 @@ variable "load_balancing_algorithm_type" {
   }
 }
 
+### ヘルスチェック関連
 variable "health_check_interval" {
   description = "Interval of health check"
   type        = number
@@ -710,6 +691,7 @@ variable "routing_http_response_server_enabled" {
 }
 
 ## WAF
+### WAF関連
 variable "scope" {
   description = "Scope to attach WAF"
   type        = string
@@ -719,12 +701,27 @@ variable "scope" {
   }
 }
 
-variable "override_action" {
-  description = "Override action"
-  type        = string
+variable "waf_managed_rules" {
+  description = "Configuration for WAF managed rules"
+  type = map(object({
+    name            = string
+    priority        = number
+    enabled         = bool
+    override_action = string
+    vendor_name     = optional(string, "AWS")
+    metric_name     = optional(string, null)
+    excluded_rules  = optional(list(string), [])
+    scope_down_statement = optional(object({
+      geo_match_statement = optional(object({
+        country_codes = list(string)
+      }), null)
+    }), null)
+  }))
   validation {
-    condition     = contains(["count", "none"], var.override_action)
-    error_message = "override_action must be one of count or none."
+    condition = alltrue([
+      for rule in var.waf_managed_rules : contains(["count", "none"], rule.override_action)
+    ])
+    error_message = "All override_action values must be either 'count' or 'none'."
   }
 }
 
@@ -738,6 +735,7 @@ variable "rate_limit_requests_per_5_minutes" {
   type        = number
 }
 
+### ログ関連
 variable "enable_logging" {
   description = "Enable WAF logging"
   type        = bool
@@ -1005,3 +1003,4 @@ variable "deployment_controller_type" {
     error_message = "deployment_controller_type must be one of ECS, CODE_DEPLOY, EXTERNAL."
   }
 }
+

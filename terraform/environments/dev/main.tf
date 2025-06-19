@@ -26,8 +26,8 @@ module "vpc" {
   create_protected_ngw_associations = var.create_protected_ngw_associations
   nat_gateway_list                  = var.nat_gateway_list
   vpc_cidr                          = var.vpc_cidr
-  subnet_list                       = var.subnet_list
   map_public_ip_on_launch           = var.map_public_ip_on_launch
+  subnet_list                       = var.subnet_list
   route_table_list                  = var.route_table_list
 }
 
@@ -64,7 +64,6 @@ module "cloudwatch_logs" {
   rds_log_configs            = var.rds_log_configs
   ecs_log_configs            = var.ecs_log_configs
   lambda_log_configs         = var.lambda_log_configs
-  waf_log_configs            = var.waf_log_configs
   cloudwatch_logs_kms_key_id = var.cloudwatch_logs_kms_key_id
 }
 
@@ -203,7 +202,7 @@ module "waf" {
   alb_arn                           = module.alb.alb_arn
   ### WAF関連
   scope                             = var.scope
-  override_action                   = var.override_action
+  waf_managed_rules                 = var.waf_managed_rules
   enable_rate_limit                 = var.enable_rate_limit
   rate_limit_requests_per_5_minutes = var.rate_limit_requests_per_5_minutes
   ### ログ関連

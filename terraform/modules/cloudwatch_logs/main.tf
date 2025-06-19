@@ -31,14 +31,3 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
     Name = "${var.system_name}-${var.environment_name}-${each.key}-secret-rotation-logs"
   }
 }
-
-## WAFログ用のCloudWatchロググループを作成
-resource "aws_cloudwatch_log_group" "waf_log_group" {
-  for_each          = { for log_config in var.waf_log_configs : log_config.name => log_config }
-  name              = "aws-waf-logs-${var.system_name}-${var.environment_name}-${each.key}"
-  retention_in_days = each.value.retention_in_days
-  kms_key_id        = var.cloudwatch_logs_kms_key_id
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-${each.key}-logs"
-  }
-}

@@ -7,6 +7,7 @@ output "rds_log_group_names" {
     name => lg.name
   }
 }
+
 output "ecs_log_group_names" {
   description = "Map of CloudWatch log group names (used by ECS module)"
   value = {
@@ -19,14 +20,6 @@ output "lambda_log_group_names" {
   description = "Map of CloudWatch log group names (used by Lambda module)"
   value = {
     for name, lg in aws_cloudwatch_log_group.lambda_log_group :
-    name => lg.name
-  }
-}
-
-output "waf_log_group_names" {
-  description = "Map of CloudWatch log group names (used by WAF module)"
-  value = {
-    for name, lg in aws_cloudwatch_log_group.waf_log_group :
     name => lg.name
   }
 }

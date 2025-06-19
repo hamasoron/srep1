@@ -118,7 +118,7 @@ locals {
       })
     },
     waf_logs = {
-      name = "${var.system_name}-${var.environment_name}-waf-logs"
+      name = "aws-waf-logs-${var.system_name}-${var.environment_name}-waf-logs"
       lifecycle_rule = true
       policy = jsonencode({
         Version = "2012-10-17"
@@ -137,8 +137,8 @@ locals {
               "s3:PutObject"
             ]
             Resource = [
-              "arn:aws:s3:::${var.system_name}-${var.environment_name}-waf-logs",
-              "arn:aws:s3:::${var.system_name}-${var.environment_name}-waf-logs/*"
+              "arn:aws:s3:::aws-waf-logs-${var.system_name}-${var.environment_name}-waf-logs",
+              "arn:aws:s3:::aws-waf-logs-${var.system_name}-${var.environment_name}-waf-logs/*"
             ]
           }
         ]
