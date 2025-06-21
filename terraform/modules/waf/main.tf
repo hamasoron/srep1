@@ -25,6 +25,7 @@ resource "aws_wafv2_web_acl" "terra_wafv2_web_acl" {
     sampled_requests_enabled   = true
   }
   #### AWS Managed Rulesの設定 - 動的ルール生成
+  ##### 注意: Managed Rulesでは override_action を使用（AWS仕様）
   dynamic "rule" {
     for_each = local.enabled_managed_rules
     content {
@@ -78,6 +79,7 @@ resource "aws_wafv2_web_acl" "terra_wafv2_web_acl" {
     }
   }
   #### レート制限ルールの設定（WCU: 各ルール2）
+  ##### 注意: カスタムルールでは action を使用（AWS仕様）
   dynamic "rule" {
     for_each = local.enabled_rate_limit_rules
     content {

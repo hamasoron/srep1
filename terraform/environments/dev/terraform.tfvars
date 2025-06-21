@@ -186,12 +186,12 @@ routing_http_response_server_enabled = true
 scope = "REGIONAL"
 enable_logging                      = true ##### WAFのログを保存するか否か
 redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
-waf_managed_rules = {
+waf_managed_rules = { ##### マネージドルール（AWS提供のルール）の設定（override_actionは、countまたはnone）
   "CommonRuleSet" = {
     enabled         = true
     name            = "AWSManagedRulesCommonRuleSet"
     priority        = 1
-    override_action = "count" ##### 初期段階では監視モード
+    override_action = "none" ##### 初期段階では監視モード
     excluded_rules  = [] ##### 必要に応じて特定ルールを除外
     metric_name     = "AWSManagedRulesCommonRuleSetMetric"
   }
@@ -199,7 +199,7 @@ waf_managed_rules = {
     enabled         = true
     name            = "AWSManagedRulesAdminProtectionRuleSet"
     priority        = 2
-    override_action = "count"
+    override_action = "none"
     excluded_rules  = []
     metric_name     = "AWSManagedRulesAdminProtectionMetric"
   }
@@ -207,7 +207,7 @@ waf_managed_rules = {
     enabled         = true
     name            = "AWSManagedRulesKnownBadInputsRuleSet"
     priority        = 3
-    override_action = "count"
+    override_action = "none"
     excluded_rules  = []
     metric_name     = "AWSManagedRulesKnownBadInputsRuleSetMetric"
   }
@@ -215,7 +215,7 @@ waf_managed_rules = {
     enabled         = true
     name            = "AWSManagedRulesSQLiRuleSet"
     priority        = 4
-    override_action = "count"
+    override_action = "none"
     excluded_rules  = []
     metric_name     = "AWSManagedRulesSQLiRuleSetMetric"
   }
@@ -223,7 +223,7 @@ waf_managed_rules = {
     enabled         = true
     name            = "AWSManagedRulesAmazonIpReputationList"
     priority        = 5
-    override_action = "count"
+    override_action = "none"
     excluded_rules  = []
     metric_name     = "AWSManagedRulesAmazonIpReputationListMetric"
   }
@@ -231,19 +231,19 @@ waf_managed_rules = {
     enabled         = true
     name            = "AWSManagedRulesAnonymousIpList"
     priority        = 6
-    override_action = "count"
+    override_action = "none"
     excluded_rules  = []
     metric_name     = "AWSManagedRulesAnonymousIpListMetric"
   }
 }
-waf_rate_limit_rules = {
+waf_rate_limit_rules = { ##### レート制限ルール（カスタムルール）の設定（actionは、countまたはblock）
   "IPRateLimit" = {
     enabled            = true
     name               = "IPRateLimitRule"
     priority           = 100
     limit              = 1000
     aggregate_key_type = "IP"
-    action             = "count" 
+    action             = "block" 
     excluded_rules  = []
     metric_name     = "IPRateLimitMetric"
   }
