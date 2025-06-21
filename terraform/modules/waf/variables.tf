@@ -43,9 +43,9 @@ variable "scope" {
 variable "waf_managed_rules" {
   description = "Configuration for WAF managed rules"
   type = map(object({
+    enabled         = bool
     name            = string
     priority        = number
-    enabled         = bool
     override_action = string
     vendor_name     = optional(string, "AWS")
     metric_name     = optional(string, null)

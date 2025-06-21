@@ -153,7 +153,7 @@ memory_size      = 128
 timeout          = 30
 reserved_concurrent_executions = null
 enable_rotation_on_apply = true
-rotation_secrets = ["master"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
+rotation_secrets = ["master", "app"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
 master_rotation_schedule_expression = "cron(0 18 1 * ? *)" ##### 毎月1日の深夜3時0分にマスターをローテーション
 app_rotation_schedule_expression = "cron(0 19 1 * ? *)" ##### 毎月1日の深夜4時0分にアプリをローテーション（マスター完了後に実行される）
 lambda_kms_key_arn = null
@@ -188,72 +188,64 @@ enable_logging                      = true ##### WAFのログを保存するか�
 redacted_headers                    = ["authorization", "cookie", "x-forwarded-for"]
 waf_managed_rules = {
   "CommonRuleSet" = {
+    enabled         = true
     name            = "AWSManagedRulesCommonRuleSet"
     priority        = 1
-    enabled         = true
-    override_action = "count"
+    override_action = "count" ##### 初期段階では監視モード
+    excluded_rules  = [] ##### 必要に応じて特定ルールを除外
     metric_name     = "AWSManagedRulesCommonRuleSetMetric"
-    excluded_rules  = [] # 必要に応じて特定ルールを除外
   }
   "AdminProtection" = {
+    enabled         = true
     name            = "AWSManagedRulesAdminProtectionRuleSet"
     priority        = 2
-    enabled         = true
     override_action = "count"
-    metric_name     = "AWSManagedRulesAdminProtectionMetric"
     excluded_rules  = []
+    metric_name     = "AWSManagedRulesAdminProtectionMetric"
   }
   "KnownBadInputs" = {
+    enabled         = true
     name            = "AWSManagedRulesKnownBadInputsRuleSet"
     priority        = 3
-    enabled         = true
     override_action = "count"
-    metric_name     = "AWSManagedRulesKnownBadInputsRuleSetMetric"
     excluded_rules  = []
+    metric_name     = "AWSManagedRulesKnownBadInputsRuleSetMetric"
   }
   "SQLiRuleSet" = {
+    enabled         = true
     name            = "AWSManagedRulesSQLiRuleSet"
     priority        = 4
-    enabled         = true ##### 段階的導入のため一旦無効
     override_action = "count"
-    metric_name     = "AWSManagedRulesSQLiRuleSetMetric"
     excluded_rules  = []
+    metric_name     = "AWSManagedRulesSQLiRuleSetMetric"
   }
   "IpReputationList" = {
+    enabled         = true
     name            = "AWSManagedRulesAmazonIpReputationList"
     priority        = 5
-    enabled         = true ##### 段階的導入のため一旦無効
     override_action = "count"
-    metric_name     = "AWSManagedRulesAmazonIpReputationListMetric"
     excluded_rules  = []
+    metric_name     = "AWSManagedRulesAmazonIpReputationListMetric"
   }
   "AnonymousIpList" = {
+    enabled         = true
     name            = "AWSManagedRulesAnonymousIpList"
     priority        = 6
-    enabled         = true ##### 段階的導入のため一旦無効
     override_action = "count"
-    metric_name     = "AWSManagedRulesAnonymousIpListMetric"
     excluded_rules  = []
+    metric_name     = "AWSManagedRulesAnonymousIpListMetric"
   }
 }
 waf_rate_limit_rules = {
   "IPRateLimit" = {
+    enabled            = true
     name               = "IPRateLimitRule"
     priority           = 100
-    enabled            = false
     limit              = 1000
     aggregate_key_type = "IP"
-    action             = "count"  # 初期段階では監視モード
-    metric_name        = "IPRateLimitMetric"
-  }
-  "ForwardedIPRateLimit" = {
-    name               = "ForwardedIPRateLimitRule"
-    priority           = 101
-    enabled            = false
-    limit              = 2000
-    aggregate_key_type = "FORWARDED_IP"
-    action             = "count"  # プロキシ経由は少し緩い制限
-    metric_name        = "ForwardedIPRateLimitMetric"
+    action             = "count" 
+    excluded_rules  = []
+    metric_name     = "IPRateLimitMetric"
   }
 }
 
@@ -329,8 +321,8 @@ db_initdata_task_memory             = 512
 db_inituser_task_cpu                = 256
 db_inituser_task_memory             = 512
 ### サービス関連
-api_desired_count                   = 0
-front_desired_count                 = 0
+api_desired_count                   = 1
+front_desired_count                 = 1
 force_new_deployment                = true
 platform_version                    = "LATEST"
 enable_execute_command              = true
