@@ -32,12 +32,12 @@ def apitest_handler():
     response.mimetype = "text/plain"
     return set_cors_headers(response)
 
-@app.route("/health", methods=["GET"])
-def health_check():
-    """
-    ECS Fargateのヘルスチェック用エンドポイント
-    """
-    return jsonify({"status": "ok"})
+# @app.route("/health", methods=["GET"])
+# def health_check():
+#     """
+#     ECS Fargateのヘルスチェック用エンドポイント
+#     """
+#     return jsonify({"status": "ok"})
 
 @app.route("/dbtest", methods=["GET", "OPTIONS"])
 def dbtest_handler():

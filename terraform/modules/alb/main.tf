@@ -61,6 +61,7 @@ resource "aws_lb_listener" "terra_http_listener" {
   port              = 80
   protocol          = "HTTP"
   routing_http_response_server_enabled = var.routing_http_response_server_enabled ##### curl等実行時にServerヘッダーを表示するかどうか
+  ### 以下、ブラウザにhttp://urlで間違えてアクセスした場合やブラウザにhostnameだけを入力してアクセスした場合の対策
   default_action {
     type             = "redirect"
     redirect {
@@ -89,6 +90,7 @@ resource "aws_lb_listener" "terra_https_listener" {
   routing_http_response_server_enabled = var.routing_http_response_server_enabled ##### curl等実行時にServerヘッダーを表示するかどうか
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = var.certificate_arn
+  ### 以下、ブラウザにhttps://IPAddressでアクセス（ポートスキャン）された場合の対策
   default_action {
     type             = "fixed-response"
     fixed_response {
@@ -175,13 +177,13 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
   }
 }
 
-## リスナールール（HTTPS）の作成 (/にアクセスした場合はフロントエンドのターゲットグループに転送)
+## リスナールール（HTTPS）の作成 (/healthか/にアクセスした場合はフロントエンドのターゲットグループに転送)
 resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
   listener_arn = aws_lb_listener.terra_https_listener.arn
   priority = 100 ##### 数値が低いほど、ルールが優先
   condition {
     path_pattern {
-      values = ["/*"]
+      values = ["/health", "/"]
     }
   }
   action {
@@ -190,5 +192,50 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
   }
   tags = {
     Name = "${var.system_name}-${var.environment_name}-https-listener-rule2"
+  }
+}
+
+## リスナールール（HTTPS）の作成 (ブラウザに想定していないパスを入力した場合の対策)
+resource "aws_lb_listener_rule" "terra_https_listener_rule3" {
+  listener_arn = aws_lb_listener.terra_https_listener.arn
+  priority = 1000 ##### 数値が低いほど、ルールが優先
+  condition {
+    path_pattern {
+      values = ["/*"]
+    }
+  }
+  ### 以下、ブラウザに想定していないパスを入力した場合の対策
+  action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/html"
+      status_code = "404"
+      message_body = <<-HTML
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+        <meta charset="UTF-8">
+        <title>404 Not Found</title>
+        <style>
+        body{font-family:sans-serif;background:#f5f7fa;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+        .container{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);text-align:center;max-width:400px;border-top:4px solid #e74c3c}
+        h1{color:#c0392b;margin:10px 0}
+        p{margin:15px 0;color:#2c3e50}
+        .status{background:#f8f9fa;padding:8px 15px;border-radius:4px;color:#e74c3c;font-weight:bold;display:inline-block;border:1px solid #e9ecef}
+        </style>
+        </head>
+        <body>
+        <div class="container">
+        <h1>404 Not Found</h1>
+        <p>Sorry, the page you are looking for does not exist.</p>
+        <div class="status">404 Not Found</div>
+        </div>
+        </body>
+        </html>
+      HTML
+    }
+  }
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-https-listener-rule3"
   }
 }

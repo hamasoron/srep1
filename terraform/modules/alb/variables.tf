@@ -58,7 +58,7 @@ variable "desync_mitigation_mode" {
   description = "Mode of desync mitigation for ALB" ##### desync_mitigation（デシンク・ミティゲーション）: 非同期緩和
   type        = string
   validation {
-    condition     = contains(["defensive", "strictest", "monitor"], var.desync_mitigation_mode)
+    condition     = contains(["monitor", "defensive", "strictest"], var.desync_mitigation_mode)
     error_message = "desync_mitigation_mode must be one of monitor, defensive, strictest." #####  monitor: 監視、defensive: 防御的、strictest: 厳しい
   }
 }
