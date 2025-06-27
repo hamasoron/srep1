@@ -233,6 +233,7 @@ output "cloudtrail_management_trail_arn" {
   description = "ARN of the CloudTrail management trail"
   value = module.cloudtrail.cloudtrail_management_trail_arn
 }
+
 output "cloudtrail_data_trail_arn" {
   description = "ARN of the CloudTrail data trail"
   value = module.cloudtrail.cloudtrail_data_trail_arn
@@ -247,6 +248,27 @@ output "cloudtrail_insight_trail_arn" {
 output "vpc_flow_log_arn" {
   description = "ARN of the VPC Flow Log"
   value = module.vpc_flow_logs.vpc_flow_log_arn
+}
+
+## GuardDuty CFn
+output "guardduty_cfn_stack_set_id" {
+  description = "ID of the CloudFormation StackSet"
+  value = module.guardduty_cfn.guardduty_cfn_stack_set_id
+}
+
+output "guardduty_cfn_stack_set_name" {
+  description = "Name of the CloudFormation StackSet"
+  value = module.guardduty_cfn.guardduty_cfn_stack_set_name
+}
+
+output "guardduty_cfn_stack_set_arn" {
+  description = "ARN of the CloudFormation StackSet"
+  value = module.guardduty_cfn.guardduty_cfn_stack_set_arn
+}
+
+output "guardduty_cfn_enabled_regions" {
+  description = "List of regions where GuardDuty is enabled"
+  value = module.guardduty_cfn.guardduty_cfn_enabled_regions
 }
 
 ## Route53 Records

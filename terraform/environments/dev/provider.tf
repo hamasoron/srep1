@@ -18,5 +18,5 @@ terraform {
 }
 
 provider "aws" {
-  region = var.region_name
+  region = var.region_name ##### アジアパシフィック(東京)
 }

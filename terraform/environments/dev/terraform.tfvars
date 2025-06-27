@@ -12,11 +12,11 @@ caa_records = ["0 issue \"amazon.com\""]
 subject_alternative_names = ["*.srep1.jp"]
 
 ## VPC
-create_protected_ngw_associations = true ### protected及びnat_gatewayを使用するか否か
+create_protected_ngw_associations = false ### protected及びnat_gatewayを使用するか否か
 vpc_cidr                          = "10.0.64.0/19"
 map_public_ip_on_launch = true
 nat_gateway_list = [
-  { az = "1a", enabled = true }, ### dev環境：protectedがある時1個（1a）、ない時0個が推奨
+  { az = "1a", enabled = false }, ### dev環境：protectedがある時1個（1a）、ない時0個が推奨
   { az = "1c", enabled = false },
   { az = "1d", enabled = false },
 ]
@@ -24,9 +24,6 @@ subnet_list = [
   { name = "1a", cidr_block = "10.0.64.0/24", type = "public" }, ### create_protected_ngw_associationsとnat_gateway_listに合わせて設定
   { name = "1c", cidr_block = "10.0.65.0/24", type = "public" },
   { name = "1d", cidr_block = "10.0.66.0/24", type = "public" },
-  { name = "1a", cidr_block = "10.0.67.0/24", type = "protected" },
-  { name = "1c", cidr_block = "10.0.68.0/24", type = "protected" },
-  { name = "1d", cidr_block = "10.0.69.0/24", type = "protected" },
   { name = "1a", cidr_block = "10.0.70.0/24", type = "private" },
   { name = "1c", cidr_block = "10.0.71.0/24", type = "private" },
   { name = "1d", cidr_block = "10.0.72.0/24", type = "private" },
@@ -35,9 +32,6 @@ route_table_list = [
   { name = "public", subnet = "1a", gateway_type = "internet_gateway" }, ### create_protected_ngw_associationsとnat_gateway_listに合わせて設定
   { name = "public", subnet = "1c", gateway_type = "internet_gateway" },
   { name = "public", subnet = "1d", gateway_type = "internet_gateway" },
-  { name = "protected", subnet = "1a", gateway_type = "nat_gateway" },
-  { name = "protected", subnet = "1c", gateway_type = "nat_gateway" },
-  { name = "protected", subnet = "1d", gateway_type = "nat_gateway" },  
   { name = "private", subnet = "1a", gateway_type = "none" },
   { name = "private", subnet = "1c", gateway_type = "none" },
   { name = "private", subnet = "1d", gateway_type = "none" },
@@ -153,7 +147,7 @@ memory_size      = 128
 timeout          = 30
 reserved_concurrent_executions = null
 enable_rotation_on_apply = true
-rotation_secrets = ["master", "app"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
+rotation_secrets = ["master"] ##### 初回apply時は、appユーザーが存在しないため、masterのみローテーション
 master_rotation_schedule_expression = "cron(0 18 1 * ? *)" ##### 毎月1日の深夜3時0分にマスターをローテーション
 app_rotation_schedule_expression = "cron(0 19 1 * ? *)" ##### 毎月1日の深夜4時0分にアプリをローテーション（マスター完了後に実行される）
 lambda_kms_key_arn = null
@@ -272,6 +266,57 @@ destination_options = {
   per_hour_partition         = false # 1時間ごとにパーティション化（Athena推奨）
 }
 
+## GuardDuty_CFN
+### 対象リージョン（37リージョン中、GuardDutyが有効なリージョンのみ）
+#### 中国（北京）、中国（寧夏）、アジアパシフィック（台北）は、GuardDutyのサービスエンドポイントが存在しない
+#### AWS GovCloud（米国東部）、AWS GovCloud（米国西部）は、通常のAWSアカウントではないため設定しない
+##### https://docs.aws.amazon.com/ja_jp/general/latest/gr/guardduty.html
+target_regions = [
+  "af-south-1", ##### アフリカ（ケープタウン）
+  "ap-east-1", ##### アジアパシフィック（香港）
+  "ap-south-2", ##### アジアパシフィック（ハイデラバード）
+  "ap-southeast-3", ##### アジアパシフィック（ジャカルタ）
+  "ap-southeast-4", ##### アジアパシフィック（メルボルン）
+  "ap-southeast-5", ##### アジアパシフィック（マレーシア）
+  "ap-southeast-7", ##### アジアパシフィック（タイ）
+  "ca-west-1", ##### カナダ（カルガリー）
+  "eu-central-2", ##### 欧州（チューリッヒ）
+  "eu-south-1", ##### 欧州（ミラノ）
+  "eu-south-2", ##### 欧州（スペイン）
+  "il-central-1", ##### イスラエル（テルアビブ）
+  "me-central-1", ##### 中東（アラブ首長国連邦）
+  "me-south-1", ##### 中東（バーレーン）
+  "mx-central-1", ##### メキシコ（中部）
+  "ap-northeast-1", ##### アジアパシフィック（東京）
+  "ap-northeast-2", ##### アジアパシフィック（ソウル）
+  "ap-northeast-3", ##### アジアパシフィック（大阪）
+  "ap-south-1", ##### アジアパシフィック（ムンバイ）
+  "ap-southeast-1", ##### アジアパシフィック（シンガポール）
+  "ap-southeast-2", ##### アジアパシフィック（シドニー）
+  "ca-central-1", ##### カナダ（中部）
+  "eu-central-1", ##### 欧州（フランクフルト）
+  "eu-north-1", ##### 欧州（ストックホルム）
+  "eu-west-1", ##### 欧州（アイルランド）
+  "eu-west-2", ##### 欧州（ロンドン）
+  "eu-west-3", ##### 欧州（パリ）
+  "sa-east-1", ##### 南米（サンパウロ）
+  "us-east-1", ##### 米国（バージニア北部）
+  "us-east-2", ##### 米国（オハイオ）
+  "us-west-1", ##### 米国（北カリフォルニア）
+  "us-west-2", ##### 米国（オレゴン）
+]
+finding_publishing_frequency = "FIFTEEN_MINUTES"
+ebs_malware_protection = "DISABLED"
+eks_audit_logs = "DISABLED"
+lambda_protection = "ENABLED"
+rds_protection = "ENABLED"
+s3_protection = "ENABLED"
+runtime_monitoring = "ENABLED"
+max_concurrent_count = 20
+failure_tolerance_count = 20
+region_concurrency_type = "PARALLEL"
+retain_stack = false
+
 ## ECR
 image_tag_mutability        = "IMMUTABLE"
 ecr_force_delete            = true
@@ -321,8 +366,8 @@ db_initdata_task_memory             = 512
 db_inituser_task_cpu                = 256
 db_inituser_task_memory             = 512
 ### サービス関連
-api_desired_count                   = 1
-front_desired_count                 = 1
+api_desired_count                   = 0
+front_desired_count                 = 0
 force_new_deployment                = true
 platform_version                    = "LATEST"
 enable_execute_command              = true

@@ -10,7 +10,7 @@ locals {
 }
 
 # リソースの定義
-## Web ACLの作成（WCU: 最大1500以内に調整。将来的な拡張性を意識して1200前後を目標）
+## Web ACL（Protection pack）の作成（WCU: 最大1500以内に調整。将来的な拡張性を意識して1200前後を目標）
 ### ベースラインルールグループ＋ユースケース別ルールグループ＋IPレピュテーションルールグループでアプローチ
 resource "aws_wafv2_web_acl" "terra_wafv2_web_acl" {
   name        = "${var.system_name}-${var.environment_name}-webacl"

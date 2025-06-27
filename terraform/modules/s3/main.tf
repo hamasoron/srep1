@@ -1,8 +1,9 @@
-# リソースの定義
-## データリソース（現在のAWSアカウントのIDとリージョンを取得）
+# データリソースの定義
+## 現在のAWSアカウントのIDとリージョンを取得
 data "aws_caller_identity" "terra_caller_identity" {}
 data "aws_region" "terra_current" {} 
 
+# ローカル変数の定義
 ## バケット定義
 locals {
   buckets = {
@@ -157,6 +158,7 @@ locals {
   ]
 }
 
+# リソースの定義
 ## S3バケットの作成
 resource "aws_s3_bucket" "terra_s3_bucket" {
   for_each      = local.buckets

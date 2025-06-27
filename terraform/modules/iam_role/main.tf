@@ -1,3 +1,8 @@
+# データリソースの定義
+## 現在のAWSアカウントのIDを取得
+data "aws_caller_identity" "terra_caller_identity" {
+}
+
 # リソースの定義
 ## ECSタスクロール（起動タイプFargate）の作成
 resource "aws_iam_role" "terra_iam_role_ecs_task" {
@@ -109,10 +114,10 @@ resource "aws_iam_role" "terra_iam_role_rds_enhanced_monitoring" {
   }
 }
 
-## WAF用のKinesis Firehoseロールを作成
-resource "aws_iam_role" "terra_iam_role_waf_firehose" {
-  name  = "CustomWAFFirehoseRole"
-  description = "Custom IAM role for WAF Kinesis Firehose"
+### CloudFormation StackSets（管理者用:StackSetの作成、更新、削除）のIAMロールを作成
+resource "aws_iam_role" "terra_iam_role_cloudformation_stacksets_administration" {
+  name = "CustomCloudFormationStackSetAdministrationRole"
+  description = "Custom IAM role for CloudFormation StackSets administration"
   max_session_duration = 3600
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -121,13 +126,35 @@ resource "aws_iam_role" "terra_iam_role_waf_firehose" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          Service = "firehose.amazonaws.com"
+          Service = "cloudformation.amazonaws.com"
         }
       }
     ]
   })
   tags = {
-    Name = "${var.system_name}-${var.environment_name}-CustomWAFFirehoseRole"
+    Name = "${var.system_name}-${var.environment_name}-CustomCloudFormationStackSetAdministrationRole"
+  }
+}
+
+### CloudFormation StackSets（実行用:各リージョンでスタックのリソースを作成、更新、削除）のIAMロールを作成
+resource "aws_iam_role" "terra_iam_role_cloudformation_stacksets_execution" {
+  name = "CustomCloudFormationStackSetExecutionRole"
+  description = "Custom IAM role for CloudFormation StackSets execution"
+  max_session_duration = 3600
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.terra_caller_identity.account_id}:role/CustomCloudFormationStackSetAdministrationRole"
+        }
+      }
+    ]
+  })
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomCloudFormationStackSetExecutionRole"
   }
 }
 
@@ -202,14 +229,25 @@ resource "aws_iam_policy" "terra_iam_policy_rds_enhanced_monitoring" {
     Name = "${var.system_name}-${var.environment_name}-CustomRDSEnhancedMonitoringPolicy"
   }
 }
-resource "aws_iam_policy" "terra_iam_policy_waf_firehose" {
-  name   = "CustomWAFFirehosePolicy"
-  description = "Custom IAM policy for WAF Kinesis Firehose"
-  policy = file("${path.module}/iam_policy/CustomWAFFirehosePolicy.json")
+
+resource "aws_iam_policy" "terra_iam_policy_stacksets_administration" {
+  name = "CustomCloudFormationStackSetAdministrationPolicy"
+  description = "Custom IAM policy for CloudFormation StackSets administration"
+  policy = file("${path.module}/iam_policy/CustomCloudFormationStackSetAdministrationPolicy.json")
   tags = {
-    Name = "${var.system_name}-${var.environment_name}-CustomWAFFirehosePolicy"
+    Name = "${var.system_name}-${var.environment_name}-CustomCloudFormationStackSetAdministrationPolicy"
   }
 }
+
+resource "aws_iam_policy" "terra_iam_policy_stacksets_execution" {
+  name = "CustomCloudFormationStackSetExecutionPolicy"
+  description = "Custom IAM policy for CloudFormation StackSets execution"
+  policy = file("${path.module}/iam_policy/CustomCloudFormationStackSetExecutionPolicy.json")
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomCloudFormationStackSetExecutionPolicy"
+  }
+}
+
 resource "aws_iam_policy" "terra_iam_policy_github_actions" {
   name   = "CustomGitHubActionsPolicy"
   description = "Custom IAM policy for GitHub Actions"
@@ -249,16 +287,22 @@ resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_rds_
   policy_arn = aws_iam_policy.terra_iam_policy_rds_enhanced_monitoring.arn
 }
 
+## CloudFormation StackSets（管理者用:StackSetの作成、更新、削除）用のカスタムポリシーのアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_policy_attachment_stacksets_administration" {
+  role       = aws_iam_role.terra_iam_role_cloudformation_stacksets_administration.name
+  policy_arn = aws_iam_policy.terra_iam_policy_stacksets_administration.arn
+}
+
+## CloudFormation StackSets（実行用:各リージョンでスタックのリソースを作成、更新、削除）用のカスタムポリシーのアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_policy_attachment_stacksets_execution" {
+  role       = aws_iam_role.terra_iam_role_cloudformation_stacksets_execution.name
+  policy_arn = aws_iam_policy.terra_iam_policy_stacksets_execution.arn
+}
+
 ## GitHub Actionsロールにカスタムポリシーをアタッチ
 resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_github_actions" {
   role       = aws_iam_role.terra_iam_role_github_actions.name
   policy_arn = aws_iam_policy.terra_iam_policy_github_actions.arn
-}
-
-## WAF Firehoseロールにカスタムポリシーをアタッチ
-resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_waf_firehose" {
-  role       = aws_iam_role.terra_iam_role_waf_firehose.name
-  policy_arn = aws_iam_policy.terra_iam_policy_waf_firehose.arn
 }
 
 ## GitHub OIDC（OpenID Connect）プロバイダーを作成

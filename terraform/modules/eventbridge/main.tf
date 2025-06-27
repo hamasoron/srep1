@@ -1,41 +1,21 @@
-# EventBridge ルール
-resource "aws_cloudwatch_event_rule" "main" {
-  count = var.enable_eventbridge ? 1 : 0
-  
-  name        = var.rule_name != "" ? var.rule_name : "${var.system_name}-${var.environment_name}-eventbridge-rule"
-  description = var.rule_description
-  state       = var.state
+# リソースの定義
+# resource "aws_cloudwatch_event_rule" "guardduty_findings" {
+#   for_each = var.enable_guardduty_detector && var.cloudwatch_event_rule_enabled ? toset(local.guardduty_regions) : toset([])
+#   name        = "${var.system_name}-${var.environment_name}-guardduty-findings-${each.value}"
+#   description = "GuardDuty 検出結果をキャプチャ (${each.value})"
+#   event_pattern = jsonencode({
+#     source        = ["aws.guardduty"]
+#     detail-type   = ["GuardDuty Finding"]
+#   })
+#   tags = {
+#     Name = "${var.system_name}-${var.environment_name}-guardduty-findings-rule"
+#   }
+# }
 
-  # イベントパターンまたはスケジュール式のどちらかを設定
-  event_pattern       = var.event_pattern != "" ? var.event_pattern : null
-  schedule_expression = var.schedule_expression != "" ? var.schedule_expression : null
-
-  tags = merge(
-    var.tags,
-    {
-      Name        = var.rule_name != "" ? var.rule_name : "${var.system_name}-${var.environment_name}-eventbridge-rule"
-      SystemName  = var.system_name
-      Environment = var.environment_name
-    }
-  )
-}
-
-# EventBridge ターゲット
-resource "aws_cloudwatch_event_target" "targets" {
-  count = var.enable_eventbridge ? length(var.targets) : 0
-  
-  rule      = aws_cloudwatch_event_rule.main[0].name
-  target_id = var.targets[count.index].target_id
-  arn       = var.targets[count.index].arn
-
-  # 入力データの変換
-  input = var.targets[count.index].input
-
-  dynamic "input_transformer" {
-    for_each = var.targets[count.index].input_transformer != null ? [1] : []
-    content {
-      input_paths = var.targets[count.index].input_transformer.input_paths_map
-      input_template = var.targets[count.index].input_transformer.input_template
-    }
-  }
-} 
+# ## CloudWatch Events ターゲット（SNSトピックが指定されている場合）- マルチリージョン対応
+# resource "aws_cloudwatch_event_target" "sns" {
+#   for_each = var.enable_guardduty_detector && var.cloudwatch_event_rule_enabled && var.sns_topic_arn != "" ? toset(local.guardduty_regions) : toset([])
+#   rule      = aws_cloudwatch_event_rule.guardduty_findings[each.key].name
+#   target_id = "SendToSNS"
+#   arn       = var.sns_topic_arn
+# }

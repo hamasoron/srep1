@@ -245,6 +245,30 @@ module "vpc_flow_logs" {
   depends_on                  = [module.vpc, module.s3]
 }
 
+## GuardDuty CFnのモジュール呼び出し
+module "guardduty_cfn" {
+  source                                           = "../../modules/guardduty_cfn"
+  system_name                                      = var.system_name
+  environment_name                                 = var.environment_name
+  ### IAMロール
+  cloudformation_stack_set_administration_role_arn = module.iam_role.iam_role_cloudformation_stacksets_administration_arn
+  cloudformation_stack_set_execution_role_name     = module.iam_role.iam_role_cloudformation_stacksets_execution_name
+  ### GuardDuty
+  target_regions                                   = var.target_regions
+  finding_publishing_frequency                     = var.finding_publishing_frequency
+  ebs_malware_protection                           = var.ebs_malware_protection
+  eks_audit_logs                                   = var.eks_audit_logs
+  lambda_protection                                = var.lambda_protection
+  rds_protection                                   = var.rds_protection
+  s3_protection                                    = var.s3_protection
+  runtime_monitoring                               = var.runtime_monitoring
+  max_concurrent_count                             = var.max_concurrent_count
+  failure_tolerance_count                          = var.failure_tolerance_count
+  region_concurrency_type                          = var.region_concurrency_type
+  retain_stack                                     = var.retain_stack
+  depends_on                                       = [module.iam_role]
+}
+
 ## Route53 Recordsのモジュール呼び出し
 module "route53_records" {
   source           = "../../modules/route53_records"
