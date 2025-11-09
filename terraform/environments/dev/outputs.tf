@@ -271,6 +271,24 @@ output "guardduty_cfn_enabled_regions" {
   value = module.guardduty_cfn.guardduty_cfn_enabled_regions
 }
 
+## SNS
+output "sns_guardduty_topic_arn" {
+  description = "ARN of the SNS topic for GuardDuty findings（used in the EventBridge module）"
+  value = module.sns.sns_guardduty_topic_arn
+}
+
+## EventBridge
+output "eventbridge_rule_arn" {
+  description = "ARN of the EventBridge rule"
+  value = module.eventbridge.eventbridge_rule_arn
+}
+
+## Amazon Q Developer
+output "q_developer_slack_channel_id" {
+  description = "Slack channel ID configured for notifications"
+  value = module.q_developer.q_developer_slack_channel_id
+}
+
 ## Route53 Records
 output "route53_records_alias_record_fqdn" {
   description = "FQDN of the Alias record (used when accessing the ALB's DNS name as an alias in the browser)"

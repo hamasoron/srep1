@@ -118,7 +118,7 @@ resource "aws_iam_role" "terra_iam_role_rds_enhanced_monitoring" {
 resource "aws_iam_role" "terra_iam_role_cloudformation_stacksets_administration" {
   name = "CustomCloudFormationStackSetAdministrationRole"
   description = "Custom IAM role for CloudFormation StackSets administration"
-  max_session_duration = 3600
+  max_session_duration = 3600 ##### セッションを保持する時間（1時間~12時間の間で設定）
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -140,7 +140,7 @@ resource "aws_iam_role" "terra_iam_role_cloudformation_stacksets_administration"
 resource "aws_iam_role" "terra_iam_role_cloudformation_stacksets_execution" {
   name = "CustomCloudFormationStackSetExecutionRole"
   description = "Custom IAM role for CloudFormation StackSets execution"
-  max_session_duration = 3600
+  max_session_duration = 3600 ##### セッションを保持する時間（1時間~12時間の間で設定）
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -155,6 +155,28 @@ resource "aws_iam_role" "terra_iam_role_cloudformation_stacksets_execution" {
   })
   tags = {
     Name = "${var.system_name}-${var.environment_name}-CustomCloudFormationStackSetExecutionRole"
+  }
+}
+
+## Amazon Q Developer用のIAMロールを作成
+resource "aws_iam_role" "terra_iam_role_q_developer" {
+  name = "CustomQDeveloperRole"
+  description = "Custom IAM role for Amazon Q Developer"
+  max_session_duration = 3600 ##### セッションを保持する時間（1時間~12時間の間で設定）
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "chatbot.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomQDeveloperRole"
   }
 }
 
@@ -257,6 +279,15 @@ resource "aws_iam_policy" "terra_iam_policy_github_actions" {
   }
 }
 
+resource "aws_iam_policy" "terra_iam_policy_q_developer" {
+  name   = "CustomQDeveloperPolicy"
+  description = "Custom IAM policy for Amazon Q Developer"
+  policy = file("${path.module}/iam_policy/CustomQDeveloperPolicy.json")
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-CustomQDeveloperPolicy"
+  }
+}
+
 ## ECSタスクロールにカスタムポリシーをアタッチ
 resource "aws_iam_role_policy_attachment" "terra_iam_policy_attachment_ecs_task" {
   role       = aws_iam_role.terra_iam_role_ecs_task.name
@@ -303,6 +334,12 @@ resource "aws_iam_role_policy_attachment" "terra_iam_policy_attachment_stacksets
 resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_github_actions" {
   role       = aws_iam_role.terra_iam_role_github_actions.name
   policy_arn = aws_iam_policy.terra_iam_policy_github_actions.arn
+}
+
+## Amazon Q Developerロールにカスタムポリシーをアタッチ
+resource "aws_iam_role_policy_attachment" "terra_iam_role_policy_attachment_q_developer" {
+  role       = aws_iam_role.terra_iam_role_q_developer.name
+  policy_arn = aws_iam_policy.terra_iam_policy_q_developer.arn
 }
 
 ## GitHub OIDC（OpenID Connect）プロバイダーを作成

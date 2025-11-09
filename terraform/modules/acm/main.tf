@@ -8,7 +8,7 @@ resource "aws_acm_certificate" "terra_acm_certificate" {
     create_before_destroy = true
   }
   tags = {
-    Name        = "${var.system_name}-${var.environment_name}-acm-certificate"
+    Name = "${var.system_name}-${var.environment_name}-acm-certificate"
   }
 }
 

@@ -917,6 +917,35 @@ variable "retain_stack" {
   type        = bool
 }
 
+## SNS
+variable "max_delivery_attempts" {
+  description = "Maximum delivery attempts"
+  type        = number
+  validation {
+    condition     = var.max_delivery_attempts >= 1 && var.max_delivery_attempts <= 10
+    error_message = "max_delivery_attempts must be between 1 and 10."
+  }
+}
+
+## EventBridge
+variable "event_rule_state" {
+  description = "Event rule state"
+  type        = string
+  validation {
+    condition     = contains(["ENABLED", "DISABLED"], var.event_rule_state)
+    error_message = "event_rule_state must be ENABLED or DISABLED."
+  }
+}
+
+variable "severity_level" {
+  description = "Severity level"
+  type        = string
+  validation {
+    condition     = contains(["low", "medium", "high", "critical"], var.severity_level)
+    error_message = "severity_level must be one of low, medium, high, critical."
+  }
+}
+
 ## ECR
 variable "image_tag_mutability" {
   description = "ECR image tag mutability"
@@ -1080,4 +1109,39 @@ variable "deployment_controller_type" {
     condition     = contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], var.deployment_controller_type)
     error_message = "deployment_controller_type must be one of ECS, CODE_DEPLOY, EXTERNAL."
   }
+}
+
+## Amazon Q Developer/Slack設定
+variable "slack_channel_id" {
+  description = "Slack channel ID for notifications"
+  type        = string
+  validation {
+    condition     = can(regex("^C[A-Z0-9]{8,}$", var.slack_channel_id))
+    error_message = "slack_channel_id must be a valid Slack channel ID (starts with 'C' followed by alphanumeric characters)."
+  }
+}
+
+variable "slack_team_id" {
+  description = "Slack team (workspace) ID"
+  type        = string
+  validation {
+    condition     = can(regex("^T[A-Z0-9]{8,}$", var.slack_team_id))
+    error_message = "slack_team_id must be a valid Slack team ID (starts with 'T' followed by alphanumeric characters)."
+  }
+}
+
+variable "logging_level" {
+  description = "Logging level for Amazon Q Developer"
+  type        = string
+  default     = "ERROR"
+  validation {
+    condition     = contains(["ERROR", "INFO", "NONE"], var.logging_level)
+    error_message = "logging_level must be one of ERROR, INFO, NONE."
+  }
+}
+
+variable "user_authorization_required" {
+  description = "Whether user authorization is required for Amazon Q Developer features"
+  type        = bool
+  default     = true
 }

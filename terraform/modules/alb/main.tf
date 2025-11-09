@@ -1,3 +1,9 @@
+# ローカル変数の定義
+## リスナールールのホストヘッダーのドメイン名を設定
+locals {
+  host_header_domain = var.environment_name == "prod" ? "${var.system_name}.jp" : "${var.environment_name}.${var.system_name}.jp"
+}
+
 # リソースの定義
 ## ALBの作成
 resource "aws_lb" "terra_alb" {
@@ -61,7 +67,9 @@ resource "aws_lb_listener" "terra_http_listener" {
   port              = 80
   protocol          = "HTTP"
   routing_http_response_server_enabled = var.routing_http_response_server_enabled ##### curl等実行時にServerヘッダーを表示するかどうか
-  ### 以下、ブラウザにhttp://urlで間違えてアクセスした場合やブラウザにhostnameだけを入力してアクセスした場合の対策
+  ### ブラウザには、ALBのIPAddressやDNS名でアクセスできないようにする（本番環境はhttps://domain.jp, 検証と開発環境はhttps://subdomain.domain.jpのAlias名でのみアクセス可能）
+  ### ブラウザにhttp://subdomain.domainでアクセスした場合に、https://subdomain.domainにリダイレクト
+  ### ブラウザにsubdomain.domainでアクセスした場合に、https://subdomain.domainにリダイレクト
   default_action {
     type             = "redirect"
     redirect {
@@ -90,12 +98,16 @@ resource "aws_lb_listener" "terra_https_listener" {
   routing_http_response_server_enabled = var.routing_http_response_server_enabled ##### curl等実行時にServerヘッダーを表示するかどうか
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = var.certificate_arn
-  ### 以下、ブラウザにhttps://IPAddressでアクセス（ポートスキャン）された場合の対策
+  ### ブラウザには、ALBのIPAddressやDNS名でアクセスできないようにする（本番環境はhttps://domain.jp, 検証と開発環境はhttps://subdomain.domain.jpのAlias名でのみアクセス可能）
+  ### ブラウザにhttp://ALBのIPAddressでアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
+  ### ブラウザにhttps://ALBのIPAddressでアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
+  ### ブラウザにhttp://ALBのDNS名でアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
+  ### ブラウザにhttps://ALBのDNS名でアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
   default_action {
     type             = "fixed-response"
     fixed_response {
       content_type = "text/html"
-      status_code = "403"
+      status_code = "403" #####
       message_body = <<-HTML
         <!DOCTYPE html>
         <html lang="ja">
@@ -123,7 +135,7 @@ resource "aws_lb_listener" "terra_https_listener" {
   }
   ### 以下、アプリケーションのセキュリティを強化するためのヘッダー各種
   routing_http_response_strict_transport_security_header_value = "max-age=31536000; includeSubDomains; preload" ##### HTTPへのダウングレード攻撃対策（常にHTTPSを使用）。中間者攻撃対策
-  routing_http_response_content_security_policy_header_value = "default-src 'self'" ##### XSS攻撃対策
+  routing_http_response_content_security_policy_header_value = "default-src 'self'; style-src 'self' 'sha256-HQq0hZVZqWvL5w8tpRZP6vqQUzQRHMKqgq+D+FoqeM0=' 'sha256-9QZB2qX3rvM8kLzP6vqQUzQRHMKqgq+D+F5Z6M0FoqeM='" ##### XSS攻撃対策（CSSと404と503ページのインラインCSSのみ明示的に許可）
   routing_http_response_x_content_type_options_header_value  = "nosniff" ##### MIME（マイム）タイプスニッフィング攻撃対策
   routing_http_response_x_frame_options_header_value         = "SAMEORIGIN" ##### クリックジャッキング攻撃対策
   tags = {
@@ -135,6 +147,11 @@ resource "aws_lb_listener" "terra_https_listener" {
 resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
   listener_arn = aws_lb_listener.terra_https_listener.arn
   priority = 10 ##### 数値が低いほど、ルールが優先
+  condition {
+    host_header {
+      values = [local.host_header_domain] ##### prodの場合は、system_name.jp、それ以外の場合は、environment_name.system_name.jp
+    }
+  }
   condition {
     path_pattern {
       values = ["/maintenance"]
@@ -177,13 +194,18 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
   }
 }
 
-## リスナールール（HTTPS）の作成 (/healthか/にアクセスした場合はフロントエンドのターゲットグループに転送)
+## リスナールール（HTTPS）の作成 (ホストヘッダーがsubdomain.domainかつ/*にアクセスした場合はフロントエンドのターゲットグループに転送)
 resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
   listener_arn = aws_lb_listener.terra_https_listener.arn
   priority = 100 ##### 数値が低いほど、ルールが優先
   condition {
+    host_header {
+      values = [local.host_header_domain] ##### prodの場合は、system_name.jp、それ以外の場合は、environment_name.system_name.jp
+    }
+  }
+  condition {
     path_pattern {
-      values = ["/health", "/"]
+      values = ["/*"]
     }
   }
   action {
@@ -192,50 +214,5 @@ resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
   }
   tags = {
     Name = "${var.system_name}-${var.environment_name}-https-listener-rule2"
-  }
-}
-
-## リスナールール（HTTPS）の作成 (ブラウザに想定していないパスを入力した場合の対策)
-resource "aws_lb_listener_rule" "terra_https_listener_rule3" {
-  listener_arn = aws_lb_listener.terra_https_listener.arn
-  priority = 1000 ##### 数値が低いほど、ルールが優先
-  condition {
-    path_pattern {
-      values = ["/*"]
-    }
-  }
-  ### 以下、ブラウザに想定していないパスを入力した場合の対策
-  action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/html"
-      status_code = "404"
-      message_body = <<-HTML
-        <!DOCTYPE html>
-        <html lang="ja">
-        <head>
-        <meta charset="UTF-8">
-        <title>404 Not Found</title>
-        <style>
-        body{font-family:sans-serif;background:#f5f7fa;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh}
-        .container{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);text-align:center;max-width:400px;border-top:4px solid #e74c3c}
-        h1{color:#c0392b;margin:10px 0}
-        p{margin:15px 0;color:#2c3e50}
-        .status{background:#f8f9fa;padding:8px 15px;border-radius:4px;color:#e74c3c;font-weight:bold;display:inline-block;border:1px solid #e9ecef}
-        </style>
-        </head>
-        <body>
-        <div class="container">
-        <h1>404 Not Found</h1>
-        <p>Sorry, the page you are looking for does not exist.</p>
-        <div class="status">404 Not Found</div>
-        </div>
-        </body>
-        </html>
-      HTML
-    }
-  }
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-https-listener-rule3"
   }
 }

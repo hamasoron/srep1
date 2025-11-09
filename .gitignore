@@ -1,8 +1,60 @@
 # Terraform
 **/.terraform/**
 **.tfstate
+**.tfstate.backup
 **.tfvars
+!terraform.tfvars.example
 **/.terraform.lock.hcl
+
 # Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
 **/lib
 **/output
+*.egg-info/
+dist/
+build/
+
+# Lambda
+*.zip
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# AWS
+.aws/
+*.pem
+
+# Docker
+docker-compose.override.yml
+
+# Secrets (二重チェック)
+*secret*
+*password*
+*key*
+!*-template.*
+!*example*
+
+# Temporary files
+tmp/
+temp/
+*.tmp

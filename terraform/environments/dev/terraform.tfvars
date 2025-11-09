@@ -317,6 +317,19 @@ failure_tolerance_count = 20
 region_concurrency_type = "PARALLEL"
 retain_stack = false
 
+## EventBridge
+event_rule_state = "ENABLED"
+severity_level = "critical" ##### 重要度（セベリティ）がCRITICAL以上
+
+## SNS
+max_delivery_attempts = 3
+
+## Q Developer
+logging_level = "ERROR"
+user_authorization_required = false
+slack_channel_id = "C093NJY3007" ##### チャンネルID（ブラウザ版でSlackを起動した際のURLの末尾）
+slack_team_id = "T08L83AEU3F" ##### ワークスペースID（ブラウザ版でSlackを起動した際のURLの末尾の一つ前）
+
 ## ECR
 image_tag_mutability        = "IMMUTABLE"
 ecr_force_delete            = true

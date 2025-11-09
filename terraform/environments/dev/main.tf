@@ -269,6 +269,41 @@ module "guardduty_cfn" {
   depends_on                                       = [module.iam_role]
 }
 
+## SNSのモジュール呼び出し
+module "sns" {
+  source           = "../../modules/sns"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  max_delivery_attempts = var.max_delivery_attempts
+}
+
+## EventBridgeのモジュール呼び出し
+module "eventbridge" {
+  source           = "../../modules/eventbridge"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  ### EventBridgeルール
+  event_rule_state = var.event_rule_state
+  severity_level   = var.severity_level
+  ### EventBridgeターゲット
+  sns_guardduty_topic_arn = module.sns.sns_guardduty_topic_arn
+  depends_on             = [module.sns]
+}
+
+ ## Amazon Q Developerのモジュール呼び出し
+ module "q_developer" {
+  source           = "../../modules/q_developer"
+  system_name      = var.system_name
+  environment_name = var.environment_name
+  iam_role_arn     = module.iam_role.iam_role_q_developer_arn
+  sns_topic_arn    = module.sns.sns_guardduty_topic_arn
+  slack_channel_id = var.slack_channel_id
+  slack_team_id    = var.slack_team_id
+  logging_level               = var.logging_level
+  user_authorization_required = var.user_authorization_required
+  depends_on                  = [module.sns, module.iam_role]
+}
+
 ## Route53 Recordsのモジュール呼び出し
 module "route53_records" {
   source           = "../../modules/route53_records"

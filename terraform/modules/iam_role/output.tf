@@ -34,3 +34,8 @@ output "iam_role_cloudformation_stacksets_execution_name" {
   description = "Name of the CloudFormation StackSets Execution role (used by GuardDuty CFn module.)"
   value       = aws_iam_role.terra_iam_role_cloudformation_stacksets_execution.name
 }
+
+output "iam_role_q_developer_arn" {
+  description = "ARN of the Amazon Q Developer IAM role (used by Q Developer module.)"
+  value       = aws_iam_role.terra_iam_role_q_developer.arn
+}
