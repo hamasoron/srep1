@@ -1,2 +1,2 @@
 # 以下の日付部分（yyyy-mm-dd hh:mm）を変更
-## 2025-05-20 17:21 triggered for db-inituser.yml CI/CD test
+## 2025-05-24 14:30 triggered for db-inituser.yml CI/CD

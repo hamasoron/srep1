@@ -40,3 +40,8 @@ function testDB() {
         // エラー発生時はエラー内容を表示
         .catch(error => updateMessageBox("エラー: " + error, true));
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('apiTestBtn').addEventListener('click', testAPI);
+    document.getElementById('dbTestBtn').addEventListener('click', testDB);
+});

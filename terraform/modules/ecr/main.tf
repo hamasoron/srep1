@@ -8,9 +8,9 @@ locals {
 resource "aws_ecr_repository" "terra_ecr_repository" {
   for_each             = local.repository_map
   name                 = "${var.system_name}-${var.environment_name}-${each.key}-repo"
-  image_tag_mutability = var.image_tag_mutability
+  image_tag_mutability = var.image_tag_mutability ##### IMMUTABLE: タグが不変（上書き不可）、MUTABLE: タグが可変（上書き可）
   image_scanning_configuration {
-    scan_on_push = lookup(each.value, "scan_on_push", true)
+    scan_on_push = lookup(each.value, "scan_on_push", true) 
   }
   encryption_configuration {
     encryption_type = var.encryption_type
@@ -34,7 +34,20 @@ resource "aws_ecr_lifecycle_policy" "terra_ecr_lifecycle_policy" {
     rules = [
       {
         rulePriority = 1
-        description  = "最新の${lookup(each.value, "lifecycle_count", 5)}イメージを保持"
+        description  = "untagged images are deleted after 30 days"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 30
+        }
+        action = {
+          type = "expire"
+        }
+      },
+      {
+        rulePriority = 2
+        description  = "Keep the latest ${lookup(each.value, "lifecycle_count", 5)} images"
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"

@@ -9,10 +9,14 @@ terraform {
       source  = "hashicorp/time"
       version = "= 0.11.2"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "= 3.6.0"
+    }
   }
   required_version = "= 1.11.3"
 }
 
 provider "aws" {
-  region = var.region_name
+  region = var.region_name ##### アジアパシフィック(東京)
 }

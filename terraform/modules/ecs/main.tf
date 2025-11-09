@@ -3,7 +3,7 @@
 resource "aws_ecs_cluster" "terra_ecs_cluster" {
   name = "${var.system_name}-${var.environment_name}-cluster"
   configuration {
-    execute_command_configuration {
+    execute_command_configuration { ##### Cluster内でECS Execを使用するための設定
       logging = "DEFAULT"
       kms_key_id = var.ecs_kms_key_id
     }
@@ -13,7 +13,7 @@ resource "aws_ecs_cluster" "terra_ecs_cluster" {
   }
 }
 
-## ECSクラスターの容量プロバイダーの設定
+## ECSクラスターの容量プロバイダー（購入オプション）とデフォルトの容量プロバイダー（購入オプション）の設定
 resource "aws_ecs_cluster_capacity_providers" "terra_ecs_cluster_capacity_providers" {
   cluster_name = aws_ecs_cluster.terra_ecs_cluster.name
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
@@ -21,35 +21,6 @@ resource "aws_ecs_cluster_capacity_providers" "terra_ecs_cluster_capacity_provid
     capacity_provider = "FARGATE"
     weight            = 1
     base              = 1
-  }
-}
-
-## 名前空間の作成（Private DNS用）（Cloud Map）
-resource "aws_service_discovery_private_dns_namespace" "terra_service_discovery_private_dns_namespace" {
-  name        = "${var.system_name}-${var.environment_name}-namespace.local"
-  description = "Private DNS namespace for ${var.system_name} ${var.environment_name}"
-  vpc         = var.vpc_id
-  tags = {
-    Name = "${var.system_name}-${var.environment_name}-namespace.local"
-  }
-}
-
-## サービス名とサービスディスカバリー（DNS名でサービスを検出）の作成（Cloud Map）
-resource "aws_service_discovery_service" "terra_service_discovery_service" {
-  name = "api-python"
-  dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.terra_service_discovery_private_dns_namespace.id
-    routing_policy = "MULTIVALUE" ##### 複数のタスクが存在する場合、それらのタスクのIPアドレスを返す（ラウンドロビン方式）
-    dns_records {
-      ttl  = 60
-      type = "A"
-    }
-  }
-  health_check_custom_config { ##### カスタムヘルスチェックを使用（アプリからAPIコールを行う場合のヘルスチェック）
-    failure_threshold = 1
-  }
-  tags = {
-    Name = "api-python"
   }
 }
 
@@ -70,10 +41,14 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_api" {
       portMappings = [
         {
           containerPort = 8080 ##### awsvpcによりHostPortはcontainerPortと同じになる
+          hostPort      = 8080
           protocol      = "tcp"
           name          = "api-http" ##### ECSサービスのserviceのnameと一致させる
         }
       ]
+      mountPoints    = []
+      systemControls = []
+      volumesFrom    = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -131,18 +106,18 @@ resource "aws_ecs_service" "terra_ecs_service_api" {
     weight            = 1
     base              = 1
   }
-  platform_version = var.platform_version
+  platform_version = var.platform_version ##### カーネルとコンテナのランタイムのバージョンの組み合わせを指定
   enable_execute_command = var.enable_execute_command
   service_registries {
-    registry_arn = aws_service_discovery_service.terra_service_discovery_service.arn
+    registry_arn = var.cloudmap_service_arn
   }
   network_configuration {
-    subnets          = var.protected_or_public_subnet_ids
+    subnets          = var.ecs_protected_or_public_subnet_ids
     security_groups  = [var.api_security_group_id]
     assign_public_ip = var.create_protected_ngw_associations ? false : true ##### protected_ngw_associationsが、trueの時パブリックIPは割り当てない、falseの時パブリックIP割り当てる
   }
-  deployment_circuit_breaker { ##### 新バージョンに切り替える際に、異常があれば元のバージョンにロールバックする機能
-    enable   = var.deployment_circuit_breaker_enable
+  deployment_circuit_breaker { ##### 新バージョンに切り替える際に、異常があれば元のバージョンにロールバックする機能 
+    enable   = var.deployment_circuit_breaker_enable ##### circuit breaker: 回路遮断器（サーキットブレーカー）。自宅のブレーカーのようなもの。
     rollback = var.deployment_circuit_breaker_rollback
   }
   deployment_controller { ##### デプロイ制御
@@ -183,10 +158,14 @@ resource "aws_ecs_task_definition" "terra_ecs_task_definition_front" {
       portMappings = [
         {
           containerPort = 80
+          hostPort      = 80
           protocol      = "tcp"
           name          = "http-nginx"
         }
       ]
+      mountPoints    = []
+      systemControls = []
+      volumesFrom    = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -215,10 +194,10 @@ resource "aws_ecs_service" "terra_ecs_service_front" {
     weight            = 1
     base              = 1
   }
-  platform_version                  = "LATEST"
+  platform_version                  = "LATEST" ##### カーネルとコンテナのランタイムのバージョンの組み合わせを指定
   enable_execute_command = true
   network_configuration {
-    subnets          = var.protected_or_public_subnet_ids
+    subnets          = var.ecs_protected_or_public_subnet_ids
     security_groups  = [var.front_security_group_id]
     assign_public_ip = var.create_protected_ngw_associations ? false : true
   }
@@ -228,15 +207,15 @@ resource "aws_ecs_service" "terra_ecs_service_front" {
     container_port   = 80
   }
   health_check_grace_period_seconds = 60 ##### ヘルスチェックの猶予期間（秒）。新しいタスクが起動してから一定時間はヘルスチェックの結果を無視する
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
+  deployment_circuit_breaker { ##### 新バージョンに切り替える際に、異常があれば元のバージョンにロールバックする機能
+    enable   = var.deployment_circuit_breaker_enable ##### circuit breaker: 回路遮断器（サーキットブレーカー）。自宅のブレーカーのようなもの。
+    rollback = var.deployment_circuit_breaker_rollback
   }
-  deployment_controller {
-    type = "ECS"
+  deployment_controller { ##### デプロイ制御
+    type = var.deployment_controller_type ##### ローリングデプロイかブルー/グリーンデプロイかを使用
   }
-  lifecycle {
-    create_before_destroy = true
+  lifecycle { ##### ダウンタイムゼロでデプロイするために必要
+    create_before_destroy = true ##### 新バージョンのECSサービスを先に作成してから古いECSサービスを削除する
   }
   tags = {
     Name = "${var.system_name}-${var.environment_name}-front-nginx-svc"

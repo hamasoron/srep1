@@ -1,0 +1,15 @@
+# Chatbot/Slack設定の例
+# 実際の値を設定してterraform.tfvarsファイルを作成してください
+
+## Slack設定
+slack_channel_id = "C1234567890"  # 実際のSlackチャンネルIDに置き換え
+slack_team_id    = "T0987654321"  # 実際のSlackチーム（ワークスペース）IDに置き換え
+
+## ChatBot設定（オプション）
+# logging_level               = "ERROR"    # デフォルト値なので省略可能
+# user_authorization_required = true       # デフォルト値なので省略可能
+
+# 他の必要な変数も設定してください...
+# system_name      = "your-system"
+# environment_name = "dev"
+# など... 

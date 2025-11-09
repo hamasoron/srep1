@@ -1,3 +1,9 @@
+# ローカル変数の定義
+## リスナールールのホストヘッダーのドメイン名を設定
+locals {
+  host_header_domain = var.environment_name == "prod" ? "${var.system_name}.jp" : "${var.environment_name}.${var.system_name}.jp"
+}
+
 # リソースの定義
 ## ALBの作成
 resource "aws_lb" "terra_alb" {
@@ -8,6 +14,7 @@ resource "aws_lb" "terra_alb" {
   subnets            = var.public_subnet_ids
   enable_deletion_protection = var.enable_deletion_protection
   enable_http2 = true
+  desync_mitigation_mode = var.desync_mitigation_mode
   dynamic "access_logs" {
     for_each = var.enable_access_logs ? [1] : []
     content {
@@ -19,9 +26,9 @@ resource "aws_lb" "terra_alb" {
   dynamic "connection_logs" {
     for_each = var.enable_connection_logs ? [1] : []
     content {
-      enabled = true
       bucket  = var.s3_alb_logs_bucket_name
       prefix  = "connectionlogs"
+      enabled = true
     }
   }
   tags = {
@@ -36,8 +43,8 @@ resource "aws_lb_target_group" "terra_front_target_group" {
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
-  deregistration_delay = var.deregistration_delay
-  load_balancing_algorithm_type = var.load_balancing_algorithm_type
+  deregistration_delay = var.deregistration_delay ##### Connection draining time
+  load_balancing_algorithm_type = var.load_balancing_algorithm_type ##### ラウンドロビン、最小未処理、重みづけのどれか
   health_check {
     enabled             = true
     interval            = var.health_check_interval
@@ -59,9 +66,27 @@ resource "aws_lb_listener" "terra_http_listener" {
   load_balancer_arn = aws_lb.terra_alb.arn
   port              = 80
   protocol          = "HTTP"
+  routing_http_response_server_enabled = var.routing_http_response_server_enabled ##### curl等実行時にServerヘッダーを表示するかどうか
+  ### ブラウザには、ALBのIPAddressやDNS名でアクセスできないようにする（本番環境はhttps://domain.jp, 検証と開発環境はhttps://subdomain.domain.jpのAlias名でのみアクセス可能）
+  ### ブラウザにhttp://subdomain.domainでアクセスした場合に、https://subdomain.domainにリダイレクト
+  ### ブラウザにsubdomain.domainでアクセスした場合に、https://subdomain.domainにリダイレクト
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.terra_front_target_group.arn
+    type             = "redirect"
+    redirect {
+      port        = "443"
+      host        = "#{host}"
+      path        = "/#{path}"
+      query       = "#{query}"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301" ##### HTTPから恒久的にHTTPSにリダイレクト（301: 恒久的なリダイレクト, 302: 一時的なリダイレクト）
+    }
+  }
+  ### 以下、アプリケーションのセキュリティを強化するためのヘッダー各種
+  routing_http_response_content_security_policy_header_value = "default-src 'self'" ##### XSS攻撃対策
+  routing_http_response_x_content_type_options_header_value  = "nosniff" ##### MIME（マイム）タイプスニッフィング攻撃対策
+  routing_http_response_x_frame_options_header_value         = "SAMEORIGIN" ##### クリックジャッキング攻撃対策
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-http-listener"
   }
 }
 
@@ -70,10 +95,124 @@ resource "aws_lb_listener" "terra_https_listener" {
   load_balancer_arn = aws_lb.terra_alb.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  routing_http_response_server_enabled = var.routing_http_response_server_enabled ##### curl等実行時にServerヘッダーを表示するかどうか
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = var.certificate_arn
+  ### ブラウザには、ALBのIPAddressやDNS名でアクセスできないようにする（本番環境はhttps://domain.jp, 検証と開発環境はhttps://subdomain.domain.jpのAlias名でのみアクセス可能）
+  ### ブラウザにhttp://ALBのIPAddressでアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
+  ### ブラウザにhttps://ALBのIPAddressでアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
+  ### ブラウザにhttp://ALBのDNS名でアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
+  ### ブラウザにhttps://ALBのDNS名でアクセス（ポートスキャン）された場合に、403 Forbiddenを返す
   default_action {
-    type             = "forward"
+    type             = "fixed-response"
+    fixed_response {
+      content_type = "text/html"
+      status_code = "403" #####
+      message_body = <<-HTML
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+        <meta charset="UTF-8">
+        <title>Access Denied</title>
+        <style>
+        body{font-family:sans-serif;background:#f5f7fa;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+        .container{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);text-align:center;max-width:400px;border-top:4px solid #e74c3c}
+        h1{color:#c0392b;margin:10px 0}
+        p{margin:15px 0;color:#2c3e50}
+        .status{background:#f8f9fa;padding:8px 15px;border-radius:4px;color:#e74c3c;font-weight:bold;display:inline-block;border:1px solid #e9ecef}
+        </style>
+        </head>
+        <body>
+        <div class="container">
+        <h1>Access Denied</h1>
+        <p>Sorry, you are not allowed to access this page.</p>
+        <div class="status">403 Forbidden</div>
+        </div>
+        </body>
+        </html>
+      HTML
+    }
+  }
+  ### 以下、アプリケーションのセキュリティを強化するためのヘッダー各種
+  routing_http_response_strict_transport_security_header_value = "max-age=31536000; includeSubDomains; preload" ##### HTTPへのダウングレード攻撃対策（常にHTTPSを使用）。中間者攻撃対策
+  routing_http_response_content_security_policy_header_value = "default-src 'self'; style-src 'self' 'sha256-HQq0hZVZqWvL5w8tpRZP6vqQUzQRHMKqgq+D+FoqeM0=' 'sha256-9QZB2qX3rvM8kLzP6vqQUzQRHMKqgq+D+F5Z6M0FoqeM='" ##### XSS攻撃対策（CSSと404と503ページのインラインCSSのみ明示的に許可）
+  routing_http_response_x_content_type_options_header_value  = "nosniff" ##### MIME（マイム）タイプスニッフィング攻撃対策
+  routing_http_response_x_frame_options_header_value         = "SAMEORIGIN" ##### クリックジャッキング攻撃対策
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-https-listener"
+  }
+}
+
+## リスナールール（HTTPS）の作成 (/maintenanceにアクセスした場合はメンテナンスページに転送)
+resource "aws_lb_listener_rule" "terra_https_listener_rule1" {
+  listener_arn = aws_lb_listener.terra_https_listener.arn
+  priority = 10 ##### 数値が低いほど、ルールが優先
+  condition {
+    host_header {
+      values = [local.host_header_domain] ##### prodの場合は、system_name.jp、それ以外の場合は、environment_name.system_name.jp
+    }
+  }
+  condition {
+    path_pattern {
+      values = ["/maintenance"]
+    }
+  }
+  action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/html"
+      status_code = "503"
+      message_body = <<-HTML
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+        <meta charset="UTF-8">
+        <title>Maintenance</title>
+        <style>
+        body{font-family:sans-serif;background:#e0f7fa;margin:0;padding:20px;display:flex;justify-content:center;align-items:center;min-height:100vh}
+        .container{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);text-align:center;max-width:400px;border-top:4px solid #0288d1}
+        h1{color:#0277bd;margin:10px 0}
+        p{margin:15px 0;color:#01579b}
+        .status{background:#e1f5fe;padding:8px 15px;border-radius:4px;color:#0288d1;font-weight:bold;display:inline-block;border:1px solid #b3e5fc}
+        .progress{width:100%;height:4px;background:#e0f7fa;border-radius:2px;margin-top:20px}
+        </style>
+        </head>
+        <body>
+        <div class="container">
+        <h1>Maintenance</h1>
+        <p>We are currently performing maintenance on the system.<br>We apologize for the inconvenience.</p>
+        <div class="status">503 Service Unavailable</div>
+        <div class="progress"></div>
+        </div>
+        </body>
+        </html>
+      HTML
+    }   
+  }
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-https-listener-rule1"
+  }
+}
+
+## リスナールール（HTTPS）の作成 (ホストヘッダーがsubdomain.domainかつ/*にアクセスした場合はフロントエンドのターゲットグループに転送)
+resource "aws_lb_listener_rule" "terra_https_listener_rule2" {
+  listener_arn = aws_lb_listener.terra_https_listener.arn
+  priority = 100 ##### 数値が低いほど、ルールが優先
+  condition {
+    host_header {
+      values = [local.host_header_domain] ##### prodの場合は、system_name.jp、それ以外の場合は、environment_name.system_name.jp
+    }
+  }
+  condition {
+    path_pattern {
+      values = ["/*"]
+    }
+  }
+  action {
+    type = "forward"
     target_group_arn = aws_lb_target_group.terra_front_target_group.arn
+  }
+  tags = {
+    Name = "${var.system_name}-${var.environment_name}-https-listener-rule2"
   }
 }

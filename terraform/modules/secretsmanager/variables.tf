@@ -1,49 +1,46 @@
 # 変数の定義
 ## 全般
-variable "region_name" {
-  description = "リージョン名"
-  type        = string
-}
-
 variable "system_name" {
-  description = "システム名"
+  description = "System name"
   type        = string
+  validation {
+    condition     = length(var.system_name) > 0
+    error_message = "system_name must not be empty."
+  }
 }
 
 variable "environment_name" {
-  description = "環境名"
+  description = "Environment name"
   type        = string
+  validation {
+    condition     = contains(["prod", "stg", "dev"], var.environment_name)
+    error_message = "environment_name must be one of prod, stg, dev."
+  }
 }
 
 ## Secrets Manager
+variable "secrets_list" {
+  description = "List of secrets managed by SecretsManager"
+  type = list(object({
+    name     = string
+    username = string
+  }))
+}
+
 variable "recovery_window_in_days" {
-  description = "削除後の復旧ウィンドウ（日数）"
+  description = "Recovery window in days after deletion"
   type        = number
+  validation {
+    condition     = var.recovery_window_in_days == 0 || (var.recovery_window_in_days >= 7 && var.recovery_window_in_days <= 30)
+    error_message = "recovery_window_in_days must be 0 or an integer between 7 and 30."
+}
 }
 
 variable "secretsmanager_kms_key_id" {
-  description = "SecretsManagerのKMSキーID"
+  description = "ID of KMS key for SecretsManager"
   type        = string
-}
-
-variable "master_username" {
-  description = "マスターユーザー名"
-  type        = string
-}
-
-variable "master_password" {
-  description = "マスターユーザーのパスワード"
-  type        = string
-  sensitive   = true
-}
-
-variable "app_username" {
-  description = "アプリケーションユーザー名"
-  type        = string
-}
-
-variable "app_password" {
-  description = "アプリケーションユーザーのパスワード"
-  type        = string
-  sensitive   = true
+  validation {
+    condition     = var.secretsmanager_kms_key_id == null || can(length(var.secretsmanager_kms_key_id) > 0)
+    error_message = "secretsmanager_kms_key_id must be null or a non-empty string."
+  }
 }
